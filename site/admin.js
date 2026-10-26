@@ -33,9 +33,13 @@ function authShell(){const visibleGroups=ctx.role==='moderator'?[['Moderation',[
  document.querySelectorAll('[data-panel]').forEach(el=>el.onclick=()=>{selected=el.dataset.panel;authShell();renderPanel();});
 }
 export async function admin(context){ctx=context;const user=currentUser();if(!user){ctx.layout('<div class="section box"><h1>Admin sign in required</h1><p>You must sign in to an Owner/Admin account before managing the bakery.</p><a class="button" href="#account">Sign in</a></div>');return;}
- try{const roles=await list('staff_roles',{user_id:'eq.'+user.id});if(!roles.some(x=>['owner','admin','moderator'].includes(x.role)))throw Error('Your account does not have Admin access. Owner permissions must be assigned securely from Supabase SQL Editor.');}
+ try{
+  const roles=await list('staff_roles',{user_id:'eq.'+user.id});
+  const authorizedRole=roles.find(x=>['owner','admin','moderator'].includes(x.role));
+  if(!authorizedRole)throw Error('Your account does not have Admin access. Owner permissions must be assigned securely from Supabase SQL Editor.');
+  ctx.role=authorizedRole.role;
+ }
  catch(x){ctx.layout(`<div class="section box"><h1>Access denied</h1><p>${e(x.message)}</p><a href="#shop">Return to shop</a></div>`);return;}
- ctx.role=roles.find(x=>['owner','admin','moderator'].includes(x.role)).role;
  if(ctx.role==='moderator')selected='messages';
  authShell();await renderPanel();}
 async function renderPanel(){try{if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
