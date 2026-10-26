@@ -11,12 +11,11 @@ import {onRequestPost as contact} from '../functions/api/contact.js';
 import {onRequestPost as orderStatus} from '../functions/api/order-status.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
-const required=['README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
+const required=['site/account.js','site/message-center.js','functions/_lib/turnstile.js','functions/api/auth/login.js','functions/api/auth/register.js','supabase/migrations/20261026_customer_profiles_message_photos.sql','README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
 test('repository contains the complete expected source layout',()=>{for(const p of required)assert.equal(existsSync(path.join(root,p)),true,'missing '+p);});
 test('JavaScript source files parse without syntax errors',()=>{
- const js=[...readdirSync(path.join(root,'site')).filter(x=>x.endsWith('.js')).map(x=>'site/'+x),
- ...readdirSync(path.join(root,'functions/api')).map(x=>'functions/api/'+x),
- ...readdirSync(path.join(root,'functions/_lib')).map(x=>'functions/_lib/'+x)];
+ const walk=dir=>readdirSync(path.join(root,dir),{withFileTypes:true}).flatMap(item=>item.isDirectory()?walk(dir+'/'+item.name):item.name.endsWith('.js')?[dir+'/'+item.name]:[]);
+ const js=[...walk('site'),...walk('functions')];
  for(const p of js){const r=spawnSync(process.execPath,['--check',path.join(root,p)],{encoding:'utf8'});assert.equal(r.status,0,p+'\n'+r.stderr);}
 });
 test('client config contains no apparent private credentials',()=>{
@@ -54,4 +53,13 @@ test('guest contact refuses traffic without human verification setup',async()=>{
 test('order-status requires an unpredictable format for tracking token',async()=>{
  const request=new Request('https://example.org/api/order-status',{method:'POST',body:JSON.stringify({token:'small'})});
  const r=await orderStatus({request,env:{}});assert.equal(r.status,400);
+});
+
+test('account and messaging enhancements enforce CAPTCHA and private storage',()=>{
+ const account=read('site/account.js'), auth=read('functions/_lib/turnstile.js'), migration=read('supabase/migrations/20261026_customer_profiles_message_photos.sql');
+ assert.match(account,/captchaToken/); assert.match(auth,/siteverify/);
+ assert.match(migration,/create table if not exists public.message_photos/i);
+ assert.match(migration,/Maximum five photos per message/);
+ assert.match(migration,/message-photos','message-photos',false/);
+ assert.match(migration,/create unique index if not exists customer_profiles_username_ci_unique/);
 });
