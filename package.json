@@ -1,0 +1,9 @@
+{
+  "name": "mamma-bees-bakery",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "GitHub-ready storefront and admin code foundation for Mamma Bee's Bakery, Nixa MO",
+  "scripts": {"test": "node --test tests/*.test.js", "check": "npm test"},
+  "engines": {"node": ">=22"}
+}
