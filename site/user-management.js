@@ -1,4 +1,4 @@
-import {currentSession,escapeHtml as e} from './api.js';
+import {currentSession,list,escapeHtml as e} from './api.js';
 let page=1;
 async function api(payload){
  const token=currentSession()?.access_token;
@@ -46,7 +46,17 @@ export async function userManagement({showError}){
     '<tbody id="user-directory">'+(rows||'<tr><td colspan="5">No customer accounts in this page.</td></tr>')+'</tbody></table></div>'+
     '<div class="actions" style="margin-top:15px"><button class="button secondary" id="users-prev"'+(page<=1?' disabled':'')+'>Previous</button>'+
     '<button class="button secondary" id="users-next"'+(!data.hasMore?' disabled':'')+'>Next</button></div>'+
-    '<p class="small muted">Admin grants and permanent deletion are restricted to the Owner. Admins can invite users, assign Moderator, and suspend lower-privilege accounts. Customer financial/order records are preserved.</p></section>';
+    '<p class="small muted">Admin grants and permanent deletion are restricted to the Owner. Admins can invite users, assign Moderator, and suspend lower-privilege accounts. Customer financial/order records are preserved.</p>'+ (isOwner?'<section id="account-audit"><h3>Account Management Audit History</h3><p class="muted">Loading recent actions…</p></section>':'')+'</section>';
+  if(isOwner){
+   try{
+    const rows=await list('account_admin_audit',{order:'recorded_at.desc',limit:'20'});
+    const area=main.querySelector('#account-audit');
+    if(area)area.innerHTML='<h3>Account Management Audit History</h3>'+
+      (rows.length?'<div class="table-wrap"><table><thead><tr><th>When</th><th>Action</th><th>Target ID</th></tr></thead><tbody>'+
+      rows.map(a=>'<tr><td>'+date(a.recorded_at)+'</td><td>'+e(a.operation)+'</td><td>'+e(a.target_user_id||'—')+'</td></tr>').join('')+
+      '</tbody></table></div>':'<p>No role or account management actions recorded yet.</p>');
+   }catch{const area=main.querySelector('#account-audit');if(area)area.innerHTML='<p>Audit records currently unavailable.</p>';}
+  }
   const find=id=>data.users.find(u=>u.id===id);
   const run=async (payload,confirmation)=>{
    if(confirmation&&!window.confirm(confirmation))return;
