@@ -1,6 +1,6 @@
-import {config,isConfigured,currentUser,signIn,signUp,signOut,list,add,update,upload,signedImage,request,money,escapeHtml as e,safePhoto as photo,currentDate,futureDate,fmt} from './api.js';
+import {config,isConfigured,currentUser,currentSession,signIn,signUp,signOut,list,add,update,upload,signedImage,request,money,escapeHtml as e,safePhoto as photo,currentDate,futureDate,fmt} from './api.js';
 import {isBackOfficeRole,backOfficeNavigation} from './role-navigation.js';
-let all={categories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],settings:{},reviews:[]};
+let all={categories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
 let checkoutMode='pickup';
 let verifiedBackOfficeRole=null;
@@ -21,7 +21,39 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const nav=(hash)=>location.hash=hash;
 const saveCart=()=>sessionStorage.setItem('mb_cart',JSON.stringify(cart));
 const showError=(ex)=>{const box=$('#feedback');if(box){box.innerHTML='<div role="alert" class="notice error">'+e(ex?.message||ex)+'</div>';box.scrollIntoView({behavior:'smooth',block:'nearest'});} else alert(ex?.message||ex);};
-const image=(src,cls='product-photo',alt='Bakery product photograph')=>src?`<img class="${cls}" src="${photo(src)}" alt="${e(alt)}" loading="lazy">`:`<div class="photo-empty" aria-label="No product photo uploaded">Mamma Bee's Bakery</div>`;
+
+async function startSandboxCheckout(id){
+ if(!['owner','admin'].includes(verifiedBackOfficeRole))throw Error('Only bakery management can access test checkout');
+ const token=currentSession()?.access_token;
+ if(!token)throw Error('Please sign in again');
+ const r=await fetch('/api/admin/demo-checkout',{method:'POST',
+  headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+  body:JSON.stringify({item_id:id})});
+ const json=await r.json().catch(()=>({}));
+ if(!r.ok)throw Error(json.error||'Sandbox checkout is unavailable');
+ if(!/^https:\/\/checkout\.stripe\.com\//.test(json.checkout_url||''))throw Error('Invalid checkout redirect');
+ location.assign(json.checkout_url);
+}
+function demoStorePreview(){
+ if(!['owner','admin'].includes(verifiedBackOfficeRole)||all.settings.demo_store_enabled!==true)return '';
+ const products=all.demoItems.filter(x=>x.enabled===true);
+ return '<section class="section demo-store"><h2>Sandbox Test Store — Owner/Admin Only</h2>'+
+ '<p class="muted">These are fictitious examples for testing Stripe. No actual bakery products, inventory, orders or live charges are involved.</p>'+
+ '<div class="grid">'+products.map(x=>
+ '<article class="card"><div class="card-content"><span class="badge">TEST ONLY</span><h3>'+e(x.name)+'</h3>'+
+ '<p class="small">'+e(x.category)+' · '+e(x.description)+'</p>'+
+ '<p class="price">'+money(x.price_cents)+' / '+e(x.unit)+'</p>'+
+ '<button type="button" class="button secondary" data-demo-checkout="'+e(x.id)+'">Test Stripe checkout</button></div></article>').join('')+
+ '</div><p class="small">The test-payment button is disabled at the server until the MommaBeesBakery <strong>sk_test_</strong> key is configured. Tax testing and the real-order workflow remain separate.</p></section>';
+}
+function bindDemoStore(){
+ document.querySelectorAll('[data-demo-checkout]').forEach(button=>button.onclick=async()=>{
+  button.disabled=true;try{await startSandboxCheckout(button.dataset.demoCheckout);}
+  catch(err){showError(err);button.disabled=false;}
+ });
+}
+
+const image=(src,cls='product-photo',alt='Bakery product photograph')=>src?`<img class="${cls}" src="${photo(src)}" alt="${e(alt)}" loading="lazy">`:(all.settings?.placeholder_missing_image===false?'':`<div class="photo-empty" aria-label="No product photo uploaded">Mamma Bee's Bakery</div>`);
 const productReady=(p)=>p.mode!=='preorder'&&all.batches.some(b=>b.product_id===p.id&&!b.disabled&&b.baked_on<=currentDate()&&b.quantity_available>0&&all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date<=b.best_before));
 const productPreorder=(p)=>p.mode!=='ready'&&all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date>=futureDate(p.lead_days)&&d.capacity_total>0);
 const available=(p)=>productReady(p)||productPreorder(p);
@@ -30,10 +62,10 @@ const card=(p)=>`<article class="card">${image(p.photo_url)}<div class="card-con
 const categories=()=>all.categories.filter(c=>c.active&&sellable().some(p=>p.category_id===c.id));
 function layout(content){
  const settings=all.settings||{};
- $('#app').innerHTML=`<div class="topbar">Homemade in Nixa, Missouri · Preorders and ready-to-sell treats</div><header class="header"><div class="shell nav">
- <a href="#home" class="brand">Mamma Bee's Bakery <span>${e(settings.brand_subtitle||'Homemade in Nixa, Missouri')}</span></a>
+ $('#app').innerHTML=`<div class="topbar">Faith, country roots & sweet traditions</div><header class="header"><div class="shell nav">
+ <a href="#home" class="brand">Mamma Bee's Bakery <span>${e(settings.brand_subtitle||'Iowa Roots. Faith-Filled Heart. Baked with Love.')}</span></a>
  <nav aria-label="Primary navigation" class="navlinks"><a href="#shop">Shop</a><a href="#ready">Ready to Sell</a><a href="#preorder">Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a><a href="#account">${currentUser()?'My Account':'Sign In'}</a>${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
- <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${content}</main><footer class="footer"><div class="shell"><strong>Mamma Bee's Bakery</strong><p>Homemade in Nixa, Missouri · Local pickup and delivery when available</p><p><a href="#faq">FAQ & policies</a> · <a href="#contact">Contact</a></p><p class="tiny">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</p></div></footer>`;
+ <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${content}</main><footer class="footer"><div class="shell"><strong>Mamma Bee's Bakery</strong><p>Iowa roots. Missouri home. Baked with faith and love. · Local pickup and delivery when available</p><p><a href="#faq">FAQ & policies</a> · <a href="#contact">Contact</a></p><p class="tiny">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</p></div></footer>`;
 }
 async function load(){
  if(!isConfigured())return;
@@ -44,12 +76,12 @@ async function load(){
 function announcements(place='home'){
  return all.announcements.filter(x=>x.placement===place||x.placement==='all').map(a=>`<aside class="announcement"><strong>${e(a.title)}</strong><p>${e(a.body)}</p>${a.link_url&&/^https?:\/\//.test(a.link_url)?`<a href="${photo(a.link_url)}" rel="noopener">Details</a>`:''}</aside>`).join('');
 }
-function home(){const s=all.settings;layout(`${announcements()}<section class="hero"><div class="hero-copy"><div class="eyebrow">Made in Nixa, Missouri</div><h1>${e(s.home_heading||'Made with care. Shared with joy.')}</h1><p>${e(s.home_intro||'Explore handmade baked goods, ready to enjoy or preorder for a baking day.')}</p><div class="hero-actions"><a class="button" href="#ready">Shop ready-to-sell</a><a class="button secondary" href="#preorder">Schedule a preorder</a></div></div><div class="hero-art ${s.hero_url?'has-photo':''}" ${s.hero_url?`style="background-image:url('${photo(s.hero_url)}')"`:''} role="img" aria-label="Mamma Bee's Bakery storefront header"></div></section>
- <section class="section"><div class="section-head"><div><div class="eyebrow">Discover something delicious</div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div><div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url)}<div class="card-content"><h3>${e(c.name)}</h3><p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||'<div class="empty">No products are currently available. Please check back for the next baking day.</div>'}</div></section>
- <section class="section"><h2>Featured bakery treats</h2><div class="grid">${sellable().filter(p=>p.featured).slice(0,6).map(card).join('')||'<div class="empty">Featured baked goods will appear here when available.</div>'}</div></section>`);}
+function home(){const s=all.settings;layout(`${announcements()}<section class="hero"><div class="hero-copy"><div class="eyebrow">Country roots and a love for baking</div><h1>${e(s.home_heading||'Made with care. Shared with joy.')}</h1><p>${e(s.home_intro||'Explore handmade baked goods, ready to enjoy or preorder for a baking day.')}</p><div class="hero-actions"><a class="button" href="#ready">Shop ready-to-sell</a><a class="button secondary" href="#preorder">Schedule a preorder</a></div></div><div class="hero-art ${s.hero_url?'has-photo':''}" ${s.hero_url?`style="background-image:url('${photo(s.hero_url)}')"`:''} role="img" aria-label="Mamma Bee's Bakery storefront header"></div></section>
+ <section class="section"><div class="section-head"><div><div class="eyebrow">Discover something delicious</div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div><div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url)}<div class="card-content"><h3>${e(c.name)}</h3><p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||(s.placeholder_empty_shop===false?'':'<div class="empty">No products are currently available. Please check back for the next baking day.</div>')}</div></section>
+ <section class="section"><h2>Featured bakery treats</h2><div class="grid">${sellable().filter(p=>p.featured).slice(0,6).map(card).join('')||(s.placeholder_featured===false?'':'<div class="empty">Featured baked goods will appear here when available.</div>')}</div></section>`);}
 function shop(mode=null,categoryId=null){let items=sellable();if(mode==='ready')items=items.filter(productReady);if(mode==='preorder')items=items.filter(productPreorder);if(categoryId)items=items.filter(p=>p.category_id===categoryId);
  const title=categoryId?all.categories.find(c=>c.id===categoryId)?.name||'Category':mode==='ready'?'Ready to Sell':mode==='preorder'?'Preorder':'Shop All';
- layout(`<section class="section">${announcements('shop')}<div class="eyebrow">Mamma Bee's Bakery</div><h1>${e(title)}</h1><p class="muted">Select a treat to see all available ordering options. Browse what is currently available.</p><nav class="tabs" aria-label="Shop filters"><a class="tab ${!mode&&!categoryId?'active':''}" href="#shop">All products</a><a class="tab ${mode==='ready'?'active':''}" href="#ready">Ready to Sell</a><a class="tab ${mode==='preorder'?'active':''}" href="#preorder">Preorder</a>${categories().map(c=>`<a class="tab ${categoryId===c.id?'active':''}" href="#category/${e(c.id)}">${e(c.name)}</a>`).join('')}</nav><div class="grid">${items.map(card).join('')||'<p class="empty">No products currently available in this selection.</p>'}</div></section>`);}
+ layout(`<section class="section">${announcements('shop')}<div class="eyebrow">Mamma Bee's Bakery</div><h1>${e(title)}</h1><p class="muted">Select a treat to see all available ordering options. Browse what is currently available.</p><nav class="tabs" aria-label="Shop filters"><a class="tab ${!mode&&!categoryId?'active':''}" href="#shop">All products</a><a class="tab ${mode==='ready'?'active':''}" href="#ready">Ready to Sell</a><a class="tab ${mode==='preorder'?'active':''}" href="#preorder">Preorder</a>${categories().map(c=>`<a class="tab ${categoryId===c.id?'active':''}" href="#category/${e(c.id)}">${e(c.name)}</a>`).join('')}</nav><div class="grid">${items.map(card).join('')||(all.settings.placeholder_empty_shop===false?'':'<p class="empty">No products currently available in this selection.</p>')}</div>${demoStorePreview()}</section>`);bindDemoStore();}
 function detail(id){const p=all.products.find(x=>x.id===id);if(!p||!p.published||!available(p)){layout('<div class="empty">Product not available. <a href="#shop">Return to shop</a>.</div>');return;}
  const batches=all.batches.filter(b=>b.product_id===p.id&&!b.disabled&&b.baked_on<=currentDate()&&b.quantity_available>0&&all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date<=b.best_before));
  const gallery=[p.photo_url,...all.photos.filter(x=>x.product_id===p.id).sort((a,b)=>a.sort_order-b.sort_order).map(x=>x.url)].filter(Boolean);
@@ -87,11 +119,11 @@ function gallery(){
     '<div class="card-content"><h3>'+e(p.title)+'</h3>'+
     (p.description?'<p class="small">'+e(p.description)+'</p>':'')+
     '<p class="small muted">Past creation · Not for sale</p></div></article>').join('')||
-    '<div class="empty">Gallery photographs will appear here when available.</div>')+
+    (all.settings.placeholder_empty_gallery===false?'':'<div class="empty">Gallery photographs will appear here when available.</div>'))+
   '</div></section>');
 }
-async function render(){const [route,pid]=decodeURIComponent((location.hash||'#home').substring(1)).split('/');await refreshBackOfficeRole();document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"Mamma Bee's Bakery";if(!isConfigured()){layout(`<section class="section"><h1>Welcome to Mamma Bee's Bakery</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in Mamma Bee’s Bakery.</p></section>`);return;}
- try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='shop')shop();else if(route==='ready')shop('ready');else if(route==='preorder')shop('preorder');else if(route==='category')shop(null,pid);else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')checkoutPage();else if(route==='success')success();else if(route==='track')track(pid);else if(route==='account')await account();else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else home();}
+async function render(){const [route,pid]=decodeURIComponent((location.hash||'#home').substring(1)).split('/');await refreshBackOfficeRole();all.demoItems=[];if(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true){all.demoItems=await list('demo_catalog_items',{order:'sort_order.asc',limit:100}).catch(()=>[]);}document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"Mamma Bee's Bakery";if(!isConfigured()){layout(`<section class="section"><h1>Welcome to Mamma Bee's Bakery</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in Mamma Bee’s Bakery.</p></section>`);return;}
+ try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='shop')shop();else if(route==='ready')shop('ready');else if(route==='preorder')shop('preorder');else if(route==='category')shop(null,pid);else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')checkoutPage();else if(route==='success')success();else if(route==='sandbox-success'&&['owner','admin'].includes(verifiedBackOfficeRole))layout('<section class="section box"><h1>Stripe Sandbox Return</h1><p>This was a TEST transaction only. Open Admin → Sandbox Test Products to check the result after Stripe sends its webhook. No real customer order was created.</p><a class="button secondary" href="#shop">Back to Test Store</a></section>');else if(route==='track')track(pid);else if(route==='account')await account();else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else home();}
  catch(ex){layout(`<section class="section"><h1>Something went wrong</h1><div class="notice error">${e(ex.message)}</div><a class="button secondary" href="#home">Return home</a></section>`);}window.scrollTo({top:0,behavior:'instant'});}
 window.addEventListener('hashchange',render);
 (async()=>{try{await load();}catch(ex){console.error('Could not load storefront',ex);}await render();})();
