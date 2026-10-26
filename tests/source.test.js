@@ -14,6 +14,8 @@ import {onRequestPost as protectedRegistration} from '../functions/api/auth/regi
 import {onRequestGet as listUsers,onRequestPost as manageUser} from '../functions/api/admin/users.js';
 import {onRequestPost as moderateRequest} from '../functions/api/admin/moderate.js';
 import {isBackOfficeRole,backOfficeNavigation} from '../site/role-navigation.js';
+import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from '../site/allergens.js';
+import {PAST_BAKE_IMAGE_NAMES,pastBakeName} from '../site/past-bakes.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
 const required=['site/account.js','site/message-center.js','functions/_lib/turnstile.js','functions/api/auth/login.js','functions/api/auth/register.js','supabase/migrations/20261026_customer_profiles_message_photos.sql','README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
@@ -232,4 +234,38 @@ test('staff role comes from Supabase RLS and direct access is guarded',()=>{
 test('customer pages avoid revealing internal operational setup instructions',()=>{
  const app=read('site/app.js');
  assert.doesNotMatch(app,/owner must connect a Supabase project|Confirm cottage-food labeling and operating permissions before accepting real orders|Ordering has not yet been activated by the bakery owner|Featured products will appear when the bakery owner publishes/);
+});
+
+test('FDA nine-major-allergen checklist suggests ingredients but does not claim certainty',()=>{
+ assert.equal(MAJOR_ALLERGENS.length,9);
+ for(const item of ['Milk','Eggs','Fish','Crustacean shellfish','Tree nuts','Peanuts','Wheat','Soybeans','Sesame'])
+  assert.ok(MAJOR_ALLERGENS.includes(item));
+ const detected=suggestMajorAllergens({name:'Caramel Pecan',ingredients:'Cream cheese, eggs, pecans, graham crackers, butter'});
+ for(const expected of ['Milk','Eggs','Tree nuts','Wheat'])assert.ok(detected.includes(expected));
+ assert.ok(!detected.includes('Fish'));
+ assert.equal(publicAllergenStatement(['Milk','Tree nuts']),'Contains: Milk, Tree nuts.');
+ assert.match(publicAllergenStatement([]),/No major allergens declared/);
+});
+test('Past Bakes Gallery cannot create a sale product by importing an image',()=>{
+ const app=read('site/app.js'),admin=read('site/admin.js'),migration=read('supabase/migrations/20261026_past_bakes_and_allergens.sql');
+ assert.match(app,/all\.pastBakes\.filter\(x=>x\.published&&x\.image_url\)/);
+ assert.match(app,/Past Bakes Gallery/);
+ assert.match(app,/Past creation · Not for sale/);
+ assert.match(admin,/upload\('past-bakes',file\)/);
+ assert.match(admin,/add\('past_bakes'/);
+ assert.match(admin,/selected==='products'/);
+ assert.match(migration,/create table if not exists public\.past_bakes/);
+ assert.doesNotMatch(migration,/product_id uuid references public\.products/, 'Past Bakes must remain independent of products');
+ assert.equal(Object.keys(PAST_BAKE_IMAGE_NAMES).length,12);
+ assert.equal(pastBakeName('641606795_26269991649297341_1895014751577267796_n.jpg'),'Caramel Pecan');
+});
+test('product editor requires acknowledged allergen review before publication',()=>{
+ const admin=read('site/admin.js'),sql=read('supabase/migrations/20261026_past_bakes_and_allergens.sql');
+ assert.match(admin,/MAJOR_ALLERGENS\.filter\(name/);
+ assert.match(admin,/id="allergen-reviewed"/);
+ assert.match(admin,/body\.allergen_reviewed=reviewed/);
+ assert.match(admin,/body\.major_allergens=groups/);
+ assert.match(admin,/body\.allergens=publicAllergenStatement\(groups\)/);
+ assert.match(sql,/validate_allergens_before_publish/);
+ assert.match(sql,/new\.allergen_reviewed/);
 });
