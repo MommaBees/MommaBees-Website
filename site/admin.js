@@ -54,6 +54,7 @@ function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key
 }
 function fieldInput(f,r){const val=r?.[f.key], id='field_'+f.key;let raw='';const value=val??'';
  if(f.type==='bool')raw=`<label><input id="${id}" type="checkbox" ${value?'checked':''}> Enabled / Yes</label>`;
+ else if(selected==='customer_profiles'&&f.key==='username')raw=`<input id="${id}" value="${e(value)}" readonly aria-readonly="true"><small>Username changes are managed under Accounts & Roles.</small>`;
  else if(f.type==='textarea')raw=`<textarea id="${id}" rows="4">${e(value)}</textarea>`;
  else if(f.type==='select')raw=`<select id="${id}">${f.options.map(x=>`<option value="${e(x)}" ${value===x?'selected':''}>${e(pretty(x))}</option>`).join('')}</select>`;
  else if(f.type==='ref'){const options=(refs[f.table]||[]).map(x=>`<option value="${e(String(x[f.key||'id']))}" ${value===x[f.key||'id']?'selected':''}>${e(titleFor(f.table,x))} (${e(String(x[f.key||'id']).slice(0,8))})</option>`).join('');raw=`<select id="${id}"><option value="">Choose…</option>${options}</select>`;}
@@ -68,7 +69,7 @@ async function openEditor(record){const c=configs[selected];editing=record;
  $('#editor-title').textContent=record?'Edit '+c.label:'Add '+c.label;
  $('#editor-fields').innerHTML=c.fields.map(f=>fieldInput(f,record)).join('');
  const dialog=$('#editor');dialog.showModal();$('#close-editor').onclick=()=>dialog.close();
- $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){const el=$('#field_'+f.key);let v=f.type==='bool'?el.checked:el.value;
+ $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);let v=f.type==='bool'?el.checked:el.value;
  if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload('product-photos',inp.files[0]);v=photo.url;} }
  if(f.type==='money')v=v===''?null:Math.round(Number(v)*100);
  if(f.type==='number')v=v===''?null:Number(v);
