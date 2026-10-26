@@ -1,4 +1,5 @@
-import {currentUser,list,add,update,upload,signedImage,escapeHtml as h,safePhoto} from './api.js';
+import {currentUser,list,add,upload,signedImage,escapeHtml as h,safePhoto} from './api.js';
+import {moderateAction} from './moderation.js';
 const options=[
  ['order','Existing order'],['custom_order','Custom cake or special order'],
  ['pickup_delivery','Pickup or local delivery'],['product_allergens','Products or allergens'],
@@ -88,12 +89,13 @@ export async function renderMessages({container,isAdmin=false,showError=()=>{}})
     if(!parent)throw Error('Conversation not found');
     const files=isAdmin?[]:[...form.elements.photos.files];
     if(files.length>5)throw Error('Maximum five photographs per reply');
-    const msg=await add('messages',{customer_id:isAdmin?parent.customer_id:user.id,
-      customer_email:parent.customer_email||user.email,kind:'reply',subject:'Re: '+parent.subject,
-      subject_type:parent.subject_type,subject_custom:parent.subject_custom,
-      body:form.elements.body.value.trim(),parent_id:parent.id,is_staff_reply:isAdmin,status:isAdmin?'replied':'new'});
-    if(files.length)await sendFiles(msg,files);
-    if(isAdmin)await update('messages',parent.id,{status:'replied'});
+    if(isAdmin)await moderateAction({action:'reply',id:parent.id,body:form.elements.body.value.trim()});
+    else{
+      const msg=await add('messages',{customer_id:user.id,customer_email:parent.customer_email||user.email,
+        kind:'reply',subject:'Re: '+parent.subject,subject_type:parent.subject_type,subject_custom:parent.subject_custom,
+        body:form.elements.body.value.trim(),parent_id:parent.id,is_staff_reply:false,status:'new'});
+      if(files.length)await sendFiles(msg,files);
+    }
     await renderMessages({container:target,isAdmin,showError});
    }catch(ex){showError(ex);submit.disabled=false;}
   });
