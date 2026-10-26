@@ -101,3 +101,53 @@ test('role management is Owner protected and suspended JWTs are restricted',()=>
  assert.match(admin,/role!=='owner'/);
  assert.match(ui,/Accounts & Roles/);
 });
+
+
+test('native Supabase CAPTCHA receives a single unspent Turnstile token for both auth flows', async()=>{
+ const previousFetch=globalThis.fetch;
+ const outbound=[];
+ globalThis.fetch=async (url,options)=>{
+  outbound.push({url:String(url),payload:JSON.parse(options.body)});
+  return new Response(JSON.stringify({access_token:'unit-test-only',user:{id:'test-id'}}),{status:200,headers:{'content-type':'application/json'}});
+ };
+ const env={SUPABASE_URL:'https://ryqcfojzdncrshinlpue.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_mock_test'};
+ try{
+  const loginToken='example-login-turnstile-token-not-real';
+  const loginRequest=new Request('https://mommabees-website.pages.dev/api/auth/login',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({email:'unit-test@example.test',password:'NotARealPassword123',captcha_token:loginToken})
+  });
+  assert.equal((await protectedLogin({request:loginRequest,env})).status,200);
+  const signupToken='example-signup-turnstile-token-not-real';
+  const signupRequest=new Request('https://mommabees-website.pages.dev/api/auth/register',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({email:'unit-test@example.test',password:'NotARealPassword123',first_name:'Test',
+    last_name:'Member',username:'unit_test_signup',address_line1:'Not a real address',
+    city:'Nixa',state:'MO',country:'US',postal_code:'65714',billing_same:true,
+    captcha_token:signupToken})
+  });
+  assert.equal((await protectedRegistration({request:signupRequest,env})).status,200);
+  assert.equal(outbound.length,2,'only Supabase should receive the challenge; Cloudflare must not redeem it first');
+  assert.equal(outbound[0].url,env.SUPABASE_URL+'/auth/v1/token?grant_type=password');
+  assert.equal(outbound[1].url,env.SUPABASE_URL+'/auth/v1/signup');
+  assert.deepEqual(outbound[0].payload.gotrue_meta_security,{captcha_token:loginToken});
+  assert.deepEqual(outbound[1].payload.gotrue_meta_security,{captcha_token:signupToken});
+  assert.equal(outbound[1].payload.data.username,'unit_test_signup');
+  for(const call of outbound){
+   assert.equal(Object.hasOwn(call.payload,'captcha_token'),false,'must use expected nested gotrue field');
+   assert.equal(Object.hasOwn(call.payload.data||{},'captcha_token'),false,'never persist token in account metadata');
+   assert.ok(!call.url.includes('siteverify'),'Turnstile tokens are single-use');
+  }
+ }finally{globalThis.fetch=previousFetch;}
+});
+
+test('auth endpoints do not contact Supabase without a Turnstile response',async()=>{
+ const env={SUPABASE_URL:'https://ryqcfojzdncrshinlpue.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_mock_test'};
+ const req=new Request('https://mommabees-website.pages.dev/api/auth/login',{
+  method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({email:'unit-test@example.test',password:'FakePassword!',captcha_token:''})
+ });
+ const result=await protectedLogin({request:req,env});
+ assert.equal(result.status,400);
+ assert.match((await result.json()).error,/Human verification/);
+});
