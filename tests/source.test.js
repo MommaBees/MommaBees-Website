@@ -176,3 +176,29 @@ test('registration username is copied to the matching customer profile and displ
  assert.match(profile,/Account ID:<\/strong>.*h\(profile\.account_code/);
  assert.match(profile,/text',p\.username/);
 });
+
+
+test('member username is locked and Edit Profile must be opened explicitly',()=>{
+ const account=read('site/account.js');
+ const migration=read('supabase/migrations/20261026_lock_member_username_v1_3.sql');
+ assert.match(migration,/revoke update \(username\) on public\.customer_profiles from authenticated;/);
+ assert.match(account,/profileFields\(profile,\{editableUsername:false\}\)/);
+ assert.match(account,/id="edit-profile">Edit Profile/);
+ assert.match(account,/id="profile-editor" hidden/);
+ assert.match(account,/collect\(form,\{includeUsername:false\}\)/);
+ assert.match(account,/Locked after registration/);
+});
+test('username updates are reserved for Admin and Owner management with audit trail',()=>{
+ const manage=read('functions/api/admin/users.js');
+ const directory=read('site/user-management.js');
+ const admin=read('site/admin.js');
+ const migration=read('supabase/migrations/20261026_lock_member_username_v1_3.sql');
+ assert.match(manage,/if\(action==='username'\)/);
+ assert.match(manage,/Only the Owner can edit the Owner username/);
+ assert.match(manage,/Only the Owner can edit another Admin username/);
+ assert.match(manage,/auditAccount\(env,actor,target,'change_username'/);
+ assert.match(directory,/data-username/);
+ assert.match(directory,/action:'username'/);
+ assert.match(admin,/f\.key==='username'\)continue/);
+ assert.match(migration,/'change_username'/);
+});
