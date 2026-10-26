@@ -111,7 +111,7 @@ async function openEditor(record){const c=configs[selected];editing=record;
     '<div id="major-allergen-choices">'+controls+'</div>'+
     '<p class="small muted">Tree nuts, fish, and shellfish must be identified by their specific types in the ingredient description where used.</p>'+
     '<label class="allergen-confirm"><input type="checkbox" id="allergen-reviewed"'+
-    (record?.allergen_reviewed?' checked':'')+' required> I checked the actual recipe and packaging. The selected allergens accurately represent this product.</label>'+
+    (record?.allergen_reviewed?' checked':'')+'> I checked the actual recipe and packaging. The selected allergens accurately represent this product.</label>'+
     '<p class="small muted">A product cannot be published until ingredients and the allergen review are completed. These controls do not certify that food is allergen-free.</p></fieldset>');
   const choices=[...document.querySelectorAll('.major-allergen')],verified=$('#allergen-reviewed');
   let manuallyChanged=Boolean(record);
