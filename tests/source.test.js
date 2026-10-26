@@ -13,6 +13,7 @@ import {onRequestPost as protectedLogin} from '../functions/api/auth/login.js';
 import {onRequestPost as protectedRegistration} from '../functions/api/auth/register.js';
 import {onRequestGet as listUsers,onRequestPost as manageUser} from '../functions/api/admin/users.js';
 import {onRequestPost as moderateRequest} from '../functions/api/admin/moderate.js';
+import {isBackOfficeRole,backOfficeNavigation} from '../site/role-navigation.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
 const required=['site/account.js','site/message-center.js','functions/_lib/turnstile.js','functions/api/auth/login.js','functions/api/auth/register.js','supabase/migrations/20261026_customer_profiles_message_photos.sql','README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
@@ -201,4 +202,34 @@ test('username updates are reserved for Admin and Owner management with audit tr
  assert.match(directory,/action:'username'/);
  assert.match(admin,/f\.key==='username'\)continue/);
  assert.match(migration,/'change_username'/);
+});
+
+test('private Admin navigation never appears to anonymous visitors or customers',()=>{
+ for(const role of [null,undefined,'','customer','guest','staff','banned','administrator']){
+  assert.equal(isBackOfficeRole(role),false);
+  assert.equal(backOfficeNavigation(role),'');
+ }
+ for(const role of ['owner','admin']){
+  assert.equal(isBackOfficeRole(role),true);
+  assert.match(backOfficeNavigation(role),/href="#admin">Admin<\/a>/);
+ }
+ assert.equal(isBackOfficeRole('moderator'),true);
+ assert.match(backOfficeNavigation('moderator'),/href="#admin">Moderation<\/a>/);
+ assert.doesNotMatch(backOfficeNavigation('moderator'),/>Admin</);
+});
+
+test('staff role comes from Supabase RLS and direct access is guarded',()=>{
+ const app=read('site/app.js');
+ assert.match(app,/const roles=await list\('staff_roles',\{select:'role',user_id:'eq\.'\+user\.id/);
+ assert.match(app,/verifiedBackOfficeRole=null; \/\/ Fail closed/);
+ assert.match(app,/await refreshBackOfficeRole\(\)/);
+ assert.match(app,/backOfficeNavigation\(verifiedBackOfficeRole\)/);
+ assert.match(app,/route==='admin'&&!isBackOfficeRole\(verifiedBackOfficeRole\)/);
+ assert.match(app,/Page unavailable/);
+ assert.doesNotMatch(app,/<a href="#admin">Admin<\/a>/, 'Admin must never be hardcoded into public navigation');
+});
+
+test('customer pages avoid revealing internal operational setup instructions',()=>{
+ const app=read('site/app.js');
+ assert.doesNotMatch(app,/owner must connect a Supabase project|Confirm cottage-food labeling and operating permissions before accepting real orders|Ordering has not yet been activated by the bakery owner|Featured products will appear when the bakery owner publishes/);
 });
