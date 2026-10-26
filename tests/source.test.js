@@ -9,6 +9,8 @@ import {verifyStripeSignature} from '../functions/_lib/stripe.js';
 import {onRequestPost as checkout} from '../functions/api/checkout.js';
 import {onRequestPost as contact} from '../functions/api/contact.js';
 import {onRequestPost as orderStatus} from '../functions/api/order-status.js';
+import {onRequestPost as protectedLogin} from '../functions/api/auth/login.js';
+import {onRequestPost as protectedRegistration} from '../functions/api/auth/register.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
 const required=['site/account.js','site/message-center.js','functions/_lib/turnstile.js','functions/api/auth/login.js','functions/api/auth/register.js','supabase/migrations/20261026_customer_profiles_message_photos.sql','README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
@@ -62,4 +64,17 @@ test('account and messaging enhancements enforce CAPTCHA and private storage',()
  assert.match(migration,/Maximum five photos per message/);
  assert.match(migration,/message-photos','message-photos',false/);
  assert.match(migration,/create unique index if not exists customer_profiles_username_ci_unique/);
+});
+
+test('sign-in requires verified Turnstile before contacting authentication',async()=>{
+ const request=new Request('https://mommabees-website.pages.dev/api/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:'example@example.test',password:'NotARealPassword123',captcha_token:''})});
+ const result=await protectedLogin({request,env:{TURNSTILE_SECRET_KEY:'fake-test-secret',SITE_URL:'https://mommabees-website.pages.dev'}});
+ assert.equal(result.status,400);
+ assert.match((await result.json()).error,/Human verification/);
+});
+test('account creation rejects missing CAPTCHA before saving private profile',async()=>{
+ const request=new Request('https://mommabees-website.pages.dev/api/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:'example@example.test',password:'NotARealPassword123',first_name:'Test',last_name:'User',username:'tester123',address_line1:'address',city:'Nixa',state:'MO',country:'US',postal_code:'65714',billing_same:true,captcha_token:''})});
+ const result=await protectedRegistration({request,env:{TURNSTILE_SECRET_KEY:'fake-test-secret',SITE_URL:'https://mommabees-website.pages.dev'}});
+ assert.equal(result.status,400);
+ assert.match((await result.json()).error,/Human verification/);
 });
