@@ -1,4 +1,4 @@
-import {currentSession,list,escapeHtml as e} from './api.js';
+import {currentSession,currentUser,list,escapeHtml as e} from './api.js';
 let page=1;
 async function api(payload){
  const token=currentSession()?.access_token;
@@ -22,16 +22,18 @@ export async function userManagement({showError}){
   const isOwner=data.actorRole==='owner';
   const rows=data.users.map(u=>{
    const protectedTarget=u.role==='owner',adminTarget=u.role==='admin',editable=!protectedTarget&&(isOwner||!adminTarget);
+   const canChangeUsername=isOwner||(!protectedTarget&&(!adminTarget||u.id===currentUser()?.id));
    const roleOptions=(isOwner?['customer','moderator','admin']:['customer','moderator'])
      .filter(x=>u.role===x||!adminTarget).map(x=>'<option value="'+x+'"'+(x===u.role?' selected':'')+'>'+e(x==='customer'?'Customer':x[0].toUpperCase()+x.slice(1))+'</option>').join('');
    return '<tr><td><strong>'+e(u.full_name||u.username||'New customer')+'</strong>'+
-     '<div class="small">'+e(u.email||'')+'</div><div class="tiny muted">'+e(u.account_code||'Account ID pending')+'</div></td>'+
+     '<div class="small">'+e(u.email||'')+'</div><div class="tiny muted">Username: '+e(u.username||'Not set')+'</div><div class="tiny muted">'+e(u.account_code||'Account ID pending')+'</div></td>'+
      '<td>'+e(u.role)+'</td><td>'+(u.banned?'<span class="warning">Suspended</span>':'Active')+'</td>'+
      '<td>'+date(u.created_at)+'</td><td><div class="user-actions" data-user="'+e(u.id)+'">'+
        (editable?'<label class="sr-only" for="role-'+e(u.id)+'">Role for '+e(u.email)+'</label>'+
         '<select id="role-'+e(u.id)+'" data-role-select="'+e(u.id)+'">'+roleOptions+'</select>'+
         '<button class="button secondary" data-change="'+e(u.id)+'">Save Role</button>'+
         '<button class="button secondary" data-suspend="'+e(u.id)+'">'+(u.banned?'Restore':'Ban')+'</button>':'<span class="small muted">Protected account</span>')+
+       (canChangeUsername?'<button class="button secondary" data-username="'+e(u.id)+'">Change Username</button>':'')+
        (isOwner&&!protectedTarget?'<button class="button ghost" data-delete="'+e(u.id)+'">Delete</button>':'')+
        '</div></td></tr>';
   }).join('');
@@ -79,6 +81,15 @@ export async function userManagement({showError}){
    const u=find(button.dataset.change),role=main.querySelector('[data-role-select="'+u.id+'"]').value;
    if(role===u.role)return;
    await run({action:'role',user_id:u.id,role},'Change '+u.email+' from '+u.role+' to '+role+'?');
+  });
+  main.querySelectorAll('[data-username]').forEach(button=>button.onclick=async()=>{
+   const u=find(button.dataset.username);
+   const next=window.prompt('New username for '+u.email+' (3–30 letters, numbers or underscores):',u.username||'');
+   if(next===null)return;
+   const name=next.trim();
+   if(!/^[A-Za-z0-9_]{3,30}$/.test(name)){showError(Error('Username must contain 3–30 letters, numbers or underscores.'));return;}
+   if(name===u.username)return;
+   await run({action:'username',user_id:u.id,username:name},'Change username for '+u.email+' to '+name+'?');
   });
   main.querySelectorAll('[data-suspend]').forEach(button=>button.onclick=async()=>{
    const u=find(button.dataset.suspend);
