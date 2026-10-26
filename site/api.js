@@ -33,23 +33,25 @@ export async function add(table,record){return request('/rest/v1/'+table,{method
 export async function update(table,id,values,keyName='id'){return request('/rest/v1/'+table+'?'+keyName+'=eq.'+encodeURIComponent(id),{method:'PATCH',body:values,prefer:'return=representation'}).then(r=>r?.[0]);}
 export async function remove(table,id,keyName='id'){return request('/rest/v1/'+table+'?'+keyName+'=eq.'+encodeURIComponent(id),{method:'DELETE'});}
 export async function rpc(name,args){return request('/rest/v1/rpc/'+name,{method:'POST',body:args});}
-export async function signIn(email,password){
- const r=await fetch(url('/auth/v1/token?grant_type=password'),{method:'POST',headers:{'apikey':key(),'Content-Type':'application/json'},body:JSON.stringify({email,password})});
- const body=await r.json(); if(!r.ok)throw Error(body.msg||body.error_description||'Sign in failed');saveSession(body);return body;
+export async function signIn(email,password,captchaToken){
+ const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,captcha_token:captchaToken})});
+ const body=await r.json().catch(()=>({}));if(!r.ok)throw Error(body.error||'Sign in failed');
+ saveSession(body);return body;
 }
-export async function signUp(email,password){
- const r=await fetch(url('/auth/v1/signup'),{method:'POST',headers:{'apikey':key(),'Content-Type':'application/json'},body:JSON.stringify({email,password})});
- const body=await r.json();if(!r.ok)throw Error(body.msg||body.error_description||'Registration failed');
- if(body.access_token) saveSession(body);return body;
+export async function signUp(email,password,profile,captchaToken){
+ const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...profile,email,password,captcha_token:captchaToken})});
+ const body=await r.json().catch(()=>({}));if(!r.ok)throw Error(body.error||'Registration failed');
+ if(body.access_token)saveSession(body);return body;
 }
 export async function signOut(){
  if(session?.access_token)await fetch(url('/auth/v1/logout'),{method:'POST',headers:headers()}).catch(()=>{});saveSession(null);
 }
-export async function upload(bucket,file){
+export async function upload(bucket,file,options={}){
  if(!session?.access_token)throw Error('Sign in before uploading photos.');
  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)throw Error('Upload JPG, PNG or WebP images up to 5MB.');
  const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];
- const path=(bucket==='review-photos'?currentUser().id+'/':'')+crypto.randomUUID()+'.'+ext;
+ const path=(bucket==='review-photos'?currentUser().id+'/':bucket==='message-photos'?currentUser().id+'/'+options.messageId+'/':'')+crypto.randomUUID()+'.'+ext;
+ if(bucket==='message-photos'&&!/^[0-9a-f-]{36}$/.test(String(options.messageId||'')))throw Error('A saved message is required before photo upload');
  const r=await fetch(url('/storage/v1/object/'+bucket+'/'+path),{method:'POST',headers:headers({'Content-Type':file.type,'x-upsert':'false'}),body:file});
  const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.message||'Upload failed');
  return {path,url:bucket==='product-photos'?url('/storage/v1/object/public/'+bucket+'/'+path):null};
