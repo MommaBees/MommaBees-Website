@@ -22,7 +22,7 @@ const item=(name,label,autocomplete,required=false,type='text',value='')=>
 function profileFields(p={}){
  return '<div class="account-fields">'+item('first_name','First name','given-name',true,'text',p.first_name)+
  item('last_name','Last name','family-name',true,'text',p.last_name)+
- item('username','Username (3–30 letters, numbers or underscores)','username',true,'text',p.username)+
+ item('username','Username (chosen at sign-up; 3–30 letters, numbers or underscores)','username',true,'text',p.username)+
  item('phone','Phone (optional)','tel',false,'tel',p.phone)+
  '<fieldset><legend>Account address</legend>'+addressFields.map(f=>item(...f.slice(0,4),'text',p[f[0]]??(f[0]==='country'?'US':''))).join('')+'</fieldset>'+
  '<label class="checkbox"><input type="checkbox" name="billing_same"'+(p.billing_same!==false?' checked':'')+'> My billing address is the same as my account address</label>'+
@@ -120,7 +120,7 @@ export async function account({layout,rerender,showError}){
    list('notifications',{customer_id:'eq.'+user.id,order:'created_at.desc',limit:'40'}),
    list('customer_profiles',{id:'eq.'+user.id})]);
   const profile=profiles[0]||{};
-  document.getElementById('my-account-code').innerHTML='<p><strong>'+h(profile.account_code||'Pending setup')+'</strong></p><p class="small muted">This ID is permanent and is not your password.</p>';
+  document.getElementById('my-account-code').innerHTML='<p><strong>Username:</strong> '+h(profile.username||'Not set')+'</p><p><strong>Account ID:</strong> '+h(profile.account_code||'Pending setup')+'</p><p class="small muted">Your username is the one chosen when you signed up. Your permanent Account ID is a separate reference, not your password.</p>';
   document.getElementById('my-orders').innerHTML=orders.map(o=>'<p>'+h(o.id.slice(0,8))+' · '+h(o.status)+' · '+fmt(o.fulfillment_date)+' · '+money(o.total_cents)+'</p>').join('')||'<p>No orders yet.</p>';
   document.getElementById('my-notices').innerHTML=notes.map(n=>'<p><strong>'+h(n.title)+'</strong>: '+h(n.body)+'</p>').join('')||'<p>No notifications.</p>';
   document.getElementById('optin').checked=Boolean(profile.marketing_opt_in);
