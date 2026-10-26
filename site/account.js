@@ -19,10 +19,10 @@ const billingFields=[
 const item=(name,label,autocomplete,required=false,type='text',value='')=>
  '<label class="field">'+h(label)+(required?' *':'')+'<input name="'+h(name)+'" type="'+type+'" autocomplete="'+h(autocomplete||'off')+
  '" maxlength="'+(name==='postal_code'||name==='billing_postal_code'?'15':'160')+'" value="'+h(value||'')+'"'+(required?' required':'')+'></label>';
-function profileFields(p={}){
+function profileFields(p={}, {editableUsername=true}={}){
  return '<div class="account-fields">'+item('first_name','First name','given-name',true,'text',p.first_name)+
  item('last_name','Last name','family-name',true,'text',p.last_name)+
- item('username','Username (chosen at sign-up; 3–30 letters, numbers or underscores)','username',true,'text',p.username)+
+ (editableUsername?item('username','Username (chosen at sign-up; 3–30 letters, numbers or underscores)','username',true,'text',p.username):'<p class="field"><strong>Username:</strong> '+h(p.username||'Not set')+'<span class="small muted" style="display:block">Locked after registration. Only the bakery Owner/Admin can change a username.</span></p>')+
  item('phone','Phone (optional)','tel',false,'tel',p.phone)+
  '<fieldset><legend>Account address</legend>'+addressFields.map(f=>item(...f.slice(0,4),'text',p[f[0]]??(f[0]==='country'?'US':''))).join('')+'</fieldset>'+
  '<label class="checkbox"><input type="checkbox" name="billing_same"'+(p.billing_same!==false?' checked':'')+'> My billing address is the same as my account address</label>'+
@@ -33,9 +33,9 @@ function billingToggle(form){
  const sync=()=>{fieldset.hidden=b.checked;fieldset.querySelectorAll('input').forEach(x=>{x.required=!b.checked&&x.name!=='billing_line2';});};
  b.onchange=sync;sync();
 }
-function collect(form){
+function collect(form,{includeUsername=true}={}){
  const fd=new FormData(form),p={};
- for(const field of [...['first_name','last_name','username','phone'],...addressFields.map(x=>x[0]),...billingFields.map(x=>x[0])])p[field]=String(fd.get(field)||'').trim();
+ for(const field of [...['first_name','last_name','phone'],...(includeUsername?['username']:[]),...addressFields.map(x=>x[0]),...billingFields.map(x=>x[0])])p[field]=String(fd.get(field)||'').trim();
  p.billing_same=form.elements.billing_same.checked;
  if(p.billing_same)for(const f of billingFields)p[f[0]]=p[({billing_line1:'address_line1',billing_line2:'address_line2',billing_city:'city',billing_state:'state',billing_country:'country',billing_postal_code:'postal_code'})[f[0]]];
  return p;
@@ -125,9 +125,12 @@ export async function account({layout,rerender,showError}){
   document.getElementById('my-notices').innerHTML=notes.map(n=>'<p><strong>'+h(n.title)+'</strong>: '+h(n.body)+'</p>').join('')||'<p>No notifications.</p>';
   document.getElementById('optin').checked=Boolean(profile.marketing_opt_in);
   document.getElementById('save-optin').onclick=async()=>{try{await update('customer_profiles',user.id,{marketing_opt_in:document.getElementById('optin').checked});}catch(e){showError(e);}};
-  document.getElementById('my-profile').innerHTML='<form id="profile-form">'+profileFields(profile)+'<button class="button" type="submit">Save My Details</button></form>';
+  document.getElementById('my-profile').innerHTML='<p class="small muted">Your personal information is private. Select Edit Profile to review or update your contact and address information.</p><button class="button secondary" type="button" id="edit-profile">Edit Profile</button><div id="profile-editor" hidden><form id="profile-form">'+profileFields(profile,{editableUsername:false})+'<div class="actions"><button class="button" type="submit">Save Changes</button><button class="button secondary" type="button" id="cancel-profile">Cancel</button></div></form></div>';
   const form=document.getElementById('profile-form');billingToggle(form);
-  form.onsubmit=async ev=>{ev.preventDefault();try{await update('customer_profiles',user.id,collect(form));await rerender();}catch(e){showError(e);}};
+  const editor=document.getElementById('profile-editor');
+  document.getElementById('edit-profile').onclick=()=>{editor.hidden=false;document.getElementById('edit-profile').hidden=true;};
+  document.getElementById('cancel-profile').onclick=()=>{editor.hidden=true;document.getElementById('edit-profile').hidden=false;form.reset();billingToggle(form);};
+  form.onsubmit=async ev=>{ev.preventDefault();try{await update('customer_profiles',user.id,collect(form,{includeUsername:false}));await rerender();}catch(e){showError(e);}};
   await renderMessages({container:'#my-messages',showError});
  }catch(e){showError(e);}
 }
