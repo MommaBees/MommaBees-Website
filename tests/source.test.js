@@ -162,3 +162,17 @@ test('Admin role lookup stays inside its declared scope and retains Owner/Admin/
  assert.doesNotMatch(code,/ctx\.role\s*=\s*roles\.find/, 'Role lookup must not reference try-scoped roles after catch');
  assert.match(code,/if\(ctx\.role==='moderator'\)selected='messages'/);
 });
+
+
+test('registration username is copied to the matching customer profile and displayed with Account ID',()=>{
+ const signup=read('functions/api/auth/register.js');
+ const migration=read('supabase/migrations/20261026_customer_profiles_message_photos.sql');
+ const profile=read('site/account.js');
+ assert.match(signup,/username:clean\(input\.username,30\)/);
+ assert.match(signup,/email,password,data,gotrue_meta_security/);
+ assert.match(migration,/nullif\(left\(m->>'username',30\),''\)/);
+ assert.match(migration,/customer_profiles_username_ci_unique/);
+ assert.match(profile,/Username:<\/strong>.*h\(profile\.username/);
+ assert.match(profile,/Account ID:<\/strong>.*h\(profile\.account_code/);
+ assert.match(profile,/text',p\.username/);
+});
