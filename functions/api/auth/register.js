@@ -1,5 +1,5 @@
 import {response} from '../../_lib/db.js';
-import {verifyTurnstile,publicAuth} from '../../_lib/turnstile.js';
+import {publicAuth} from '../../_lib/turnstile.js';
 const clean=(s,max)=>String(s||'').trim().slice(0,max);
 export async function onRequestPost({request,env}){
  try{
@@ -19,8 +19,11 @@ export async function onRequestPost({request,env}){
     !data.address_line1||!data.city||!data.state||!data.country||!data.postal_code||
     (!data.billing_same&&(!data.billing_line1||!data.billing_city||!data.billing_state||!data.billing_country||!data.billing_postal_code)))
     return response({error:'Complete all required account and address fields'},400);
-  if(!await verifyTurnstile(env,input.captcha_token,request))
-    return response({error:'Human verification failed; please try again'},400);
-  return publicAuth(env,'/auth/v1/signup',{email,password,data});
+  // Supabase Auth verifies the Turnstile token once (direct Auth requests are protected too).
+  if(typeof input.captcha_token!=='string' || !input.captcha_token || input.captcha_token.length>2048)
+    return response({error:'Human verification is required; complete the CAPTCHA and try again'},400);
+  return publicAuth(env,'/auth/v1/signup',{
+    email,password,data,gotrue_meta_security:{captcha_token:input.captcha_token}
+  });
  }catch(e){console.error('Registration rejected',e.message);return response({error:'Registration temporarily unavailable'},503);}
 }
