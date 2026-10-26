@@ -11,6 +11,8 @@ import {onRequestPost as contact} from '../functions/api/contact.js';
 import {onRequestPost as orderStatus} from '../functions/api/order-status.js';
 import {onRequestPost as protectedLogin} from '../functions/api/auth/login.js';
 import {onRequestPost as protectedRegistration} from '../functions/api/auth/register.js';
+import {onRequestGet as listUsers,onRequestPost as manageUser} from '../functions/api/admin/users.js';
+import {onRequestPost as moderateRequest} from '../functions/api/admin/moderate.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
 const required=['site/account.js','site/message-center.js','functions/_lib/turnstile.js','functions/api/auth/login.js','functions/api/auth/register.js','supabase/migrations/20261026_customer_profiles_message_photos.sql','README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
@@ -77,4 +79,25 @@ test('account creation rejects missing CAPTCHA before saving private profile',as
  const result=await protectedRegistration({request,env:{TURNSTILE_SECRET_KEY:'fake-test-secret',SITE_URL:'https://mommabees-website.pages.dev'}});
  assert.equal(result.status,400);
  assert.match((await result.json()).error,/Human verification/);
+});
+
+test('user management is blocked without a signed-in Supabase session',async()=>{
+ const get=new Request('https://mommabees-website.pages.dev/api/admin/users');
+ const post=new Request('https://mommabees-website.pages.dev/api/admin/users',{method:'POST',body:JSON.stringify({action:'ban'})});
+ assert.equal((await listUsers({request:get,env:{}})).status,401);
+ assert.equal((await manageUser({request:post,env:{}})).status,401);
+ assert.equal((await moderateRequest({request:post,env:{}})).status,401);
+});
+test('role management is Owner protected and suspended JWTs are restricted',()=>{
+ const sql=read('supabase/migrations/20261026_role_management_and_bans_v1_2.sql');
+ const admin=read('functions/api/admin/users.js');
+ const ui=read('site/user-management.js');
+ assert.match(sql,/bakery_account_active/);
+ assert.match(sql,/as restrictive for all to authenticated/);
+ assert.match(sql,/protect_owner_role/);
+ assert.match(sql,/account_admin_audit/);
+ assert.match(admin,/Only the Owner can grant Admin access/);
+ assert.match(admin,/cannot change your own role or account status/);
+ assert.match(admin,/role!=='owner'/);
+ assert.match(ui,/Accounts & Roles/);
 });
