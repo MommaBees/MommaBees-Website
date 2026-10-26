@@ -65,10 +65,7 @@ export async function onRequestPost({request,env}){
    if(account.role==='admin'&&role!=='owner'&&actor!==target)
     return response({error:'Only the Owner can edit another Admin username'},403);
    if(account.profile.username===next)return response({ok:true,message:'Username is already set to that value'});
-   // Enforce uniqueness case-insensitively before update; DB index also protects concurrency.
-   const duplicate=await db(env,'/rest/v1/customer_profiles?select=id&username=ilike.'+encodeURIComponent(next)+'&limit=2');
-   if(duplicate.some(x=>x.id!==target))
-    return response({error:'That username is already taken'},409);
+   // PostgreSQL's case-insensitive unique index resolves concurrent changes safely.
    try{
     const rows=await db(env,'/rest/v1/customer_profiles?id=eq.'+target,{
       method:'PATCH',prefer:'return=representation',body:{username:next}
