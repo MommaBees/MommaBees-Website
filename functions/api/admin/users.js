@@ -53,6 +53,35 @@ export async function onRequestPost({request,env}){
   }
   const target=asUuid(body.user_id);
   if(!target)return response({error:'Select a valid registered account'},400);
+  if(action==='username'){
+   const next=String(body.username||'').trim();
+   if(!/^[A-Za-z0-9_]{3,30}$/.test(next))
+    return response({error:'Username must be 3–30 letters, numbers or underscores'},400);
+   const account=await userAndRole(env,target);
+   if(!account.user?.id||!account.profile)return response({error:'Customer profile not found'},404);
+   if(account.profile.banned_at)return response({error:'Restore this account before changing its username'},409);
+   if(account.role==='owner'&&role!=='owner')
+    return response({error:'Only the Owner can edit the Owner username'},403);
+   if(account.role==='admin'&&role!=='owner'&&actor!==target)
+    return response({error:'Only the Owner can edit another Admin username'},403);
+   if(account.profile.username===next)return response({ok:true,message:'Username is already set to that value'});
+   // Enforce uniqueness case-insensitively before update; DB index also protects concurrency.
+   const duplicate=await db(env,'/rest/v1/customer_profiles?select=id&username=ilike.'+encodeURIComponent(next)+'&limit=2');
+   if(duplicate.some(x=>x.id!==target))
+    return response({error:'That username is already taken'},409);
+   try{
+    const rows=await db(env,'/rest/v1/customer_profiles?id=eq.'+target,{
+      method:'PATCH',prefer:'return=representation',body:{username:next}
+    });
+    if(!Array.isArray(rows)||rows.length!==1)return response({error:'Username update could not be verified'},409);
+   }catch(error){
+    if(/duplicate key|customer_profiles_username_ci_unique/i.test(error.message))
+      return response({error:'That username is already taken'},409);
+    throw error;
+   }
+   await auditAccount(env,actor,target,'change_username',{previous:account.profile.username||null,username:next});
+   return response({ok:true,message:'Username changed to '+next});
+  }
   if(actor===target)return response({error:'You cannot change your own role or account status'},403);
   const targetInfo=await userAndRole(env,target);
   if(!targetInfo.user?.id)return response({error:'Customer account not found'},404);
