@@ -96,9 +96,43 @@ async function openEditor(record){const c=configs[selected];editing=record;
  const tables=[...new Set(c.fields.filter(f=>f.type==='ref').map(f=>f.table))];await Promise.all(tables.map(async t=>{refs[t]=await list(t,{limit:500}).catch(()=>[]);}));
  $('#editor-title').textContent=record?'Edit '+c.label:'Add '+c.label;
  $('#editor-fields').innerHTML=c.fields.map(f=>fieldInput(f,record)).join('');
+
+ if(selected==='products'){
+  const selectedGroups=Array.isArray(record?.major_allergens)?record.major_allergens:[];
+  const controls=MAJOR_ALLERGENS.map(name=>
+    '<label class="allergen-choice"><input type="checkbox" class="major-allergen" value="'+e(name)+'"'+
+    (selectedGroups.includes(name)?' checked':'')+'> '+e(name)+'</label>').join('');
+  $('#editor-fields').insertAdjacentHTML('beforeend',
+    '<fieldset class="allergen-panel"><legend>Major allergen review — all nine FDA groups</legend>'+
+    '<p class="small">Suggestions come from the entered name and ingredient words; they are NOT a verified recipe analysis. '+
+    'Inspect every ingredient, topping, crust, filling, purchased mix, and supplier label. '+
+    'Uncheck only allergens you have confirmed are absent as ingredients. Cross-contact may still occur.</p>'+
+    '<button class="button secondary" type="button" id="suggest-major-allergens">Suggest from entered ingredients</button>'+
+    '<div id="major-allergen-choices">'+controls+'</div>'+
+    '<p class="small muted">Tree nuts, fish, and shellfish must be identified by their specific types in the ingredient description where used.</p>'+
+    '<label class="allergen-confirm"><input type="checkbox" id="allergen-reviewed"'+
+    (record?.allergen_reviewed?' checked':'')+' required> I checked the actual recipe and packaging. The selected allergens accurately represent this product.</label>'+
+    '<p class="small muted">A product cannot be published until ingredients and the allergen review are completed. These controls do not certify that food is allergen-free.</p></fieldset>');
+  const choices=[...document.querySelectorAll('.major-allergen')],verified=$('#allergen-reviewed');
+  let manuallyChanged=Boolean(record);
+  const suggest=()=>{
+    const groups=suggestMajorAllergens({name:$('#field_name')?.value,ingredients:$('#field_ingredients')?.value});
+    choices.forEach(box=>{box.checked=groups.includes(box.value);});
+    verified.checked=false;
+  };
+  $('#suggest-major-allergens').onclick=()=>{suggest();manuallyChanged=true;};
+  choices.forEach(box=>box.onchange=()=>{manuallyChanged=true;verified.checked=false;});
+  for(const id of ['#field_name','#field_ingredients']){
+    const field=$(id);if(field)field.addEventListener('input',()=>{
+      if(!manuallyChanged)suggest();
+      verified.checked=false;
+    });
+  }
+ }
+
  const dialog=$('#editor');dialog.showModal();$('#close-editor').onclick=()=>dialog.close();
  $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);let v=f.type==='bool'?el.checked:el.value;
- if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload('product-photos',inp.files[0]);v=photo.url;} }
+ if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload(selected==='past_bakes'?'past-bakes':'product-photos',inp.files[0]);v=photo.url;} }
  if(f.type==='money')v=v===''?null:Math.round(Number(v)*100);
  if(f.type==='number')v=v===''?null:Number(v);
  if(f.type==='csv'||f.type==='uuids')v=v.split(',').map(x=>x.trim()).filter(Boolean);
@@ -106,9 +140,20 @@ async function openEditor(record){const c=configs[selected];editing=record;
  if(['max_discount_cents','max_uses'].includes(f.key)&&v==='')v=null;
  if(f.type==='ref'&&!v)v=null;
  if(f.key==='code'&&!v)v=null;
- if(f.key==='published'&&selected==='products'&&v===true&&(!$('#field_ingredients').value||!$('#field_allergens').value))throw Error('Add verified ingredients and allergen details before publishing a product.');
+ if(f.key==='published'&&selected==='products'&&v===true&&!$('#field_ingredients')?.value?.trim())throw Error('Add the actual ingredient list before publishing this product.');
  body[f.key]=v;
- }const key=c.key||'id';if(c.single){await update(selected,1,body);}else if(record){if(Array.isArray(key))throw Error('Editing records with two-part keys requires deleting/recreating from SQL Editor.');await update(selected,record[key],body,key);}else await add(selected,body);
+
+ }
+ if(selected==='products'){
+  const groups=MAJOR_ALLERGENS.filter(name=>[...document.querySelectorAll('.major-allergen')].some(input=>input.value===name&&input.checked));
+  const reviewed=$('#allergen-reviewed')?.checked===true;
+  body.major_allergens=groups;
+  body.allergens=publicAllergenStatement(groups);
+  body.allergen_reviewed=reviewed;
+  if(body.published && !reviewed)throw Error('Review and confirm all nine major allergen groups before publishing.');
+  if(body.published && !String(body.ingredients||'').trim())throw Error('Enter a complete ingredient list before publishing.');
+ }
+ const key=c.key||'id';if(c.single){await update(selected,1,body);}else if(record){if(Array.isArray(key))throw Error('Editing records with two-part keys requires deleting/recreating from SQL Editor.');await update(selected,record[key],body,key);}else await add(selected,body);
  dialog.close();await ctx.load();await renderPanel();}catch(x){ctx.showError(x);}};
 }
 async function reply(message){const text=prompt('Write your response. It will be saved to the secure account inbox. Email delivery is not enabled by this action:');if(!text)return;try{if(!message.customer_id)throw Error('Guest email replies require a configured email provider; do not mark as replied yet.');await add('messages',{customer_id:message.customer_id,customer_email:message.customer_email,order_id:message.order_id,kind:'reply',subject:'Re: '+message.subject,body:text,parent_id:message.id,is_staff_reply:true,status:'replied'});await update('messages',message.id,{status:'replied'});await renderPanel();}catch(x){ctx.showError(x);}}
