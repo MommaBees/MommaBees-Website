@@ -1,0 +1,24 @@
+name: MommaBees Website Checks
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out bakery source
+        uses: actions/checkout@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify JavaScript and security basics
+        run: npm test
+      - name: Verify auth routes syntax
+        run: |
+          node --check functions/api/auth/login.js
+          node --check functions/api/auth/register.js
+          node --check functions/_lib/turnstile.js
