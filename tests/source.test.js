@@ -151,3 +151,14 @@ test('auth endpoints do not contact Supabase without a Turnstile response',async
  assert.equal(result.status,400);
  assert.match((await result.json()).error,/Human verification/);
 });
+
+
+test('Admin role lookup stays inside its declared scope and retains Owner/Admin/Moderator access',()=>{
+ const code=read('site/admin.js');
+ assert.match(code,/const roles=await list\('staff_roles'/);
+ assert.match(code,/const authorizedRole=roles\.find\(x=>\['owner','admin','moderator'\]\.includes\(x\.role\)\)/);
+ assert.match(code,/if\(!authorizedRole\)throw Error/);
+ assert.match(code,/ctx\.role=authorizedRole\.role;/);
+ assert.doesNotMatch(code,/ctx\.role\s*=\s*roles\.find/, 'Role lookup must not reference try-scoped roles after catch');
+ assert.match(code,/if\(ctx\.role==='moderator'\)selected='messages'/);
+});
