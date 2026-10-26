@@ -6,5 +6,5 @@ window.MAMMA_BEES_CONFIG = {
   supabasePublishableKey: 'sb_publishable_075tPyE6T8nqG9KesL6-bA_EI2-JibJ',
   bakeryTimeZone: 'America/Chicago',
   currency: 'USD',
-  turnstileSiteKey: '' // Required to accept anonymous messages; see Cloudflare Turnstile
+  turnstileSiteKey: '0x4AAAAAAFnN8HMmQNmK9UG-' // Required to accept anonymous messages; see Cloudflare Turnstile
 };
