@@ -10,6 +10,7 @@ import {onRequestPost as checkout} from '../functions/api/checkout.js';
 import {onRequestPost as demoCheckout,onRequestGet as demoHistory} from '../functions/api/admin/demo-checkout.js';
 import {onRequestPost as payAtPickup} from '../functions/api/pay-at-pickup.js';
 import {onRequestPost as collectPickup} from '../functions/api/admin/collect-pickup.js';
+import {onRequestPost as cancelPickup} from '../functions/api/admin/cancel-pickup.js';
 import {onRequestPost as contact} from '../functions/api/contact.js';
 import {onRequestPost as orderStatus} from '../functions/api/order-status.js';
 import {onRequestPost as protectedLogin} from '../functions/api/auth/login.js';
@@ -364,4 +365,37 @@ test('checkout supports accessible highlighted calendar, unavailable-day inquiry
  assert.match(admin,/pay_at_pickup_enabled/);
  assert.match(admin,/pay_at_pickup_available/);
  assert.match(admin,/Record Pickup Payment/);
+});
+
+test('unpaid pickup cancellation and payment recording are owner/admin-only',async()=>{
+ const request=new Request('https://mommabees-website.pages.dev/api/admin/cancel-pickup',
+ {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({order_id:'00000000-0000-4000-8000-000000000001',reason:'Test cancel'})});
+ assert.equal((await cancelPickup({request,env:{}})).status,401);
+ const sql=read('supabase/migrations/20261026_cancel_unpaid_pickup.sql');
+ const protect=read('supabase/migrations/20261026_prevent_cancelled_pickup_collection.sql');
+ assert.match(sql,/quantity_available=quantity_available\+row_item.quantity/);
+ assert.match(sql,/r\.payment_status/);
+ assert.match(sql,/payment_status<>'awaiting_pickup'/);
+ assert.match(protect,/r\.reservation_released or r\.status='cancelled'/);
+});
+test('guest online checkout captures address and requires an email',()=>{
+ const src=read('functions/api/checkout.js');
+ assert.match(src,/guestAddress=body\.guest_address/);
+ assert.match(src,/Guest checkout requires first and last name/);
+ assert.match(src,/email address is required for Stripe online payments/i);
+ assert.match(src,/guest_contact_address/);
+});
+test('four-day fair generator and tax confirmation must be configured by staff',()=>{
+ const admin=read('site/admin.js');
+ const form=read('site/checkout-form.js');
+ assert.match(admin,/Set Up 4-Day Bake Fair/);
+ assert.match(admin,/Array\.from\(\{length:4\}/);
+ assert.match(admin,/America\/Chicago/);
+ assert.match(admin,/pay_at_pickup_tax_reviewed/);
+ assert.match(admin,/Record Pickup Payment/);
+ assert.match(admin,/Cancel Unpaid Pickup/);
+ assert.match(form,/calendar-picker/);
+ assert.match(form,/Pickup reservation received/);
+ assert.match(form,/text_consent/);
+ assert.match(form,/guest_contact_address|guest_address/);
 });
