@@ -74,7 +74,7 @@ function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key
     for(const day of dates){
      const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',timeZoneName:'shortOffset'}).formatToParts(new Date(day+'T18:00:00Z'));
      const offset=parts.find(p=>p.type==='timeZoneName')?.value||'';
-     const match=/GMT([+-]\\d{1,2})(?::(\\d{2}))?/.exec(offset);
+     const match=/GMT([+-]\d{1,2})(?::(\d{2}))?/.exec(offset);
      if(!match)throw Error('Could not establish America/Chicago time offset');
      const minutes=Number(match[1])*60+Math.sign(Number(match[1]))*Number(match[2]||0);
      const cutoff=new Date(Date.parse(day+'T23:59:00Z')-minutes*60000).toISOString();
