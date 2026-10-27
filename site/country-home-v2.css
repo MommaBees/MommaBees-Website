@@ -1,4 +1,4 @@
-/* Mamma Bee's Bakery | Country Home V2 visual system
+/* Mommy Bee Farmstand and Bakery | Country Home V2 visual system
    Warm, personal, hand-crafted design. Presentation only: existing orders,
    authentication, permissions, pricing, and Owner background controls unchanged. */
 
@@ -30,8 +30,8 @@ a{text-underline-offset:3px;text-decoration-thickness:1px}
 /* Masthead: a familiar local-business identity, not a corporate app bar. */
 .topbar{background:#513627;color:#fff8e9;font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;padding:9px 14px;line-height:1.35;border-bottom:2px solid #b98c50}
 .header{background:rgba(255,249,240,.98);box-shadow:0 4px 16px rgba(52,30,17,.07);border-bottom:1px solid #dbc5a7;backdrop-filter:blur(9px)}
-.nav{max-width:1760px;min-height:95px;gap:clamp(15px,2.5vw,44px)}
-.brand{display:block;flex:none;font-weight:700;color:#4d2e1b;font-size:clamp(1.5rem,2.2vw,2.22rem);line-height:1.03;white-space:normal}
+.nav{max-width:1760px;min-height:95px;gap:clamp(15px,2.5vw,44px);flex-wrap:wrap;row-gap:8px}
+.brand{display:block;flex:0 1 440px;max-width:100%;font-weight:700;color:#4d2e1b;font-size:clamp(1.5rem,2.2vw,2.22rem);line-height:1.1;white-space:normal}
 .brand span{margin-top:8px;font:italic 400 clamp(.73rem,.83vw,.93rem) Georgia,serif;text-transform:none;letter-spacing:.012em;color:#886044;max-width:310px;line-height:1.35}
 .navlinks{gap:clamp(6px,1vw,16px)}
 .navlinks a{position:relative;border-radius:0!important;background:transparent!important;color:#4e392a!important;padding:11px 2px!important;white-space:nowrap;font-size:.88rem;font-weight:650;text-decoration:none}
