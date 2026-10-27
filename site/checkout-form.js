@@ -79,7 +79,8 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
  const resetCaptcha=()=>{if(window.turnstile&&document.getElementById('pickup-captcha'))window.turnstile.reset('#pickup-captcha');};
  const contactChanged=()=>{
   const text=contactChannel.value==='text';
-  email.required=!text;phone.required=text;
+  // Stripe online payments require email even when text contact is preferred.
+  email.required=!text||!payRadio.checked;phone.required=text;
   document.getElementById('text-consent-label').hidden=!text;
   consent.required=text;if(!text)consent.checked=false;
  };
@@ -99,6 +100,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   submit.disabled=!(stripeAvailable||payAvailable);
   if(!stripeAvailable&&!payAvailable)submit.textContent='Pickup payment is unavailable on this date';
   else submit.textContent=payRadio.checked?'Reserve — Pay at Pickup':'Continue to Stripe';
+  contactChanged();
   document.getElementById('pickup-tax-estimate').textContent=payRadio.checked&&payAvailable?
     'Estimated total including configured pickup tax: '+dollars(subtotal+Math.round(subtotal*settings.pay_at_pickup_tax_rate_bps/10000))+
     '. Your confirmed total is calculated by the bakery server.':'';
