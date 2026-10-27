@@ -1,4 +1,5 @@
 // MommaBee homepage carousel: server-filtered, Owner-controlled media, accessible controls.
+import {harvestCrop,harvestCropStyles} from './harvest-sprite.js';
 export const DEFAULT_CAROUSEL_INTERVAL_SECONDS=6.5;
 export const CAROUSEL_SIZE_OPTIONS=Object.freeze(['extra-small','small','medium','large']);
 export function normalizeCarouselSize(size){
@@ -27,11 +28,13 @@ export function homeCarouselMarkup(slides,escape,photo,size='medium'){
    const img=photo(s.image_url);
    const action=(label,href,secondary=false)=>label&&/^#(shop|ready|preorder|gallery|contact|faq)(\/(bakery|homestand))?$/.test(href||'')
      ?'<a class="button'+(secondary?' secondary':'')+'" href="'+escape(href)+'">'+escape(label)+'</a>':'';
+   const cropped=harvestCrop(s.image_url);
+   const art=cropped?'<div class="hero-art has-photo"><div class="harvest-photo-sprite harvest-carousel-photo" role="img" aria-label="'+escape(s.image_alt||s.title)+'" style="'+harvestCropStyles(cropped)+'"></div></div>':
+    '<div class="hero-art has-photo"><img src="'+img+'" alt="'+escape(s.image_alt||'MommaBee Bakery&Farmstand creation')+'" loading="'+(first?'eager':'lazy')+'" decoding="async"></div>';
    return '<article class="hero home-carousel-slide" data-slide="'+i+'" aria-label="Slide '+(i+1)+' of '+count+'"'+hidden+'>'+
     '<div class="hero-copy"><div class="eyebrow">'+escape(s.eyebrow||'MommaBee Bakery&Farmstand')+'</div>'+
     '<h1>'+escape(s.title)+'</h1><p>'+escape(s.description||'')+'</p>'+
-    '<div class="hero-actions">'+action(s.primary_label,s.primary_href)+action(s.secondary_label,s.secondary_href,true)+'</div></div>'+
-    '<div class="hero-art has-photo"><img src="'+img+'" alt="'+escape(s.image_alt||'MommaBee Bakery&Farmstand creation')+'" loading="'+(first?'eager':'lazy')+'" decoding="async"></div></article>';
+    '<div class="hero-actions">'+action(s.primary_label,s.primary_href)+action(s.secondary_label,s.secondary_href,true)+'</div></div>'+art+'</article>';
   }).join('')+'</div>'+
   (count>1?'<div class="home-carousel-controls">'+
    '<button type="button" class="home-carousel-prev" aria-label="Previous featured slide">‹</button>'+

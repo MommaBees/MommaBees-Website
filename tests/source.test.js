@@ -1547,3 +1547,19 @@ test('Bakery and Homestand carousel sources only show actual photographed items'
  assert.match(admin,/id="carousel-show-homestand"/);
  assert.match(carousel,/bakery\|homestand/);
 });
+
+import {HARVEST_SPRITE_PATH,harvestCrop,harvestCropStyles} from '../site/harvest-sprite.js';
+test('harvest crop maps original images to their named store cards',()=>{
+ assert.equal(HARVEST_SPRITE_PATH,'/assets/harvest-2027-sprite.webp');
+ for(const [slug,x,y] of [['broccoli',0,0],['cauliflower',25,0],['green-beans',50,0],['jalapenos',75,0],['mini-green-peppers',100,0],
+ ['salad-cucumbers',0,100],['spineless-okra',25,100],['tomatoes',50,100],['yellow-summer-squash',75,100],['zucchini',100,100]]){
+  const result=harvestCrop('https://mommabees-website.pages.dev/assets/harvest-2027-sprite.webp#'+slug);
+  assert.deepEqual(result,{slug,x,y});
+  assert.match(harvestCropStyles(result),/--harvest-x:/);
+ }
+ assert.equal(harvestCrop('https://evil.test/assets/harvest-2027-sprite.webp#broccoli'),null);
+ assert.equal(harvestCrop('https://mommabees-website.pages.dev/assets/harvest-2027-sprite.webp#cherry-tomatoes'),null);
+ const app=read('site/app.js'),carousel=read('site/home-carousel.js');
+ assert.match(app,/harvest-photo-sprite/);
+ assert.match(carousel,/harvest-carousel-photo/);
+});

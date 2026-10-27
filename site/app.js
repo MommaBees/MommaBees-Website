@@ -13,6 +13,7 @@ import {bindRequiredMarkers} from './required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
 import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts} from './store-departments.js';
 import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
+import {harvestCrop,harvestCropStyles} from './harvest-sprite.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],showcaseItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -115,7 +116,9 @@ const card=p=>{
   '<a class="button secondary" href="#product/'+encodeURIComponent(p.id)+'">View details</a></div></article>';
 };
 const showcaseCard=item=>{
- const picture=item.photo_url?'<div class="card-media">'+image(item.photo_url,'product-photo',item.name)+'</div>':'';
+ const harvest=harvestCrop(item.photo_url);
+ const picture=harvest?'<div class="card-media"><div class="harvest-photo-sprite" role="img" aria-label="'+e(item.name)+'" style="'+harvestCropStyles(harvest)+'"></div></div>':
+  item.photo_url?'<div class="card-media">'+image(item.photo_url,'product-photo',item.name)+'</div>':'';
  return '<article class="card bakery-product-card store-showcase-card'+(item.photo_url?'':' is-text-only')+'">'+picture+
   '<div class="card-content"><p class="eyebrow">'+e(all.categories.find(c=>c.id===item.category_id)?.name||'')+'</p>'+
   '<h3>'+e(item.name)+'</h3></div></article>';
