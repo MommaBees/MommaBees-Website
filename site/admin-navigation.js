@@ -2,10 +2,10 @@
 export const ADMIN_GROUPS=Object.freeze([
  ['Overview',['dashboard']],
  ['Orders & Fulfillment',['orders','baking_days','product_day_limits','stock_batches','shopping']],
- ['Products & Inventory',['products','categories','subcategories','product_photos','recipes','recipe_ingredients','ingredients','past_bakes']],
+ ['Products & Inventory',['products','categories','subcategories','catalog_varieties','product_photos','recipes','recipe_ingredients','ingredients','past_bakes']],
  ['Customers & Communication',['messages','reviews','notifications','customer_profiles']],
  ['Marketing & Promotions',['announcements','announcement_recipients','promotions','promotion_recipients']],
- ['Website & Design',['home_carousel_slides','website_size','website_background','site_settings']],
+ ['Website & Design',['home_carousel_slides','store_display','website_size','website_background','site_settings']],
  ['Finance & Administration',['reports','expenses','demo_checkout_tests','demo_catalog_items','users']]
 ]);
 export function adminGroupsForRole(role){
@@ -21,7 +21,8 @@ export const ADMIN_DESCRIPTIONS=Object.freeze({
  shopping:'Generate ingredient requirements from recorded orders.',
  products:'Add, classify, photograph and publish real products.',
  categories:'Organize major product families.',
- subcategories:'Manage the varieties within a product family.',
+ subcategories:'Manage named product groups within a family.',
+ catalog_varieties:'Search and manage selectable product varieties, not inventory.',
  product_photos:'Maintain product gallery images.',
  recipes:'Recipe yields and preparation instructions.',
  recipe_ingredients:'Recipe ingredient quantities.',
@@ -37,6 +38,7 @@ export const ADMIN_DESCRIPTIONS=Object.freeze({
  promotion_recipients:'Private promotional audiences.',
  home_carousel_slides:'Homepage featured slides, photographs and buttons.',
  website_size:'Scale all site pages, text, navigation, cards and forms.',
+ store_display:'Show Bakery and Homestand as separate store tabs or one combined store.',
  website_background:'Site background artwork and display treatment.',
  site_settings:'Header, homepage information and checkout settings.',
  reports:'Sales and expense reporting.',

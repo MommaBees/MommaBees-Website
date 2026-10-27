@@ -4,6 +4,7 @@ import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from './product
 import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
 import {adminGroupsForRole,ADMIN_DESCRIPTIONS} from './admin-navigation.js';
 import {adminFieldIsRequired} from './admin-required.js';
+import {STORE_DEPARTMENTS,departmentForCategory,departmentLabel,taxonomyPaths,searchTaxonomyPaths} from './store-departments.js';
 import {WEBSITE_SIZE_OPTIONS,normalizeWebsiteSize,applyWebsiteSize} from './website-size.js';
 import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from './home-carousel.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
@@ -14,13 +15,14 @@ const $=s=>document.querySelector(s);
 const cols=(...x)=>x;
 const field=(key,label,type='text',extra={})=>({key,label,type,...extra});
 const configs={
- categories:{label:'Categories',fields:cols(field('name','Category name'),field('slug','URL slug (example: cookies)'),field('description','Description','textarea'),field('photo_url','Category image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
- products:{label:'Products',fields:cols(field('category_id','Category','ref',{table:'categories'}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Sold by','select',{options:['each','dozen','tray','box','slice']}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
- subcategories:{label:'Subcategories & Varieties',fields:cols(field('category_id','Parent category','ref',{table:'categories'}),field('name','Subcategory name'),field('slug','Subcategory slug'),field('description','Description','textarea'),field('photo_url','Subcategory image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
+ categories:{label:'Categories',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('name','Category name'),field('slug','URL slug (example: cookies)'),field('description','Description','textarea'),field('photo_url','Category image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
+ products:{label:'Products',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('category_id','Category','ref',{table:'categories'}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('variety_id','Variety','ref',{table:'catalog_varieties'}),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Sold by','select',{options:['each','dozen','tray','box','slice','bag','bunch','basket','pint','quart','pound']}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
+ catalog_varieties:{label:'Product Varieties',fields:cols(field('category_id','Category','ref',{table:'categories'}),field('subcategory_id','Subcategory (optional)','ref',{table:'subcategories'}),field('name','Variety name'),field('slug','Variety slug'),field('sort_order','Display order','number'),field('active','Active','bool'))},
+ subcategories:{label:'Subcategories',fields:cols(field('category_id','Parent category','ref',{table:'categories'}),field('name','Subcategory name'),field('slug','Subcategory slug'),field('description','Description','textarea'),field('photo_url','Subcategory image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
  past_bakes:{label:'Past Bakes Gallery',fields:cols(field('title','Gallery photo title'),field('description','Optional photo description','textarea'),field('image_url','Past bake photograph','image'),field('sort_order','Display order','number'),field('published','Display in gallery','bool'))},
  demo_catalog_items:{label:'Sandbox Test Products',fields:cols(field('name','Test product name'),field('category','Category','select',{options:['Cookies','Cakes','Pies','Cheesecakes','Pastries']}),field('description','Test description','textarea'),field('price_cents','Example price (dollars)','money'),field('unit','Unit','select',{options:['each','dozen','box','tray','slice']}),field('sort_order','Display order','number'),field('enabled','Enable this sample','bool'))},
  product_photos:{label:'Product Gallery Photos',fields:cols(field('product_id','Product','ref',{table:'products'}),field('url','Photo upload','image'),field('alt_text','Image description'),field('sort_order','Display order','number'))},
- stock_batches:{label:'Ready-to-Sell Inventory',fields:cols(field('product_id','Product','ref',{table:'products'}),field('batch_label','Batch label'),field('baked_on','Baked on','date'),field('best_before','Last eligible fulfillment date','date'),field('quantity_available','Quantity available','number'),field('clearance_approved','Owner approved clearance','bool'),field('clearance_note','Clearance inspection / source order','textarea'),field('disabled','Remove batch from sale','bool'))},
+ stock_batches:{label:'Ready-to-Sell Inventory',fields:cols(field('product_id','Product','ref',{table:'products'}),field('batch_label','Batch label'),field('baked_on','Produced / harvested on','date'),field('best_before','Last eligible fulfillment date','date'),field('quantity_available','Quantity available','number'),field('clearance_approved','Owner approved clearance','bool'),field('clearance_note','Clearance inspection / source order','textarea'),field('disabled','Remove batch from sale','bool'))},
  baking_days:{label:'Baking & Fulfillment Calendar',key:'date',fields:cols(field('date','Baking / fulfillment date','date'),field('cutoff_at','Order cutoff (Central Time)','datetime'),field('capacity_total','Total preorder units','number'),field('pickup_enabled','Pickup available','bool'),field('delivery_enabled','Delivery available','bool'),field('pickup_windows','Pickup time windows (comma-separated)','csv'),field('day_type','Day type','select',{options:['baking','fair']}),field('event_label','Fair/event name (optional)'),field('pay_at_pickup_available','Allow Pay at Pickup on this date','bool'),field('delivery_windows','Delivery time windows (comma-separated)','csv'),field('notes','Internal notes','textarea'),field('enabled','Enabled','bool'))},
  product_day_limits:{label:'Product Day Limits',key:['product_id','baking_date'],fields:cols(field('product_id','Product','ref',{table:'products'}),field('baking_date','Baking day','ref',{table:'baking_days',key:'date'}),field('max_quantity','Maximum units','number'))},
  orders:{label:'Order Management',readMostly:true,fields:cols(field('status','Fulfillment status','select',{options:['new','confirmed','baking','ready','completed','cancelled']}),field('note','Internal/customer order note','textarea'))},
@@ -36,7 +38,7 @@ const configs={
  recipe_ingredients:{label:'Recipe Ingredient Quantities',fields:cols(field('recipe_id','Recipe','ref',{table:'recipes'}),field('ingredient_id','Ingredient','ref',{table:'ingredients'}),field('quantity','Quantity required per batch','number'))},
  customer_profiles:{label:'Customer Accounts',readMostly:true,fields:cols(field('first_name','First name'),field('last_name','Last name'),field('username','Username'),field('phone','Phone'),field('address_line1','Account street'),field('address_line2','Apt / suite'),field('city','City'),field('state','State'),field('country','Country'),field('postal_code','ZIP / postal'),field('billing_same','Billing same as account','bool'),field('billing_line1','Billing street'),field('billing_line2','Billing apt / suite'),field('billing_city','Billing city'),field('billing_state','Billing state'),field('billing_country','Billing country'),field('billing_postal_code','Billing ZIP / postal'),field('marketing_opt_in','Marketing permission','bool'))},
  home_carousel_slides:{label:'Homepage Carousel',fields:cols(field('sort_order','Display position','number'),field('eyebrow','Small heading'),field('title','Main headline'),field('description','Supporting text','textarea'),field('image_url','Carousel photo','carousel_image'),field('image_alt','Image description for screen readers'),field('primary_label','Main button label'),field('primary_href','Main button destination','select',{options:['#shop','#ready','#preorder','#gallery','#contact','#faq']}),field('secondary_label','Second button label (optional)'),field('secondary_href','Second button destination','select',{options:['#shop','#ready','#preorder','#gallery','#contact','#faq']}),field('published','Published / visible','bool'),field('starts_at','Start showing (Central Time)','datetime'),field('ends_at','Stop showing (Central Time)','datetime'))},
- site_settings:{label:'Website Appearance & Settings',single:true,fields:cols(field('brand_subtitle','Header products & services line','textarea'),field('placeholder_empty_shop','Show empty-shop message','bool'),field('placeholder_empty_gallery','Show empty-gallery message','bool'),field('placeholder_missing_image','Show missing-photo placeholder','bool'),field('placeholder_featured','Show empty-featured message','bool'),field('demo_store_enabled','Show test products to Owner/Admin ONLY','bool'),field('home_heading','Homepage headline'),field('home_intro','Homepage introduction','textarea'),field('hero_url','Homepage background photo','image'),field('header_url','Header image','image'),field('email','Contact email'),field('phone','Contact phone'),field('pickup_instructions','Pickup instructions','textarea'),field('delivery_zips','Allowed delivery ZIP codes (comma-separated)','csv'),field('delivery_fee_cents','Local delivery fee (dollars)','money'),field('pickup_enabled','Offer pickup','bool'),field('delivery_enabled','Offer local delivery','bool'),field('checkout_enabled','ENABLE LIVE CHECKOUT AFTER TESTING','bool'),field('pay_at_pickup_enabled','Offer Pay at Pickup (separate from Stripe)','bool'),field('pay_at_pickup_tax_reviewed','Pay-at-pickup tax configuration (staff-only; do not enable until supported)','bool'),field('pay_at_pickup_tax_rate_bps','Pay-at-pickup fallback tax rate (restricted legacy setting)','number'),field('special_date_requests_enabled','Offer off-schedule special date inquiries','bool'),field('special_date_convenience_fee_cents','Proposed off-day convenience fee (dollars; subject to approval)','money'),field('food_notice','Food/allergen disclosure','textarea'),field('terms','Cancellation, return and store terms','textarea'))}
+ site_settings:{label:'Website Appearance & Settings',single:true,fields:cols(field('brand_subtitle','Header products & services line','textarea'),field('split_store_enabled','Split store into Bakery / Homestand','bool'),field('placeholder_empty_shop','Show empty-shop message','bool'),field('placeholder_empty_gallery','Show empty-gallery message','bool'),field('placeholder_missing_image','Show missing-photo placeholder','bool'),field('placeholder_featured','Show empty-featured message','bool'),field('demo_store_enabled','Show test products to Owner/Admin ONLY','bool'),field('home_heading','Homepage headline'),field('home_intro','Homepage introduction','textarea'),field('hero_url','Homepage background photo','image'),field('header_url','Header image','image'),field('email','Contact email'),field('phone','Contact phone'),field('pickup_instructions','Pickup instructions','textarea'),field('delivery_zips','Allowed delivery ZIP codes (comma-separated)','csv'),field('delivery_fee_cents','Local delivery fee (dollars)','money'),field('pickup_enabled','Offer pickup','bool'),field('delivery_enabled','Offer local delivery','bool'),field('checkout_enabled','ENABLE LIVE CHECKOUT AFTER TESTING','bool'),field('pay_at_pickup_enabled','Offer Pay at Pickup (separate from Stripe)','bool'),field('pay_at_pickup_tax_reviewed','Pay-at-pickup tax configuration (staff-only; do not enable until supported)','bool'),field('pay_at_pickup_tax_rate_bps','Pay-at-pickup fallback tax rate (restricted legacy setting)','number'),field('special_date_requests_enabled','Offer off-schedule special date inquiries','bool'),field('special_date_convenience_fee_cents','Proposed off-day convenience fee (dollars; subject to approval)','money'),field('food_notice','Food/allergen disclosure','textarea'),field('terms','Cancellation, return and store terms','textarea'))}
 };
 // Administrative groups are centralized in admin-navigation.js.
 const titleFor=(table,row)=>row?.name||row?.title||row?.email||row?.description||row?.date||row?.product_name||row?.full_name||row?.subject||String(row?.id||row?.product_id||'').slice(0,8);
@@ -99,9 +101,9 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  catch(x){ctx.layout(`<div class="section box"><h1>Access denied</h1><p>${e(x.message)}</p><a href="#shop">Return to shop</a></div>`);return;}
  if(ctx.role==='moderator')selected='messages';
  authShell();await renderPanel();}
-async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_size')return websiteSizePanel();if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
+async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_size')return websiteSizePanel();if(selected==='store_display')return storeDisplayPanel();if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
-function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['name','product_type','price_cents','mode','published']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
+function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
 
 
  if(selected==='baking_days'){
@@ -209,6 +211,27 @@ function listPanel(){if(selected==='site_settings')return siteSettingsSummary();
  });
 
 }
+async function storeDisplayPanel(){
+ if(!['owner','admin'].includes(ctx.role))throw Error('Only Owner/Admin can change the store display.');
+ await loadTable('site_settings');
+ const split=data.site_settings?.[0]?.split_store_enabled===true;
+ $('#admin-main').innerHTML=`<section class="box"><h2>Store Display</h2>
+ <form id="store-display-form">
+  <label class="admin-store-switch" for="store-display-split"><input id="store-display-split" type="checkbox" ${split?'checked':''}>
+   <span><strong>Split Store — Bakery / Homestand</strong><small>Enabled: two department tabs. Disabled: one combined store.</small></span>
+  </label>
+  <p class="muted">This changes product browsing only. All products keep their department classification. No product is published automatically.</p>
+  <button type="submit" class="button">Save store display</button>
+  <p id="store-display-status" role="status" aria-live="polite"></p>
+ </form></section>`;
+ $('#store-display-form').onsubmit=async event=>{
+  event.preventDefault();const enabled=$('#store-display-split').checked;
+  try{await update('site_settings',1,{split_store_enabled:enabled});await ctx.load();
+   $('#store-display-status').textContent=enabled?'Saved: Bakery and Homestand are separate.':'Saved: the store is combined.';
+  }catch(error){$('#store-display-split').checked=split;ctx.showError(error);}
+ };
+}
+
 async function websiteSizePanel(){
  if(ctx.role!=='owner'&&ctx.role!=='admin')throw Error('Website size can only be managed by Owner/Admin.');
  await loadTable('site_settings');
@@ -430,8 +453,8 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
   const options=(refs[f.table]||[]).flatMap(x=>{
    const refValue=x[rowKey];
    if(refValue===null||refValue===undefined||String(refValue)==='')return [];
-   const label=titleFor(f.table,x);
-   const suffix=['categories','subcategories'].includes(f.table)||f.table==='baking_days'?'':' ('+String(refValue).slice(0,8)+')';
+   const label=f.table==='categories'?departmentLabel(departmentForCategory(x))+' → '+x.name:titleFor(f.table,x);
+   const suffix=['categories','subcategories','catalog_varieties'].includes(f.table)||f.table==='baking_days'?'':' ('+String(refValue).slice(0,8)+')';
    return [`<option value="${e(String(refValue))}" ${String(value)===String(refValue)?'selected':''}>${e(label+suffix)}</option>`];
   }).join('');
   const none=!(refs[f.table]||[]).length;
@@ -464,7 +487,7 @@ async function openEditor(record){const c=configs[selected];
  const tables=[...new Set(c.fields.filter(f=>f.type==='ref').map(f=>f.table))];await Promise.all(tables.map(async t=>{refs[t]=await list(t,{limit:500}).catch(()=>[]);}));
  $('#editor-title').textContent=record&&!record._unsaved?'Edit '+c.label:'Add '+c.label;
  $('#editor-fields').innerHTML=c.fields.map(f=>fieldInput(f,record)).join('');
- const missingRequired=c.fields.filter(f=>f.type==='ref'&&f.key!=='subcategory_id'&&!(refs[f.table]||[]).length);
+ const missingRequired=c.fields.filter(f=>f.type==='ref'&&!['subcategory_id','variety_id'].includes(f.key)&&!(refs[f.table]||[]).length);
  if(missingRequired.length){
   const warning=document.createElement('p');
   warning.className='admin-reference-warning';
@@ -494,20 +517,89 @@ async function openEditor(record){const c=configs[selected];
   });
 
 
- if(selected==='products' && refs.subcategories?.length){
-  const category=$('#field_category_id'),subcat=$('#field_subcategory_id');
-  if(category&&subcat){
-    const filter=()=>{
-      [...subcat.options].forEach(o=>{
-       if(!o.value)return;
-       const match=refs.subcategories.find(x=>x.id===o.value);
-       o.hidden=!match||match.category_id!==category.value;
-       o.disabled=o.hidden;
-      });
-      if(subcat.selectedOptions[0]?.disabled)subcat.value='';
+
+ if(selected==='products'){
+  const form=$('#editor-fields');
+  const dep=$('#field_department'),category=$('#field_category_id'),
+   sub=$('#field_subcategory_id'),variety=$('#field_variety_id');
+  const searchPanel=document.createElement('div');
+  searchPanel.className='admin-taxonomy-search';
+  searchPanel.innerHTML='<label for="product-taxonomy-search">Search department / category / variety</label>'+
+   '<input type="search" id="product-taxonomy-search" placeholder="Search banana, cookies, bread, vegetables…" autocomplete="off" aria-controls="product-taxonomy-results">'+
+   '<div id="product-taxonomy-results" role="listbox" aria-label="Matching catalog paths"></div>'+
+   '<p class="small muted">Select a path to fill the dropdowns. A variety is a classification, not an active product.</p>';
+  form.prepend(searchPanel);
+  const paths=taxonomyPaths(refs.categories||[],refs.subcategories||[],refs.catalog_varieties||[]);
+  const updateHierarchy=(level='department')=>{
+   if(level==='department'){
+    for(const opt of [...category.options]){if(!opt.value)continue;
+     const obj=refs.categories.find(c=>c.id===opt.value);
+     opt.hidden=!obj||departmentForCategory(obj)!==dep.value;opt.disabled=opt.hidden;
+    }
+    if(category.selectedOptions[0]?.disabled)category.value='';
+   }
+   if(sub){for(const opt of [...sub.options]){if(!opt.value)continue;
+     const found=refs.subcategories.find(x=>x.id===opt.value);
+     opt.hidden=!found||found.category_id!==category.value;opt.disabled=opt.hidden;
+    }
+    if(sub.selectedOptions[0]?.disabled)sub.value='';
+   }
+   if(variety){for(const opt of [...variety.options]){if(!opt.value)continue;
+     const found=refs.catalog_varieties.find(x=>x.id===opt.value);
+     opt.hidden=!found||found.category_id!==category.value||String(found.subcategory_id||'')!==String(sub?.value||'');
+     opt.disabled=opt.hidden;
+    }
+    if(variety.selectedOptions[0]?.disabled)variety.value='';
+   }
+   const item=refs.categories.find(c=>c.id===category.value);
+   const suggested=productTypeForCategory(item?.slug);
+   const kind=$('#field_product_type');
+   if(kind&&suggested&&suggested!=='unclassified'&&suggested!==null)kind.value=suggested;
+  };
+  dep?.addEventListener('change',()=>{category.value='';if(sub)sub.value='';if(variety)variety.value='';updateHierarchy('department');});
+  category?.addEventListener('change',()=>{if(sub)sub.value='';if(variety)variety.value='';updateHierarchy('category');});
+  sub?.addEventListener('change',()=>{if(variety)variety.value='';updateHierarchy('subcategory');});
+  variety?.addEventListener('change',()=>{
+   const found=(refs.catalog_varieties||[]).find(v=>v.id===variety.value);
+   if(found&&!$('#field_name')?.value?.trim())$('#field_name').value=found.name;
+  });
+  const search=$('#product-taxonomy-search'),results=$('#product-taxonomy-results');
+  const showMatches=()=>{
+   const query=search.value.trim();results.innerHTML='';
+   if(!query)return;
+   for(const path of searchTaxonomyPaths(paths,query,20)){
+    const button=document.createElement('button');
+    button.type='button';button.className='admin-taxonomy-result';button.setAttribute('role','option');
+    button.textContent=path.path;
+    button.onclick=()=>{
+     dep.value=path.department;category.value=path.categoryId;
+     updateHierarchy('department');
+     if(sub)sub.value=path.subcategoryId||'';
+     updateHierarchy('subcategory');
+     if(variety)variety.value=path.id;
+     if(!$('#field_name')?.value?.trim())$('#field_name').value=path.name;
+     search.value=path.path;results.innerHTML='';
     };
-    category.addEventListener('change',filter);filter();
-  }
+    results.append(button);
+   }
+   if(!results.children.length)results.textContent='No matching paths. Add the category or variety in Admin first.';
+  };
+  search?.addEventListener('input',showMatches);
+  if(record?.category_id){const c=refs.categories.find(c=>c.id===record.category_id);dep.value=departmentForCategory(c);}
+  updateHierarchy('department');
+ }
+ if(selected==='catalog_varieties'){
+  const cat=$('#field_category_id'),sub=$('#field_subcategory_id');
+  const filter=()=>{
+   if(!sub)return;
+   [...sub.options].forEach(o=>{
+    if(!o.value)return;
+    const ref=refs.subcategories?.find(x=>x.id===o.value);
+    o.hidden=!ref||ref.category_id!==cat.value;o.disabled=o.hidden;
+   });
+   if(sub.selectedOptions[0]?.disabled)sub.value='';
+  };
+  cat?.addEventListener('change',()=>{if(sub)sub.value='';filter();});filter();
  }
  if(selected==='orders'&&record){
   const details=record.guest_contact_address||record.delivery_address||{};
@@ -604,7 +696,7 @@ async function openEditor(record){const c=configs[selected];
  }
 
  const dialog=$('#editor');dialog.showModal();$('#close-editor').onclick=()=>dialog.close();
- $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);if(!el&&f.key==='subcategory_id')continue;let v=f.type==='bool'?el.checked:el.value;
+ $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);if(!el&&['subcategory_id','variety_id'].includes(f.key)){body[f.key]=null;continue;}let v=f.type==='bool'?el.checked:el.value;
  if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload(selected==='past_bakes'?'past-bakes':'product-photos',inp.files[0]);v=photo.url;} }
  if(f.type==='carousel_image'){const inp=document.querySelector('[data-carousel-photo-for="field_'+f.key+'"]');if(inp?.files?.[0]){const uploaded=await upload('carousel-photos',inp.files[0]);v=uploaded.url;}if(!v)throw Error('Upload a real photograph before saving this slide.');}
  if(f.type==='money')v=v===''?null:Math.round(Number(v)*100);
@@ -613,7 +705,7 @@ async function openEditor(record){const c=configs[selected];
  if(f.type==='datetime')v=v?isoFromCentralInput(v):null;
  if(['max_discount_cents','max_uses'].includes(f.key)&&v==='')v=null;
  if(f.type==='ref'&&!v){
-  if(f.key!=='subcategory_id')throw Error('Select '+f.label+' before saving.');
+  if(!['subcategory_id','variety_id'].includes(f.key))throw Error('Select '+f.label+' before saving.');
   v=null;
  }
  if(f.key==='code'&&!v)v=null;
@@ -634,6 +726,7 @@ async function openEditor(record){const c=configs[selected];
   const cat=refs.categories?.find(c=>c.id===body.category_id);
   const expected=productTypeForCategory(cat?.slug);
   if(expected==='unclassified')throw Error('Choose a classified product category before saving.');
+  if(body.department!==departmentForCategory(cat))throw Error('Product department must match its category.');
   if(expected!==null&&body.product_type!==expected)throw Error('The product type must match its category.');
   if(body.product_type!=='food'){
    if(body.published)throw Error(nonfoodHoldMessage(body.product_type));

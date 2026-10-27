@@ -1037,3 +1037,74 @@ body[data-website-size] #main .home-carousel .home-carousel-slide .hero-art img{
  .admin-website-size .admin-carousel-interval-controls > *{flex:1 1 100%}
  .admin-website-size select{width:100%}
 }
+
+
+/* MBB-CATALOG-038 v1.28: Bakery/Homestand store navigation and taxonomy finder */
+.shop-department-tabs{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px;
+ margin:15px 0 20px;
+ padding:6px;
+ background:#f3e7d4;
+ border:1px solid #d3b795;
+ border-radius:7px;
+}
+.shop-department-tabs .tab{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ min-height:48px;
+ font-size:clamp(.92rem,1.3vw,1.13rem);
+ font-weight:750;
+ padding:12px;
+ text-align:center;
+}
+.shop-department-tabs .tab.active{
+ background:#69432b;
+ color:#fff;
+ border-color:#69432b;
+}
+.admin-store-switch{
+ display:flex;
+ gap:14px;
+ padding:14px;
+ border:1px solid #d2b595;
+ border-radius:6px;
+ background:#fffbf4;
+ align-items:flex-start;
+ cursor:pointer;
+}
+.admin-store-switch input{width:24px;height:24px;min-width:24px;margin-top:3px}
+.admin-store-switch strong,.admin-store-switch small{display:block}
+.admin-store-switch small{margin-top:5px;color:#654c39;line-height:1.5}
+#store-display-form>.button{margin-top:16px}
+#store-display-status{margin-top:10px;font-weight:650}
+.admin-taxonomy-search{
+ background:#fff5e8;
+ border:1px solid #dbc5aa;
+ padding:15px;
+ border-radius:6px;
+ margin-bottom:15px;
+}
+.admin-taxonomy-search>label{font-weight:750;display:block;margin-bottom:8px}
+.admin-taxonomy-search>input{width:100%;min-height:44px;background:#fff}
+#product-taxonomy-results{max-height:240px;overflow-y:auto;display:grid;gap:4px;margin-top:8px}
+#product-taxonomy-results:empty{display:none}
+.admin-taxonomy-result{
+ display:block;
+ width:100%;
+ text-align:left;
+ min-height:44px;
+ padding:9px 12px;
+ background:#fffdf9;
+ border:1px solid #dac4ad;
+ color:#4a3020;
+ border-radius:4px;
+}
+.admin-taxonomy-result:hover,.admin-taxonomy-result:focus-visible{background:#eee1d0}
+@media(max-width:530px){
+ .shop-department-tabs{gap:7px;padding:5px}
+ .shop-department-tabs .tab{font-size:.89rem;min-height:44px}
+ .admin-taxonomy-search{padding:10px}
+}

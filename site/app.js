@@ -9,6 +9,7 @@ import {SAMPLE_MENU,samplesFor} from './sample-menu.js';
 import {accountNavigationMarkup,bindAccountNavigation} from './account-navigation.js';
 import {bindRequiredMarkers} from './required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
+import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts} from './store-departments.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -110,7 +111,7 @@ const card=p=>{
   '<p class="price">'+money(p.price_cents)+' <small>/ '+e(p.unit)+'</small></p>'+
   '<a class="button secondary" href="#product/'+encodeURIComponent(p.id)+'">View details</a></div></article>';
 };
-const categories=()=>all.categories.filter(c=>c.active&&(sellable().some(p=>p.category_id===c.id)||(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true&&all.demoItems.some(x=>x.enabled&&x.category===c.name))));
+const categories=(department=null)=>all.categories.filter(c=>c.active&&(!department||departmentForCategory(c)===department)&&(sellable().some(p=>p.category_id===c.id)||(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true&&all.demoItems.some(x=>x.enabled&&x.category===c.name))));
 function layout(content){
  const settings=all.settings||{};
  const routeName=(location.hash||'#home').slice(1).split('/')[0]||'home';
@@ -193,57 +194,67 @@ function home(){const s=all.settings;const active=eligibleHomeSlides(all.carouse
  <p class="muted">Past creations — not currently for sale.</p>
  <div class="grid home-gallery-preview">${all.pastBakes.filter(p=>p.published&&p.image_url).slice(0,3).map(p=>`<a class="card" href="#gallery">${image(p.image_url,'product-photo',p.title)}<div class="card-content"><strong>${e(p.title)}</strong><p class="small muted">Past creation</p></div></a>`).join('')}</div></section>
  <section class="section ${sellable().some(p=>p.featured)?'':'no-featured-products'}"><h2>Featured treats</h2><div class="grid">${sellable().filter(p=>p.featured).slice(0,6).map(card).join('')||(s.placeholder_featured===false?'':'<div class="empty">Our baking list changes with the week. The treats below are examples while we prepare the next menu.</div>')}</div></section>${sellable().length===0?demoStorePreview('ready',null,false):''}`);bindDemoStore();}
-function shop(mode=null,categoryId=null,subcategoryId=null){
- let items=sellable();
+function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=null){
+ const category=all.categories.find(x=>x.id===categoryId);
+ const department=effectiveDepartment(all.settings,requestedDepartment,category);
+ const split=all.settings.split_store_enabled===true;
+ let items=department?filterStoreProducts(sellable(),all.settings,department,all.categories):sellable();
  if(mode==='ready')items=items.filter(productReady);
  if(mode==='preorder')items=items.filter(productPreorder);
  if(categoryId)items=items.filter(p=>p.category_id===categoryId);
  if(subcategoryId)items=items.filter(p=>p.subcategory_id===subcategoryId);
- const title=subcategoryId?all.subcategories.find(c=>c.id===subcategoryId)?.name||'Bakery type':
+ const title=subcategoryId?all.subcategories.find(c=>c.id===subcategoryId)?.name||'Product type':
   categoryId?all.categories.find(c=>c.id===categoryId)?.name||'Category':
   mode==='ready'?'Ready to Sell':mode==='preorder'?'Preorder':'Shop All';
- const heading=mode==='ready'?'Baked and ready for scheduled pickup':
+ const heading=mode==='ready'?'Ready for scheduled pickup':
   mode==='preorder'?'Made for an upcoming baking day':'Explore all currently available treats';
- const description=mode==='ready'
-  ?'Baked and available for scheduled pickup while supplies last.'
-  :mode==='preorder'
-  ?'Made for scheduled baking dates. Select an available date at checkout.'
-  :'Ready-to-sell items and preorders for scheduled baking days.';
- const empty=mode==='ready'
+ const description=department==='homestand'
+  ?mode==='ready'?'In stock for scheduled pickup while supplies last.':mode==='preorder'?'Order ahead for an available fulfillment date.':'Homestand goods available to order.'
+  :mode==='ready'?'Baked and available for scheduled pickup while supplies last.'
+   :mode==='preorder'?'Made for scheduled baking dates. Select an available date at checkout.'
+   :'Ready-to-sell items and preorders for scheduled baking days.';
+ const empty=department==='homestand'?'No Homestand items are available for this selection.':mode==='ready'
   ?'No ready-to-sell items are currently stocked. Check Preorder or return after the next bake.'
   :mode==='preorder'
   ?'No preorders are available for a scheduled baking date right now. Check Ready to Sell or ask about a special order.'
   :'No items are currently available for ordering. Check back for the next baking day.';
  const visual=stockPhotoFor(mode==='ready'?'Cookies':mode==='preorder'?'Cakes':'Pies');
- const isShopAll=!mode&&!categoryId&&!subcategoryId;
+ const isShopAll=(!mode&&!categoryId&&!subcategoryId)||department==='homestand';
+ const pageTitle=department?departmentLabel(department)+(categoryId?'':mode==='ready'?' · Ready to Sell':mode==='preorder'?' · Preorder':' · Shop All'):title;
+ const departmentSuffix=department?'/'+department:'';
+ const categoryChoices=categories(department);
  layout(`<section class="section shop-page shop-page--${mode||'all'}" data-shop-view="${mode||'all'}">
  ${announcements('shop')}
  <div class="shop-hero">
-  <div class="shop-hero-copy"><h1>${e(title)}</h1><p>${e(description)}</p>
-   <p class="shop-result-count">${items.length?'<strong>'+items.length+'</strong> currently available to order': 'Example treats below · Check back for actual availability'}</p>
+  <div class="shop-hero-copy"><h1>${e(categoryId?title:pageTitle)}</h1><p>${e(description)}</p>
+   <p class="shop-result-count">${items.length?'<strong>'+items.length+'</strong> currently available to order': 'No items currently available'}</p>
   </div>
   <div class="shop-hero-picture ${isShopAll?'shop-hero-picture--brand':''}">${isShopAll?
    '<img class="shop-hero-image shop-hero-brand-image" src="/assets/branding/mommabee-shop-logo.webp" alt="MommaBee Bakery&Farmstand — Bread, Cookies, Candy & More" decoding="async" fetchpriority="high">':
    image(visual.url,'shop-hero-image',title+' illustrative stock photo')}${isShopAll?'':'<div class="photo-disclosure">Illustrative photograph · Actual baked goods may differ</div>'}</div>
  </div>
+ ${split?'<nav class="tabs shop-department-tabs" aria-label="Store departments">'+
+  '<a class="tab '+(department==='bakery'?'active':'')+'" href="#shop/bakery" '+(department==='bakery'?'aria-current="page"':'')+'>Bakery</a>'+
+  '<a class="tab '+(department==='homestand'?'active':'')+'" href="#shop/homestand" '+(department==='homestand'?'aria-current="page"':'')+'>Homestand</a>'+
+  '</nav>':''}
  <nav class="tabs shop-mode-tabs" aria-label="Browse available products">
-  <a class="tab ${!mode&&!categoryId?'active':''}" href="#shop" ${!mode&&!categoryId?'aria-current="page"':''}>Shop All</a>
-  <a class="tab ${mode==='ready'?'active':''}" href="#ready" ${mode==='ready'?'aria-current="page"':''}>Ready to Sell</a>
-  <a class="tab ${mode==='preorder'?'active':''}" href="#preorder" ${mode==='preorder'?'aria-current="page"':''}>Preorder</a>
+  <a class="tab ${!mode&&!categoryId?'active':''}" href="#shop${departmentSuffix}" ${!mode&&!categoryId?'aria-current="page"':''}>Shop All</a>
+  <a class="tab ${mode==='ready'?'active':''}" href="#ready${departmentSuffix}" ${mode==='ready'?'aria-current="page"':''}>Ready to Sell</a>
+  <a class="tab ${mode==='preorder'?'active':''}" href="#preorder${departmentSuffix}" ${mode==='preorder'?'aria-current="page"':''}>Preorder</a>
  </nav>
- ${categories().length?'<nav class="tabs subcategory-tabs" aria-label="Categories">'+categories().map(c=>
+ ${categoryChoices.length?'<nav class="tabs subcategory-tabs" aria-label="Categories">'+categoryChoices.map(c=>
   '<a class="tab '+(categoryId===c.id?'active':'')+'" href="#category/'+e(c.id)+'">'+e(c.name)+'</a>'
  ).join('')+'</nav>':''}
  ${categoryId?'<nav class="tabs subcategory-tabs" aria-label="Subcategory filters">'+
  '<a class="tab '+(!subcategoryId?'active':'')+'" href="#category/'+e(categoryId)+'">All '+e(all.categories.find(c=>c.id===categoryId)?.name||'')+'</a>'+
- all.subcategories.filter(x=>x.category_id===categoryId&&x.active&&sellable().some(p=>p.subcategory_id===x.id))
+ all.subcategories.filter(x=>x.category_id===categoryId&&x.active&&items.some(p=>p.subcategory_id===x.id))
  .map(x=>'<a class="tab '+(subcategoryId===x.id?'active':'')+'" href="#subcategory/'+e(categoryId)+'/'+e(x.id)+'">'+e(x.name)+'</a>').join('')+'</nav>':''}
  <div class="grid product-results">${items.map(card).join('')||
- ((samplesFor(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null).length>0&&all.settings.placeholder_empty_shop!==false)?'':all.settings.placeholder_empty_shop===false?'':'<div class="empty shop-empty">'+e(empty)+
- '<div class="actions" style="justify-content:center;margin-top:18px">'+(mode==='ready'?'<a class="button secondary" href="#preorder">Explore Preorders</a>':
- mode==='preorder'?'<a class="button secondary" href="#ready">Browse Ready to Sell</a>':
+ ((!split&&samplesFor(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null).length>0&&all.settings.placeholder_empty_shop!==false)?'':all.settings.placeholder_empty_shop===false?'':'<div class="empty shop-empty">'+e(empty)+
+ '<div class="actions" style="justify-content:center;margin-top:18px">'+(mode==='ready'?'<a class="button secondary" href="#preorder'+departmentSuffix+'">Explore Preorders</a>':
+ mode==='preorder'?'<a class="button secondary" href="#ready'+departmentSuffix+'">Browse Ready to Sell</a>':
  '<a class="button secondary" href="#contact">Ask About a Special Order</a>')+'</div></div>')}</div>
- ${demoStorePreview(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null,items.length>0)}
+ ${split?'':demoStorePreview(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null,items.length>0)}
  </section>`);bindDemoStore();
 }
 function detail(id){const p=all.products.find(x=>x.id===id);if(!p||!p.published||!available(p)){layout('<div class="empty">Product not available. <a href="#shop">Return to shop</a>.</div>');return;}
@@ -307,7 +318,7 @@ async function render(){const [route,pid]=decodeURIComponent((location.hash||'#h
   }catch(ex){console.warn('Homepage carousel refresh unavailable; retaining last loaded content',ex);}
  }
  all.demoItems=[];if(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true){all.demoItems=await list('demo_catalog_items',{order:'sort_order.asc',limit:100}).catch(()=>[]);}document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"MommaBee Bakery&Farmstand";if(!isConfigured()){layout(`<section class="section"><h1>Welcome to MommaBee Bakery&Farmstand</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in MommaBee Bakery&Farmstand.</p></section>`);return;}
- try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='sandbox-store'){nav('#shop');return;}else if(route==='shop')shop();else if(route==='ready')shop('ready');else if(route==='preorder')shop('preorder');else if(route==='category')shop(null,pid);else if(route==='subcategory'){const parts=(location.hash||'').slice(1).split('/');shop(null,parts[1],parts[2]);}else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')await checkoutPage();else if(route==='success')success();else if(route==='sandbox-success'&&['owner','admin'].includes(verifiedBackOfficeRole))layout('<section class="section box"><h1>Stripe Sandbox Return</h1><p>This was a TEST transaction only. Open Admin → Sandbox Test Products to check the result after Stripe sends its webhook. No real customer order was created.</p><a class="button secondary" href="#shop">Back to Shop All</a></section>');else if(route==='track')track(pid);else if(route==='account')await account(pid);else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else if(route==='qr')qrPage();else home();}
+ try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='sandbox-store'){nav('#shop');return;}else if(route==='shop')shop(null,null,null,pid);else if(route==='ready')shop('ready',null,null,pid);else if(route==='preorder')shop('preorder',null,null,pid);else if(route==='category')shop(null,pid);else if(route==='subcategory'){const parts=(location.hash||'').slice(1).split('/');shop(null,parts[1],parts[2]);}else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')await checkoutPage();else if(route==='success')success();else if(route==='sandbox-success'&&['owner','admin'].includes(verifiedBackOfficeRole))layout('<section class="section box"><h1>Stripe Sandbox Return</h1><p>This was a TEST transaction only. Open Admin → Sandbox Test Products to check the result after Stripe sends its webhook. No real customer order was created.</p><a class="button secondary" href="#shop">Back to Shop All</a></section>');else if(route==='track')track(pid);else if(route==='account')await account(pid);else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else if(route==='qr')qrPage();else home();}
  catch(ex){layout(`<section class="section"><h1>Something went wrong</h1><div class="notice error">${e(ex.message)}</div><a class="button secondary" href="#home">Return home</a></section>`);}if(route==='account'&&['profile','settings'].includes(pid)){
  const target=document.getElementById(pid==='profile'?'account-profile-section':'account-settings');
  if(target)target.scrollIntoView({block:'start',behavior:'instant'});

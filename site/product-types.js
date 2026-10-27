@@ -3,7 +3,7 @@
 export const PRODUCT_TYPES=Object.freeze(['food','handmade','regulated']);
 export const FOOD_CATEGORY_SLUGS=Object.freeze([
  'cookies','cakes','pies','cheesecakes','pastries','bars-brownies','breads',
- 'cake-pops','candies'
+ 'cake-pops','candies','fruits','vegetables'
 ]);
 export function productTypeForCategory(slug){
  if(slug==='natural-homemade-products')return 'regulated';

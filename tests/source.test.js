@@ -1285,3 +1285,65 @@ test('whole-site sizing changes layouts and text while preserving accessible con
  assert.match(sql,/drop policy if exists "active account only" on public\.site_settings/);
  assert.doesNotMatch(sql,/drop policy.*staff manage site_settings/);
 });
+
+
+import {STORE_DEPARTMENTS,normalizeDepartment,departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,taxonomyPaths,searchTaxonomyPaths} from '../site/store-departments.js';
+
+test('Bakery and Homestand storefront filtering respects the Owner toggle and category truth',()=>{
+ assert.deepEqual(STORE_DEPARTMENTS,['bakery','homestand']);
+ assert.equal(normalizeDepartment('bad'),'bakery');
+ assert.equal(departmentLabel('homestand'),'Homestand');
+ const cats=[{id:'pies',name:'Pies',department:'bakery'},{id:'fruits',name:'Fruits',department:'homestand'}];
+ const goods=[{id:'pie1',category_id:'pies',department:'bakery'},{id:'fruit1',category_id:'fruits',department:'homestand'}];
+ assert.equal(effectiveDepartment({split_store_enabled:false},'homestand',null),null);
+ assert.equal(effectiveDepartment({split_store_enabled:true},'homestand',null),'homestand');
+ assert.equal(effectiveDepartment({split_store_enabled:true},'bakery',cats[1]),'homestand');
+ assert.equal(departmentForCategory(cats[1]),'homestand');
+ assert.deepEqual(filterStoreProducts(goods,{split_store_enabled:true},'bakery',cats).map(x=>x.id),['pie1']);
+ assert.deepEqual(filterStoreProducts(goods,{split_store_enabled:true},'homestand',cats).map(x=>x.id),['fruit1']);
+ assert.deepEqual(filterStoreProducts(goods,{split_store_enabled:false},'homestand',cats).map(x=>x.id),['pie1','fruit1']);
+});
+test('searchable taxonomy paths support owner examples without generating products',()=>{
+ const cats=[{id:'pies',department:'bakery',name:'Pies'},{id:'breads',department:'bakery',name:'Breads'},{id:'cookies',department:'bakery',name:'Cookies'},{id:'veg',department:'homestand',name:'Vegetables'},{id:'fruit',department:'homestand',name:'Fruits'}];
+ const subs=[{id:'creme',category_id:'pies',name:'Creme'},{id:'butter',category_id:'cookies',name:'Butter Cookies'},{id:'holiday',category_id:'cookies',name:'Holiday'}];
+ const choices=[
+ {id:'banana',category_id:'pies',subcategory_id:'creme',name:'Banana',active:true},
+ {id:'cinnamon',category_id:'breads',subcategory_id:null,name:'Cinnamon Swirl',active:true},
+ {id:'dream',category_id:'cookies',subcategory_id:'butter',name:'Dream Cookie (drömmar)',active:true},
+ {id:'ginger',category_id:'cookies',subcategory_id:'holiday',name:'Ginger Bread',active:true},
+ {id:'green',category_id:'veg',subcategory_id:null,name:'Green Beans',active:true},
+ {id:'berries',category_id:'fruit',subcategory_id:null,name:'Blackberries',active:true}
+ ];
+ const paths=taxonomyPaths(cats,subs,choices);
+ assert.equal(paths.length,6);
+ for(const value of ['Bakery → Pies → Creme → Banana','Bakery → Breads → Cinnamon Swirl','Bakery → Cookies → Butter Cookies → Dream Cookie (drömmar)','Bakery → Cookies → Holiday → Ginger Bread','Homestand → Vegetables → Green Beans','Homestand → Fruits → Blackberries'])
+  assert.ok(paths.some(x=>x.path===value),value);
+ assert.equal(searchTaxonomyPaths(paths,'drömmar').length,1);
+ assert.equal(searchTaxonomyPaths(paths,'homestand').length,2);
+ assert.equal(searchTaxonomyPaths(paths,'green').length,1);
+});
+test('store routes have department tabs only in split mode, and Admin holds catalog search',()=>{
+ const site=read('site/app.js'),admin=read('site/admin.js'),nav=read('site/admin-navigation.js'),css=read('site/country-home-v2.css'),types=read('site/product-types.js');
+ const sql=read('supabase/migrations/20261027_split_store_taxonomy_v128.sql');
+ assert.match(site,/split_store_enabled===true/);
+ assert.match(site,/filterStoreProducts\(sellable\(\),all\.settings,department,all\.categories\)/);
+ assert.match(site,/#shop\/bakery/);
+ assert.match(site,/#shop\/homestand/);
+ assert.match(site,/#ready\$\{departmentSuffix\}/);
+ assert.match(site,/categoryChoices=categories\(department\)/);
+ assert.match(site,/split\?'':demoStorePreview/);
+ assert.match(admin,/selected==='store_display'\)return storeDisplayPanel\(\)/);
+ assert.match(admin,/update\('site_settings',1,\{split_store_enabled:enabled\}\)/);
+ assert.match(admin,/id="product-taxonomy-search"/);
+ assert.match(admin,/searchTaxonomyPaths\(paths,query,20\)/);
+ assert.match(admin,/field\('variety_id','Variety'/);
+ assert.match(admin,/body\.department!==departmentForCategory\(cat\)/);
+ assert.match(nav,/catalog_varieties/);
+ assert.match(nav,/store_display/);
+ assert.match(types,/'fruits','vegetables'/);
+ assert.match(sql,/create table if not exists public\.catalog_varieties/);
+ assert.match(sql,/split_store_enabled boolean not null default false/);
+ assert.match(sql,/create trigger validate_catalog_department/);
+ assert.match(sql,/Product department must match category department/);
+ assert.match(css,/\.shop-department-tabs/);
+});
