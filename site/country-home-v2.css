@@ -1116,3 +1116,69 @@ body[data-website-size] #main .home-carousel .home-carousel-slide .hero-art img{
 }
 .admin-stripe-sync .tiny{font-weight:700;line-height:1.5;overflow-wrap:anywhere}
 .admin-stripe-sync .button{min-height:44px}
+
+
+/* MBB-CATALOG-040 v1.30 — independently visible homepage department showcases. */
+.home-departments-section{margin-block:clamp(24px,4vw,60px)}
+.home-departments-grid{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ align-items:start;
+ gap:clamp(16px,2.5vw,32px);
+}
+.home-departments-grid.is-single{grid-template-columns:minmax(0,1fr)}
+.home-department-panel{
+ min-width:0;
+ border:1px solid #d5bda3;
+ background:#fffaf4;
+ border-radius:10px;
+ padding:clamp(14px,2vw,26px);
+}
+.home-department-heading{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+.home-department-heading h2{margin:0}
+.home-department-heading a{font-weight:750;min-height:44px;display:inline-flex;align-items:center;text-decoration:underline;text-underline-offset:3px}
+.home-department-products{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:clamp(10px,1.5vw,18px);
+ align-items:start;
+}
+.home-department-products .card{min-width:0}
+.home-department-products .card-content{min-width:0}
+.home-department-products .card-content :is(h3,p){overflow-wrap:anywhere}
+.home-department-products .card-media .product-photo{width:100%;height:clamp(140px,15vw,210px);object-fit:cover}
+.home-department-empty{
+ grid-column:1/-1;
+ padding:clamp(16px,2vw,28px);
+ border:1px dashed #cdb195;
+ border-radius:6px;
+ background:#fff;
+ line-height:1.6;
+}
+.admin-home-visibility{
+ border:1px solid #d6bea3;
+ padding:15px;
+ border-radius:7px;
+ margin-block:18px;
+ display:grid;
+ gap:12px;
+}
+.admin-home-visibility legend{font-weight:750;padding-inline:5px}
+.admin-home-visibility .admin-store-switch{margin:0}
+@media(max-width:1050px){
+ .home-department-products{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:750px){
+ .home-departments-grid{grid-template-columns:minmax(0,1fr)}
+ .home-department-products{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+ .home-department-products{grid-template-columns:minmax(0,1fr)}
+}

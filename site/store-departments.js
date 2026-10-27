@@ -31,3 +31,20 @@ export function searchTaxonomyPaths(paths,query,limit=20){
  const needle=String(query||'').trim().toLocaleLowerCase();
  return (!needle?paths:paths.filter(p=>p.path.toLocaleLowerCase().includes(needle))).slice(0,limit);
 }
+
+/** Homepage-only flags: they never hide or unpublish the underlying department. */
+export function homepageStorefronts(settings,products,categories,limit=3){
+ if(settings?.split_store_enabled!==true)return [];
+ const count=Number.isInteger(limit)&&limit>0?Math.min(limit,12):3;
+ const views=[
+  ['bakery','home_bakery_visible'],
+  ['homestand','home_homestand_visible']
+ ];
+ return views.filter(([,field])=>settings[field]!==false).map(([department])=>{
+  const items=filterStoreProducts(products,settings,department,categories)
+   .slice().sort((a,b)=>Number(b.featured===true)-Number(a.featured===true)||
+     String(a.name||'').localeCompare(String(b.name||''))||String(a.id||'').localeCompare(String(b.id||'')));
+  return {department,label:departmentLabel(department),products:items.slice(0,count),total:items.length,
+    href:'#shop/'+department};
+ });
+}

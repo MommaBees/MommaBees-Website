@@ -9,7 +9,7 @@ import {SAMPLE_MENU,samplesFor} from './sample-menu.js';
 import {accountNavigationMarkup,bindAccountNavigation} from './account-navigation.js';
 import {bindRequiredMarkers} from './required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
-import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts} from './store-departments.js';
+import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts} from './store-departments.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -188,12 +188,47 @@ async function load(){
 function announcements(place='home'){
  return all.announcements.filter(x=>x.placement===place||x.placement==='all').map(a=>`<aside class="announcement"><strong>${e(a.title)}</strong><p>${e(a.body)}</p>${a.link_url&&/^https?:\/\//.test(a.link_url)?`<a href="${photo(a.link_url)}" rel="noopener">Details</a>`:''}</aside>`).join('');
 }
-function home(){const s=all.settings;const active=eligibleHomeSlides(all.carouselSlides);const backup=!s.home_carousel_enabled&&s.hero_url?[{published:true,id:'legacy',sort_order:10,eyebrow:'Rooted in Faith · Baked with Love',title:s.home_heading||'A Little Country. A Whole Lot of Homemade.',description:s.home_intro||'',image_url:s.hero_url,image_alt:'An original bakery creation by MommaBee Bakery&Farmstand',primary_label:'Shop ready-to-sell',primary_href:'#ready',secondary_label:'Schedule a preorder',secondary_href:'#preorder'}]:[];const slides=active.length?active:backup;layout(`${announcements()}${homeCarouselMarkup(slides,e,photo,s.home_carousel_size)}
- <section class="section ${categories().length?'':'empty-category-section'}"><div class="section-head"><div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div><div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url||stockPhotoFor(c.name).thumb)}<div class="card-content"><h3>${e(c.name)}</h3>${!c.photo_url?'<p class="stock-label">Illustrative category photograph</p>':''}<p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||(s.placeholder_empty_shop===false?'':'<div class="empty">No products are currently available. Please check back for the next baking day.</div>')}</div></section>
- <section class="section"><div class="section-head"><div><h2>Past Bakes</h2></div><a href="#gallery">Browse Past Bakes</a></div>
- <p class="muted">Past creations — not currently for sale.</p>
- <div class="grid home-gallery-preview">${all.pastBakes.filter(p=>p.published&&p.image_url).slice(0,3).map(p=>`<a class="card" href="#gallery">${image(p.image_url,'product-photo',p.title)}<div class="card-content"><strong>${e(p.title)}</strong><p class="small muted">Past creation</p></div></a>`).join('')}</div></section>
- <section class="section ${sellable().some(p=>p.featured)?'':'no-featured-products'}"><h2>Featured treats</h2><div class="grid">${sellable().filter(p=>p.featured).slice(0,6).map(card).join('')||(s.placeholder_featured===false?'':'<div class="empty">Our baking list changes with the week. The treats below are examples while we prepare the next menu.</div>')}</div></section>${sellable().length===0?demoStorePreview('ready',null,false):''}`);bindDemoStore();}
+function home(){
+ const s=all.settings;
+ const active=eligibleHomeSlides(all.carouselSlides);
+ const backup=!s.home_carousel_enabled&&s.hero_url?[{
+  published:true,id:'legacy',sort_order:10,eyebrow:'Rooted in Faith · Baked with Love',
+  title:s.home_heading||'A Little Country. A Whole Lot of Homemade.',
+  description:s.home_intro||'',image_url:s.hero_url,
+  image_alt:'An original bakery creation by MommaBee Bakery&Farmstand',
+  primary_label:'Shop ready-to-sell',primary_href:'#ready',
+  secondary_label:'Schedule a preorder',secondary_href:'#preorder'
+ }]:[];
+ const slides=active.length?active:backup;
+ const split=s.split_store_enabled===true;
+ const currentProducts=sellable();
+ const storefronts=homepageStorefronts(s,currentProducts,all.categories,3);
+ const departmentPanels=storefronts.length?
+  '<section class="section home-departments-section" aria-label="Bakery and Homestand products">'+
+  '<div class="home-departments-grid '+(storefronts.length===1?'is-single':'')+'">'+
+  storefronts.map(view=>'<section class="home-department-panel home-department--'+view.department+
+   '" aria-labelledby="home-'+view.department+'-heading">'+
+    '<div class="home-department-heading"><h2 id="home-'+view.department+'-heading">'+e(view.label)+'</h2>'+
+      '<a href="'+view.href+'">Shop '+e(view.label)+'</a></div>'+
+    '<div class="home-department-products">'+
+      (view.products.length?view.products.map(card).join(''):
+       '<div class="home-department-empty">No '+e(view.label)+' products available yet.</div>')+
+    '</div></section>').join('')+
+  '</div></section>':'';
+ const combinedCategories=`<section class="section ${categories().length?'':'empty-category-section'}">
+  <div class="section-head"><div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div>
+  <div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url||stockPhotoFor(c.name).thumb)}<div class="card-content"><h3>${e(c.name)}</h3>${!c.photo_url?'<p class="stock-label">Illustrative category photograph</p>':''}<p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||(s.placeholder_empty_shop===false?'':'<div class="empty">No products are currently available. Please check back for the next baking day.</div>')}</div>
+ </section>`;
+ const gallery=`<section class="section"><div class="section-head"><div><h2>Past Bakes</h2></div><a href="#gallery">Browse Past Bakes</a></div>
+  <p class="muted">Past creations — not currently for sale.</p>
+  <div class="grid home-gallery-preview">${all.pastBakes.filter(p=>p.published&&p.image_url).slice(0,3).map(p=>`<a class="card" href="#gallery">${image(p.image_url,'product-photo',p.title)}<div class="card-content"><strong>${e(p.title)}</strong><p class="small muted">Past creation</p></div></a>`).join('')}</div></section>`;
+ const combinedFeatured=`<section class="section ${currentProducts.some(p=>p.featured)?'':'no-featured-products'}">
+  <h2>Featured treats</h2><div class="grid">${currentProducts.filter(p=>p.featured).slice(0,6).map(card).join('')||(s.placeholder_featured===false?'':'<div class="empty">Our baking list changes with the week. The treats below are examples while we prepare the next menu.</div>')}</div>
+ </section>${currentProducts.length===0?demoStorePreview('ready',null,false):''}`;
+ layout(announcements()+homeCarouselMarkup(slides,e,photo,s.home_carousel_size)+
+   (split?departmentPanels:combinedCategories)+gallery+(split?'':combinedFeatured));
+ if(!split)bindDemoStore();
+}
 function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=null){
  const category=all.categories.find(x=>x.id===categoryId);
  const department=effectiveDepartment(all.settings,requestedDepartment,category);

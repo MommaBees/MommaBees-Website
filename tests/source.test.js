@@ -1288,6 +1288,7 @@ test('whole-site sizing changes layouts and text while preserving accessible con
 
 
 import {STORE_DEPARTMENTS,normalizeDepartment,departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,taxonomyPaths,searchTaxonomyPaths} from '../site/store-departments.js';
+import {homepageStorefronts} from '../site/store-departments.js';
 
 test('Bakery and Homestand storefront filtering respects the Owner toggle and category truth',()=>{
  assert.deepEqual(STORE_DEPARTMENTS,['bakery','homestand']);
@@ -1389,4 +1390,46 @@ test('saving product synchronizes Stripe TEST through authenticated Cloudflare A
  assert.match(migration,/enable row level security/);
  assert.match(migration,/revoke all on public\.product_stripe_test_sync from public,anon,authenticated/);
  assert.doesNotMatch(source,/LIVE_PAYMENT_ALLOWED\s*=\s*'yes'/);
+});
+
+
+test('Split Store homepage showcases respect independent visibility and available products',()=>{
+ const categories=[{id:'cake',name:'Cakes',department:'bakery'},{id:'vegs',name:'Vegetables',department:'homestand'}];
+ const products=[
+  {id:'a',name:'A Cake',category_id:'cake',featured:false},
+  {id:'b',name:'B Cake',category_id:'cake',featured:true},
+  {id:'v',name:'Green Beans',category_id:'vegs',featured:true}
+ ];
+ assert.deepEqual(homepageStorefronts({split_store_enabled:false},products,categories),[]);
+ const both=homepageStorefronts({split_store_enabled:true},products,categories);
+ assert.deepEqual(both.map(x=>x.department),['bakery','homestand']);
+ assert.deepEqual(both[0].products.map(x=>x.id),['b','a']);
+ assert.deepEqual(both[1].products.map(x=>x.id),['v']);
+ assert.equal(both[1].href,'#shop/homestand');
+ assert.deepEqual(homepageStorefronts({split_store_enabled:true,home_bakery_visible:false},products,categories).map(x=>x.department),['homestand']);
+ assert.deepEqual(homepageStorefronts({split_store_enabled:true,home_homestand_visible:false},products,categories).map(x=>x.department),['bakery']);
+ assert.deepEqual(homepageStorefronts({split_store_enabled:true,home_homestand_visible:false,home_bakery_visible:false},products,categories),[]);
+ assert.deepEqual(homepageStorefronts({split_store_enabled:true},[],categories).map(x=>x.products.length),[0,0]);
+ assert.equal(homepageStorefronts({split_store_enabled:true},products,categories,1)[0].products.length,1);
+});
+test('homepage departments use real sellable cards, mobile stacking and staff-only visibility controls',()=>{
+ const app=read('site/app.js'),admin=read('site/admin.js'),css=read('site/country-home-v2.css');
+ const migration=read('supabase/migrations/20261027_home_department_visibility_v130.sql');
+ assert.match(app,/homepageStorefronts\(s,currentProducts,all\.categories,3\)/);
+ assert.match(app,/const currentProducts=sellable\(\)/);
+ assert.match(app,/home-departments-grid/);
+ assert.match(app,/home-department--/);
+ assert.match(app,/view\.products\.map\(card\)/);
+ assert.match(app,/split\?departmentPanels:combinedCategories/);
+ assert.match(app,/split\?'':combinedFeatured/);
+ assert.match(admin,/id="home-bakery-visible"/);
+ assert.match(admin,/id="home-homestand-visible"/);
+ assert.match(admin,/home_bakery_visible:\$\('#home-bakery-visible'\)\.checked/);
+ assert.match(admin,/home_homestand_visible:\$\('#home-homestand-visible'\)\.checked/);
+ assert.match(admin,/update\('site_settings',1,next\)/);
+ assert.match(css,/\.home-departments-grid/);
+ assert.match(css,/@media\(max-width:750px\)/);
+ assert.match(css,/grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(migration,/home_bakery_visible boolean not null default true/);
+ assert.match(migration,/home_homestand_visible boolean not null default true/);
 });
