@@ -3,7 +3,7 @@
 **Document ID:** MBB-ADMIN-030  
 **Project:** MommaBees Website, Nixa, Missouri  
 **Version:** 1.20  
-**Status:** Implementation — verify database migration, GitHub CI and production deployment  
+**Status:** Deployed; Supabase migration verified, automated GitHub CI passed, matching Cloudflare production deployment successful. Owner-authenticated browser interaction and responsive visual acceptance remain open.  
 **Date:** 2026-10-27  
 **Filename:** `docs/MBB_ADMIN_030_CAROUSEL_NAVIGATION_V1_20.md`  
 **File type:** Markdown  
@@ -46,3 +46,10 @@ Carousel table and Storage writes allow only active Owner/Admin. Public reads re
 **Footer:** MommaBee Bakery&Farmstand · MBB-ADMIN-030 · v1.20 · GitHub main
 
 **Fallback policy:** A database-backed setting distinguishes a configured carousel with no published slides from a legacy homepage without carousel configuration. Unpublishing all slides does not accidentally republish the legacy hero. Blank photo uploads are rejected.
+
+## Release evidence (2026-10-27)
+- Code revision accepted by automated GitHub Actions: `4dcc0ae6c51fa16bc39f241ee6efa2251293335a`, workflow run `40464613034` (success).
+- Matching Cloudflare production deployment for the same code revision: success.
+- MommaBees Supabase migration `home_carousel_admin_v120`: successful; exactly one original hero slide is published, and its photograph URL matches the pre-existing site-settings image. The public slide RLS and Owner/Admin RLS policies are installed.
+- Carousel dedicated public-photo bucket created with controlled staff uploads.
+- This is deployment and automated-test evidence, **not** an authenticated end-to-end Owner browser acceptance of upload, reorder, edit, or mobile gesture behavior.
