@@ -66,10 +66,10 @@ function captchaToken(form){
 }
 async function authPage({layout,rerender,showError}){
  layout('<section class="section" style="max-width:850px;margin:24px auto"><h1>Customer Sign In & Registration</h1>'+
-  '<p>Create an account to save your details, see your unique Customer Account ID, and privately message Mamma Bee’s. Guest checkout remains available.</p>'+
+  '<p>Sign in using the username you chose at registration or your email address. Your password is the same either way. Guest checkout remains available.</p>'+
   '<div class="actions"><button type="button" class="button" data-auth-tab="login">Sign In</button>'+
   '<button type="button" class="button secondary" data-auth-tab="register">Create Account</button></div>'+
-  '<form id="bakery-login" class="box"><h2>Sign In</h2>'+item('email','Email address','email',true,'email')+
+  '<form id="bakery-login" class="box"><h2>Sign In</h2>'+item('identifier','Username or email address','username',true,'text')+
   item('password','Password','current-password',true,'password')+'<div data-captcha></div>'+
   '<div class="actions"><button class="button" type="submit">Sign In Securely</button></div></form>'+
   '<form id="bakery-register" class="box" hidden><h2>Create Account</h2>'+
@@ -88,7 +88,7 @@ async function authPage({layout,rerender,showError}){
  await select('login');
  login.onsubmit=async ev=>{
   ev.preventDefault();const button=login.querySelector('[type=submit]');button.disabled=true;
-  try{await signIn(login.elements.email.value,login.elements.password.value,captchaToken(login));await rerender();}
+  try{await signIn(login.elements.identifier.value,login.elements.password.value,captchaToken(login));await rerender();}
   catch(e){showError(e);window.turnstile?.reset();button.disabled=false;}
  };
  register.onsubmit=async ev=>{
