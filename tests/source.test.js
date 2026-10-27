@@ -945,3 +945,34 @@ test('Admin scheduling uses Nixa Central Time, not the browser timezone or UTC w
  assert.throws(()=>isoFromCentralInput('2026-03-08T02:30'),/does not exist/);
  assert.throws(()=>isoFromCentralInput('2026-11-01T01:30'),/occurs twice/);
 });
+
+
+test('Owner-approved MommaBee product taxonomy preserves existing families and restricts regulated natural offerings',()=>{
+ const sql=read('supabase/migrations/20261027_owner_offerings_taxonomy_v118.sql');
+ for(const slug of [
+  "'cake-pops'","'candies'","'natural-homemade-products'",
+  "'decorated-cakes'","'decorated-cookies'",
+  "'crocheted-items'","'sewn-items'","'custom-engraved-cutting-boards'",
+  "'bug-spray'","'sunscreen'","'lip-balm'","'soaps'"
+ ]){
+  assert.ok(sql.includes(slug),'Missing catalog slug '+slug);
+ }
+ assert.match(sql,/join public\.categories c on c\.slug=r\.category_slug/);
+ assert.match(sql,/on conflict \(category_id,slug\) do nothing/);
+ assert.match(sql,/on conflict \(slug\) do nothing/);
+ assert.match(sql,/'Natural Homemade Products',[\s\S]*?130,false/);
+ for(const restricted of ['Bug Spray','Sunscreen','Lip Balm','Soaps']){
+  assert.match(sql,new RegExp("'"+restricted+"'[^\\n]*false"));
+ }
+ assert.doesNotMatch(sql,/insert into public\.products/i,'Catalog taxonomy must not create fictional sellable products');
+});
+
+test('catalog RLS hardening drops overly permissive active-account write policies',()=>{
+ const sql=read('supabase/migrations/20261027_catalog_permission_hardening_v118.sql');
+ for(const table of ['categories','subcategories','products']){
+  assert.match(sql,new RegExp('drop policy if exists "active account only" on public\\.'+table+';'));
+ }
+ assert.doesNotMatch(sql,/drop policy.*staff manage/i);
+ assert.doesNotMatch(sql,/drop policy.*public categories/i);
+ assert.doesNotMatch(sql,/drop policy.*public products/i);
+});
