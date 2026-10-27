@@ -697,3 +697,49 @@ test('username sign-in with no CAPTCHA is stopped before privileged username loo
   assert.equal(calls,0);
  }finally{globalThis.fetch=previous;}
 });
+
+test('country-home stylesheet is loaded after established controls and is syntactically balanced',()=>{
+ const html=read('site/index.html'),css=read('site/country-home-v2.css');
+ assert.match(html,/<link rel="stylesheet" href="\/country-home-v2\.css"\/>/);
+ assert.ok(html.indexOf('href="/styles.css"')<html.indexOf('href="/country-home-v2.css"'));
+ assert.ok(css.length>14000);
+ assert.equal((css.match(/\{/g)||[]).length,(css.match(/\}/g)||[]).length);
+ assert.match(css,/--bakery-page:/);
+ assert.match(css,/\.country-welcome-band/);
+ assert.match(css,/\.bakery-home-note/);
+ assert.match(css,/\.footer-inner/);
+ assert.match(css,/\.page-crumbs/);
+ assert.match(css,/@media\(max-width:850px\)/);
+ assert.match(css,/@media\(max-width:760px\)/);
+ assert.match(css,/@media\(max-width:530px\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(css,/:focus-visible/);
+});
+test('whole-site rustic design covers actual storefront and member and staff pages',()=>{
+ const css=read('site/country-home-v2.css');
+ for(const route of ['home','shop','ready','preorder','product','cart','checkout','account','gallery','contact','faq','admin']){
+  const unique=route==='shop'||route==='ready'||route==='preorder'?'shop-page--'+(route==='shop'?'all':route):'data-page="'+route+'"';
+  assert.ok(css.includes(unique)||css.includes('page="'+route+'"')||route==='home'&&css.includes('.hero'),route+' must have dedicated presentation');
+ }
+ for(const selector of ['#bakery-login','#checkout-form','#pickup-calendar','.past-bakes-gallery','.admin-layout','.table-wrap','.footer-qr','.bakery-menu-grid'])
+  assert.ok(css.includes(selector),'missing styling for '+selector);
+});
+test('new home, footer, cart and contact provide personality without inventing bakery fulfillment',()=>{
+ const app=read('site/app.js'),auth=read('site/account.js'),checkout=read('site/checkout-form.js');
+ assert.match(app,/A little note from our kitchen/);
+ assert.match(app,/Good baking is worth looking forward to/);
+ assert.match(app,/Some treats are ready when they/);
+ assert.match(app,/class="footer-inner"/);
+ assert.match(app,/Rooted in Faith\. Made with Love\. Shared with Joy\./);
+ assert.match(app,/body\.dataset\.page=routeName/);
+ assert.match(app,/aria-label="Breadcrumb"/);
+ assert.match(app,/setAttribute\('aria-current','page'\)/);
+ assert.match(app,/Past Bakes Gallery/);
+ assert.match(app,/Your bakery basket/);
+ assert.match(app,/We'd love to hear from you/);
+ assert.match(auth,/Welcome to the bakery/);
+ assert.match(auth,/login\.elements\.identifier\.value/);
+ assert.match(checkout,/Guest checkout is welcome/);
+ assert.match(checkout,/Choose Your Pickup Day/);
+ assert.doesNotMatch(app,/Missouri Prairie Roots|From Our Country Kitchen to Your Table/);
+});
