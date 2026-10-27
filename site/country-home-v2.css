@@ -326,3 +326,49 @@ dialog::backdrop{background:rgba(30,17,10,.7)}
  #main.shell,body[data-site-background] #main.shell{background:#fff!important;box-shadow:none!important;border:0!important}
  body{background:#fff!important}
 }
+
+
+/* Sitewide account menu: keyboard/click first, with a forgiving mouse grace period. */
+#primary-navigation .account-dropdown{position:relative;display:flex;align-items:center;isolation:isolate;z-index:30}
+#primary-navigation .account-dropdown-trigger{display:inline-flex;align-items:center;justify-content:center;gap:9px;
+ min-height:46px;padding:6px 12px;color:#563924;background:transparent;border:1px solid #d9c3a5;
+ border-radius:5px;font-weight:700;font-size:.86rem;line-height:1.25;cursor:pointer;white-space:nowrap}
+#primary-navigation .account-dropdown-trigger:hover,
+#primary-navigation .account-dropdown-trigger[aria-expanded="true"]{background:#f0e1ca;border-color:#a88557;color:#4d2d1c}
+#primary-navigation .account-avatar{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;
+ border-radius:50%;background:#6c4c35;color:#fff9ed;font:700 1.04rem Georgia,serif;flex:none}
+#primary-navigation .account-chevron{font-size:1.1rem;color:#806347;line-height:1;margin-left:2px}
+#primary-navigation .account-dropdown-panel{position:absolute;right:0;top:calc(100% + 9px);min-width:240px;
+ max-width:min(290px,90vw);padding:9px;background:#fffaf1;border:1px solid #d3b997;border-radius:7px;
+ box-shadow:0 13px 34px rgba(57,33,17,.2);z-index:100}
+#primary-navigation .account-dropdown-panel[hidden]{display:none!important}
+#primary-navigation .account-dropdown-heading{font:italic .89rem Georgia,serif;color:#7c5c40;
+ padding:10px 12px;border-bottom:1px solid #e6d3b9;margin-bottom:4px}
+#primary-navigation .account-dropdown-panel a,
+#primary-navigation .account-dropdown-panel button{display:block;width:100%;text-align:left;
+ border:0;border-radius:4px;background:transparent;color:#4e3321!important;padding:12px 13px!important;
+ min-height:44px;font-size:.9rem;font-weight:650;text-decoration:none;white-space:normal}
+#primary-navigation .account-dropdown-panel a:after{display:none!important}
+#primary-navigation .account-dropdown-panel a:hover,
+#primary-navigation .account-dropdown-panel button:hover{background:#f0e2ce!important;color:#4f311e!important}
+#primary-navigation .account-dropdown-panel a:focus-visible,
+#primary-navigation .account-dropdown-panel button:focus-visible{background:#f0e2ce!important}
+#primary-navigation .account-dropdown-divider{border-top:1px solid #e3ceb0;margin:7px 6px}
+#primary-navigation .account-dropdown-panel .account-signout{color:#7f352d!important}
+body[data-page="account"] #account-profile-section,
+body[data-page="account"] #account-settings{scroll-margin-top:130px}
+body[data-page="account"] #account-settings{margin-top:25px;padding-top:15px;border-top:1px solid #e2cfb5}
+body[data-page="account"] #account-settings h2{font-size:1.35rem;margin:0 0 12px}
+body[data-page="home"] .hero{margin-top:18px}
+body[data-page="home"] .bakery-home-note h2{margin-top:0}
+@media(max-width:760px){
+ #primary-navigation .account-dropdown{display:block;width:100%;padding:6px 0}
+ #primary-navigation .account-dropdown-trigger{width:100%;justify-content:flex-start;min-height:48px;padding:8px 12px}
+ #primary-navigation .account-chevron{margin-left:auto}
+ #primary-navigation .account-dropdown-panel{position:static;min-width:0;max-width:none;width:100%;
+  box-shadow:none;margin-top:5px;border-left:3px solid #b99261;padding:5px 7px}
+ #primary-navigation .account-dropdown-panel a,
+ #primary-navigation .account-dropdown-panel button{padding:12px 15px!important}
+ body[data-page="account"] #account-profile-section,
+ body[data-page="account"] #account-settings{scroll-margin-top:25px}
+}
