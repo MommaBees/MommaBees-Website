@@ -372,3 +372,9 @@ body[data-page="home"] .bakery-home-note h2{margin-top:0}
  body[data-page="account"] #account-profile-section,
  body[data-page="account"] #account-settings{scroll-margin-top:25px}
 }
+
+
+/* Keep long QR destination URLs readable and both download formats aligned. */
+.qr-page .bakery-qr-panel a[href^="https://"]{overflow-wrap:anywhere;word-break:break-word}
+.qr-page .qr-actions a.button{min-width:135px;display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
+@media(max-width:530px){.qr-page .qr-actions a.button{width:100%}}
