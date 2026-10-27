@@ -115,11 +115,8 @@ const card=p=>{
   '<a class="button secondary" href="#product/'+encodeURIComponent(p.id)+'">View details</a></div></article>';
 };
 const showcaseCard=item=>{
- const icon=showcaseIcon(item);
- const picture=item.photo_url?image(item.photo_url,'product-photo',item.name):
-  '<div class="showcase-illustration showcase-illustration--'+e(item.department)+'" aria-hidden="true">'+e(icon)+'</div>';
- return '<article class="card bakery-product-card store-showcase-card">'+
-  '<div class="card-media">'+picture+'</div>'+
+ const picture=item.photo_url?'<div class="card-media">'+image(item.photo_url,'product-photo',item.name)+'</div>':'';
+ return '<article class="card bakery-product-card store-showcase-card'+(item.photo_url?'':' is-text-only')+'">'+picture+
   '<div class="card-content"><p class="eyebrow">'+e(all.categories.find(c=>c.id===item.category_id)?.name||'')+'</p>'+
   '<h3>'+e(item.name)+'</h3></div></article>';
 };

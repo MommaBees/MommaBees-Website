@@ -1216,3 +1216,9 @@ body[data-page="home"] .home-department-products .showcase-illustration{height:c
 #idle-pref-status:not(:empty){font-weight:700;margin-top:9px}
 [data-verify-human]{min-height:44px;margin-top:12px}
 .account-dropdown-panel .account-admin-link{font-weight:750}
+
+/* MBB-UI-044: Never substitute emoji graphics for products missing real photographs. */
+.store-showcase-card.is-text-only{display:flex;align-items:center;min-height:160px;background:#fffaf3}
+.store-showcase-card.is-text-only .card-content{width:100%;padding:25px}
+.store-showcase-card.is-text-only .card-media{display:none}
+.home-department-products .store-showcase-card .product-photo{object-fit:cover}
