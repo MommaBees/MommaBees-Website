@@ -27,6 +27,7 @@ import {SAMPLE_MENU,samplesFor} from '../site/sample-menu.js';
 import {accountNavigationMarkup,ACCOUNT_MENU_OPEN_MS,ACCOUNT_MENU_CLOSE_MS} from '../site/account-navigation.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
 import {referenceKeyFor} from '../site/reference-keys.js';
+import {centralInputFromIso,isoFromCentralInput} from '../site/admin-time.js';
 import {HOME_URL,QR_PNG_PATH,qrSvg,qrMarkup} from '../site/qr-code.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
@@ -915,4 +916,32 @@ test('header offerings replace the previous pledge without duplicating footer ca
   assert.ok(migration.includes(term),term+' missing from catalog migration');
  }
  assert.match(migration,/on conflict \(slug\) do nothing/);
+});
+
+test('Admin v1.17: footer text removal, clear scheduling labels, full-width settings and safe empty references',()=>{
+ const app=read('site/app.js'),admin=read('site/admin.js'),css=read('site/country-home-v2.css');
+ assert.doesNotMatch(app,/Small-batch baking and sweet traditions, made with care/);
+ assert.doesNotMatch(app,/Pickup and local delivery are offered on selected bakery dates/);
+ assert.match(app,/Located in Nixa, Missouri/);
+ assert.match(admin,/field\('cutoff_at','Order cutoff \(Central Time\)'/);
+ assert.doesNotMatch(admin,/local browser time/);
+ assert.match(admin,/function siteSettingsSummary\(/);
+ assert.match(admin,/admin-settings-copy/);
+ assert.match(admin,/admin-boolean-toggle/);
+ assert.match(admin,/admin-reference-warning/);
+ assert.match(admin,/No products have been created/);
+ assert.match(admin,/f\.table==='baking_days'/);
+ assert.match(admin,/\|\|f\.table==='baking_days'/);
+ assert.match(admin,/No alerts have been recorded yet/);
+ for(const cls of ['.admin-boolean-toggle','.admin-settings-copy','.admin-reference-warning','.admin-empty-state']){
+  assert.ok(css.includes(cls),'Missing stylesheet selector '+cls);
+ }
+});
+
+test('Admin scheduling uses Nixa Central Time, not the browser timezone or UTC wall clock',()=>{
+ assert.equal(centralInputFromIso('2026-10-27T22:00:00.000Z'),'2026-10-27T17:00');
+ assert.equal(isoFromCentralInput('2026-10-27T17:00'),'2026-10-27T22:00:00.000Z');
+ assert.equal(isoFromCentralInput('2026-12-01T17:00'),'2026-12-01T23:00:00.000Z');
+ assert.throws(()=>isoFromCentralInput('2026-03-08T02:30'),/does not exist/);
+ assert.throws(()=>isoFromCentralInput('2026-11-01T01:30'),/occurs twice/);
 });

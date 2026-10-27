@@ -424,3 +424,21 @@ body[data-site-background="chickens"] #main.shell{background:rgba(255,251,245,.9
  .header-offerings{font-size:.78rem;line-height:1.55;padding:10px 0}
  .header-offerings .shell{text-align:left;padding-inline:16px}
 }
+
+/* MBB-ADMIN-027 v1.17: form usability, empty-reference warnings and site settings summary. */
+body[data-page="admin"] #editor{width:min(650px,calc(100vw - 24px));max-width:100%;max-height:min(88vh,850px);overflow-y:auto;padding:clamp(18px,3vw,28px)}
+body[data-page="admin"] #editor #record-form,#editor-fields{min-width:0}
+body[data-page="admin"] #editor .field{min-width:0}
+body[data-page="admin"] #editor .admin-boolean-field{display:flex;align-items:flex-start;gap:6px;margin-block:16px;flex-direction:column}
+body[data-page="admin"] #editor .admin-field-label{font-size:.9rem;font-weight:700;line-height:1.4}
+body[data-page="admin"] #editor .admin-boolean-toggle{display:inline-flex;align-items:center;gap:12px;font-weight:600;font-size:.92rem;line-height:1.45;cursor:pointer;min-height:34px}
+body[data-page="admin"] #editor .admin-boolean-toggle input[type="checkbox"]{appearance:auto;display:inline-block;flex:none;width:20px!important;height:20px!important;min-height:0!important;max-width:20px;padding:0!important;margin:0;accent-color:#785034;border-radius:3px}
+body[data-page="admin"] #editor .admin-reference-note{margin:0;font-size:.84rem;color:#65432e;line-height:1.5;max-width:55ch}
+body[data-page="admin"] #editor .admin-reference-warning{background:#fcf0d9;color:#5b3b20;border:1px solid #d6b780;padding:12px 14px;border-radius:5px;font-size:.9rem;line-height:1.55}
+body[data-page="admin"] .admin-site-settings-summary{max-width:100%;overflow:hidden}
+body[data-page="admin"] .admin-site-settings-summary .section-head{display:flex;flex-wrap:wrap;align-items:center;gap:15px}
+body[data-page="admin"] .admin-site-settings-summary .section-head>.button{flex:none;white-space:nowrap;min-width:135px}
+body[data-page="admin"] .admin-settings-detail{padding:20px;background:#fffaf3;border:1px solid #dac6ae;max-width:100%;border-radius:6px}
+body[data-page="admin"] .admin-settings-detail h3{font-size:1.08rem;margin:0 0 8px}
+body[data-page="admin"] .admin-settings-copy{font-size:.98rem;line-height:1.7;overflow-wrap:anywhere;white-space:normal;margin:0;max-width:80ch}
+body[data-page="admin"] .admin-empty-state{padding:18px;border:1px dashed #d2bea7;background:#fffbf4;border-radius:5px;line-height:1.6}

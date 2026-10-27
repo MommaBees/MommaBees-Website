@@ -1,5 +1,6 @@
 import {currentUser,list,add,update,remove,rpc,upload,signedImage,money,escapeHtml as e,fmt,pretty} from './api.js';
 import {referenceKeyFor} from './reference-keys.js';
+import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
 import {pastBakeName} from './past-bakes.js';
 import {BUILTIN_PHOTO_PRESETS,photoByUrl} from './photo-library.js';
@@ -15,7 +16,7 @@ const configs={
  demo_catalog_items:{label:'Sandbox Test Products',fields:cols(field('name','Test product name'),field('category','Category','select',{options:['Cookies','Cakes','Pies','Cheesecakes','Pastries']}),field('description','Test description','textarea'),field('price_cents','Example price (dollars)','money'),field('unit','Unit','select',{options:['each','dozen','box','tray','slice']}),field('sort_order','Display order','number'),field('enabled','Enable this sample','bool'))},
  product_photos:{label:'Product Gallery Photos',fields:cols(field('product_id','Product','ref',{table:'products'}),field('url','Photo upload','image'),field('alt_text','Image description'),field('sort_order','Display order','number'))},
  stock_batches:{label:'Ready-to-Sell Inventory',fields:cols(field('product_id','Product','ref',{table:'products'}),field('batch_label','Batch label'),field('baked_on','Baked on','date'),field('best_before','Last eligible fulfillment date','date'),field('quantity_available','Quantity available','number'),field('clearance_approved','Owner approved clearance','bool'),field('clearance_note','Clearance inspection / source order','textarea'),field('disabled','Remove batch from sale','bool'))},
- baking_days:{label:'Baking & Fulfillment Calendar',key:'date',fields:cols(field('date','Baking / fulfillment date','date'),field('cutoff_at','Order cutoff (local browser time)','datetime'),field('capacity_total','Total preorder units','number'),field('pickup_enabled','Pickup available','bool'),field('delivery_enabled','Delivery available','bool'),field('pickup_windows','Pickup time windows (comma-separated)','csv'),field('day_type','Day type','select',{options:['baking','fair']}),field('event_label','Fair/event name (optional)'),field('pay_at_pickup_available','Allow Pay at Pickup on this date','bool'),field('delivery_windows','Delivery time windows (comma-separated)','csv'),field('notes','Internal notes','textarea'),field('enabled','Enabled','bool'))},
+ baking_days:{label:'Baking & Fulfillment Calendar',key:'date',fields:cols(field('date','Baking / fulfillment date','date'),field('cutoff_at','Order cutoff (Central Time)','datetime'),field('capacity_total','Total preorder units','number'),field('pickup_enabled','Pickup available','bool'),field('delivery_enabled','Delivery available','bool'),field('pickup_windows','Pickup time windows (comma-separated)','csv'),field('day_type','Day type','select',{options:['baking','fair']}),field('event_label','Fair/event name (optional)'),field('pay_at_pickup_available','Allow Pay at Pickup on this date','bool'),field('delivery_windows','Delivery time windows (comma-separated)','csv'),field('notes','Internal notes','textarea'),field('enabled','Enabled','bool'))},
  product_day_limits:{label:'Product Day Limits',key:['product_id','baking_date'],fields:cols(field('product_id','Product','ref',{table:'products'}),field('baking_date','Baking day','ref',{table:'baking_days',key:'date'}),field('max_quantity','Maximum units','number'))},
  orders:{label:'Order Management',readMostly:true,fields:cols(field('status','Fulfillment status','select',{options:['new','confirmed','baking','ready','completed','cancelled']}),field('note','Internal/customer order note','textarea'))},
  messages:{label:'Customer Messages & Requests',readMostly:true,fields:cols(field('status','Status','select',{options:['new','in_progress','replied','closed']}))},
@@ -51,7 +52,7 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  authShell();await renderPanel();}
 async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
-function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
+function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
 
 
  if(selected==='baking_days'){
@@ -159,8 +160,28 @@ function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key
  });
 
 }
+function siteSettingsSummary(){
+ const row=data.site_settings?.[0]||{id:1};
+ const subtitle=String(row.brand_subtitle||'');
+ $('#admin-main').innerHTML=`<section class="box admin-site-settings-summary">
+ <div class="section-head">
+  <div><h2>Website Appearance &amp; Settings</h2><p class="muted">Manage the public site’s appearance and operating preferences.</p></div>
+  <button type="button" class="button" id="edit-site-settings">Edit settings</button>
+ </div>
+ <div class="admin-settings-detail"><h3>Header products &amp; services line</h3>
+  <p class="admin-settings-copy">${e(subtitle)||'No header description configured.'}</p></div>
+ <p class="muted small">To change the header text, checkout settings, and site preferences, select Edit settings. Background images are managed separately in Website Background.</p>
+ <dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit settings</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>
+ </section>`;
+ $('#edit-site-settings').onclick=()=>openEditor(row);
+}
 function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.length)return '';const val=r?.[f.key], id='field_'+f.key;let raw='';const value=val??'';
- if(f.type==='bool')raw=`<label><input id="${id}" type="checkbox" ${value?'checked':''}> Enabled / Yes</label>`;
+ if(f.type==='bool')return `<div class="field admin-boolean-field">
+ <span class="admin-field-label" id="${id}_label">${e(f.label)}</span>
+ <label class="admin-boolean-toggle" for="${id}">
+  <input id="${id}" type="checkbox" aria-labelledby="${id}_label" ${value?'checked':''}>
+  <span>Enabled / Yes</span>
+ </label></div>`;
  else if(selected==='customer_profiles'&&f.key==='username')raw=`<input id="${id}" value="${e(value)}" readonly aria-readonly="true"><small>Username changes are managed under Accounts & Roles.</small>`;
  else if(f.type==='textarea')raw=`<textarea id="${id}" rows="4">${e(value)}</textarea>`;
  else if(f.type==='select')raw=`<select id="${id}">${f.options.map(x=>`<option value="${e(x)}" ${value===x?'selected':''}>${e(pretty(x))}</option>`).join('')}</select>`;
@@ -170,10 +191,15 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
    const refValue=x[rowKey];
    if(refValue===null||refValue===undefined||String(refValue)==='')return [];
    const label=titleFor(f.table,x);
-   const suffix=['categories','subcategories'].includes(f.table)?'':' ('+String(refValue).slice(0,8)+')';
+   const suffix=['categories','subcategories'].includes(f.table)||f.table==='baking_days'?'':' ('+String(refValue).slice(0,8)+')';
    return [`<option value="${e(String(refValue))}" ${String(value)===String(refValue)?'selected':''}>${e(label+suffix)}</option>`];
   }).join('');
-  raw=`<select id="${id}"><option value="">Choose…</option>${options}</select>`;
+  const none=!(refs[f.table]||[]).length;
+  const emptyMessage=f.table==='products'?'No products have been created. Add a real product in Catalog → Products first.'
+   :f.table==='baking_days'?'No baking dates are available. Add a date in Baking & Fulfillment Calendar first.'
+   :'No '+f.table.replaceAll('_',' ')+' records are available. Create the related record first.';
+  raw=`<select id="${id}" ${none?'disabled':''} ${f.key==='subcategory_id'?'':'required'}>
+   <option value="">${none?'No entries available':'Choose…'}</option>${options}</select>${none?'<p class="admin-reference-note" role="status">'+e(emptyMessage)+'</p>':''}`;
  }
  else if(f.type==='csv'||f.type==='uuids')raw=`<input id="${id}" value="${e(Array.isArray(value)?value.join(', '):value)}">`;
  else if(f.type==='image')raw=`<input id="${id}" value="${e(value)}" placeholder="Select a real photograph or upload your own" readonly>
@@ -184,7 +210,7 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
  <input type="file" data-image-for="${id}" accept="image/jpeg,image/png,image/webp">
  <small id="${id}_license">All reference photographs must be labeled as examples; bakery-owned gallery photos are from prior bakes. Upload your own photograph to replace a reference.</small>
  <div class="preset-preview" id="${id}_preview"></div>`;
- else if(f.type==='datetime'){const v=value?new Date(value).toISOString().slice(0,16):'';raw=`<input id="${id}" type="datetime-local" value="${v}">`;}
+ else if(f.type==='datetime'){const v=value?centralInputFromIso(value):'';raw=`<input id="${id}" type="datetime-local" value="${v}"><small class="muted">Central Time (Nixa, Missouri); daylight saving time is handled automatically.</small>`;}
  else if(f.type==='number'||f.type==='money')raw=`<input id="${id}" type="number" step="${f.type==='money'?'0.01':'any'}" value="${value===''?'':(f.type==='money'?Number(value)/100:value)}">`;
  else raw=`<input id="${id}" type="${f.type==='date'?'date':'text'}" value="${e(value)}">`;
  return `<div class="field"><label for="${id}">${e(f.label)}</label>${raw}</div>`;}
@@ -192,6 +218,15 @@ async function openEditor(record){const c=configs[selected];editing=record;
  const tables=[...new Set(c.fields.filter(f=>f.type==='ref').map(f=>f.table))];await Promise.all(tables.map(async t=>{refs[t]=await list(t,{limit:500}).catch(()=>[]);}));
  $('#editor-title').textContent=record?'Edit '+c.label:'Add '+c.label;
  $('#editor-fields').innerHTML=c.fields.map(f=>fieldInput(f,record)).join('');
+ const missingRequired=c.fields.filter(f=>f.type==='ref'&&f.key!=='subcategory_id'&&!(refs[f.table]||[]).length);
+ if(missingRequired.length){
+  const warning=document.createElement('p');
+  warning.className='admin-reference-warning';
+  warning.setAttribute('role','status');
+  warning.textContent='This form cannot be saved yet: '+missingRequired.map(f=>f.label+' has no available records').join('; ')+'. Create the necessary records in the relevant Admin section first.';
+  $('#editor-fields').prepend(warning);
+  $('#record-form button[type="submit"]').disabled=true;
+ }
 
   document.querySelectorAll('[data-photo-library-for]').forEach(select=>{
     const id=select.dataset.photoLibraryFor, input=document.getElementById(id);
@@ -290,9 +325,12 @@ async function openEditor(record){const c=configs[selected];editing=record;
  if(f.type==='money')v=v===''?null:Math.round(Number(v)*100);
  if(f.type==='number')v=v===''?null:Number(v);
  if(f.type==='csv'||f.type==='uuids')v=v.split(',').map(x=>x.trim()).filter(Boolean);
- if(f.type==='datetime')v=v?new Date(v).toISOString():null;
+ if(f.type==='datetime')v=v?isoFromCentralInput(v):null;
  if(['max_discount_cents','max_uses'].includes(f.key)&&v==='')v=null;
- if(f.type==='ref'&&!v)v=null;
+ if(f.type==='ref'&&!v){
+  if(f.key!=='subcategory_id')throw Error('Select '+f.label+' before saving.');
+  v=null;
+ }
  if(f.key==='code'&&!v)v=null;
  if(f.key==='published'&&selected==='products'&&v===true&&!$('#field_ingredients')?.value?.trim())throw Error('Add the actual ingredient list before publishing this product.');
  body[f.key]=v;
@@ -315,7 +353,7 @@ async function openEditor(record){const c=configs[selected];editing=record;
 }
 async function reply(message){const text=prompt('Write your response. It will be saved to the secure account inbox. Email delivery is not enabled by this action:');if(!text)return;try{if(!message.customer_id)throw Error('Guest email replies require a configured email provider; do not mark as replied yet.');await add('messages',{customer_id:message.customer_id,customer_email:message.customer_email,order_id:message.order_id,kind:'reply',subject:'Re: '+message.subject,body:text,parent_id:message.id,is_staff_reply:true,status:'replied'});await update('messages',message.id,{status:'replied'});await renderPanel();}catch(x){ctx.showError(x);}}
 async function reviewPhotos(review){try{const items=await list('review_photos',{review_id:'eq.'+review.id});const urls=[];for(const p of items)urls.push(await signedImage('review-photos',p.storage_path));const win=window.open('','_blank','noopener,noreferrer');if(win){win.document.write('<!doctype html><title>Review photos</title><body style="font-family:sans-serif">'+urls.map(u=>u?`<img alt="Customer review upload" style="max-width:90vw;max-height:65vh" src="${e(u)}">`:'').join('<hr>')+'</body>');win.document.close();}else alert('Allow popups to view review photos.');}catch(x){ctx.showError(x);}}
-async function notices(){const notes=await list('notifications',{order:'created_at.desc',limit:150});$('#admin-main').innerHTML=`<div class="box"><h2>Alerts & Notifications</h2><p class="muted">Owner/admin notifications are created for paid orders, customer requests and reviews. Customer inbox notices are delivered when order status changes.</p>${notes.map(n=>`<article class="lineitem"><div><strong>${e(n.title)}</strong><p>${e(n.body)}</p></div><small>${fmt(n.created_at)}</small></article>`).join('')||'<p>No notifications currently available.</p>'}</div>`;}
+async function notices(){const notes=await list('notifications',{order:'created_at.desc',limit:150});$('#admin-main').innerHTML=`<div class="box"><h2>Alerts & Notifications</h2><p class="muted">Owner/admin notifications are created for paid orders, customer requests and reviews. Customer inbox notices are delivered when order status changes.</p>${notes.map(n=>`<article class="lineitem"><div><strong>${e(n.title)}</strong><p>${e(n.body)}</p></div><small>${fmt(n.created_at)}</small></article>`).join('')||'<p class="admin-empty-state">No alerts have been recorded yet. New orders, messages, and reviews will appear here when a notification is generated.</p>'}</div>`;}
 async function dashboard(){const [orders,notes,reviews,messages,expenses]=await Promise.all(['orders','notifications','reviews','messages','expenses'].map(t=>list(t,{limit:1000}).catch(()=>[])));
  const paid=orders.filter(o=>o.payment_status==='paid');const sales=paid.reduce((s,o)=>s+o.total_cents-o.tax_cents,0);
  const costs=expenses.reduce((s,x)=>s+x.amount_cents,0);

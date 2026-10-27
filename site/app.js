@@ -123,8 +123,6 @@ function layout(content){
  <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${crumb}${content}</main><footer class="footer"><div class="shell">
   <div class="footer-inner">
    <div class="footer-col"><div class="footer-brand-name">MommaBee Bakery&Farmstand</div>
-    <p>Small-batch baking and sweet traditions, made with care.</p>
-    <p class="small">Pickup and local delivery are offered on selected bakery dates.</p>
     <p class="footer-location">Located in Nixa, Missouri — Farmstand &amp; Made to Order</p>
     <p class="footer-availability">Offerings vary by baking date and availability. Please contact us for current selections and custom orders.</p></div>
    <nav class="footer-col footer-navigation" aria-label="Footer navigation">
