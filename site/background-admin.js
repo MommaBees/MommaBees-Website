@@ -17,7 +17,7 @@ export async function showBackgroundEditor(ctx){
   '<option value="'+p+'"'+(initial.background_position===p?' selected':'')+'>'+
   p[0].toUpperCase()+p.slice(1)+'</option>').join('');
  root.innerHTML='<section class="box background-admin">'+
-  '<div class="eyebrow">Missouri prairie farmhouse</div><h2>Website Background</h2>'+
+  '<div class="eyebrow">Rustic farmhouse design</div><h2>Website Background</h2>'+
   '<p class="muted">Style the public website with wooden barn doors, aged timber, farmhouse linen, warm cream, or your own photograph.</p>'+
   '<form id="website-background-form">'+
   '<div class="field"><label><input type="checkbox" id="bg-enabled"'+
@@ -25,7 +25,7 @@ export async function showBackgroundEditor(ctx){
   '<div class="field"><label for="bg-style">Background design</label><select id="bg-style">'+options+'</select></div>'+
   '<div class="field"><label for="bg-photo-file">Upload a background photo (JPG, PNG or WebP; up to 5 MB)</label>'+
   '<input type="file" id="bg-photo-file" accept="image/jpeg,image/png,image/webp">'+
-  '<p class="small muted">Choose a Missouri barn, rustic wooden doors, prairie scenery or another photograph you have permission to publish. Photos are uploaded only when saved.</p>'+
+  '<p class="small muted">Choose rustic wooden doors, a farmhouse setting, country scenery, or another photograph you have permission to publish. Photos are uploaded only when saved.</p>'+
   '<button type="button" class="button secondary" id="bg-clear-photo">Remove selected photo</button></div>'+
   '<div class="field"><label for="bg-position">Photo position</label><select id="bg-position">'+positions+'</select></div>'+
   '<div class="field"><label for="bg-overlay">Photo lightening for readable text: <strong id="bg-overlay-value"></strong></label>'+
@@ -38,7 +38,7 @@ export async function showBackgroundEditor(ctx){
   '<p id="bg-preview-status" class="small muted" aria-live="polite"></p>'+
   '<div class="site-background-tools">'+
   '<button type="submit" class="button" id="bg-save">Save Background</button>'+
-  '<button type="button" class="button secondary" id="bg-restore">Restore Missouri Barn Doors</button>'+
+  '<button type="button" class="button secondary" id="bg-restore">Restore Rustic Barn Doors</button>'+
   '<button type="button" class="button secondary" id="bg-disable">Disable Background</button></div>'+
   '<p id="bg-save-status" aria-live="polite"></p></form></section>';
  const $=id=>root.querySelector('#'+id);
