@@ -22,7 +22,7 @@ export function verifiedBackgroundUrl(value,supabaseUrl){
 }
 export function applyBakeryBackground(settings={},supabaseUrl='',target=document.body){
  const enabled=settings.background_enabled!==false;
- let choice=enabled?backgroundChoice(settings.background_style):'linen';
+ let choice=enabled?backgroundChoice(settings.background_style):'solid';
  const safe=verifiedBackgroundUrl(settings.background_image_url,supabaseUrl);
  if(choice==='photo'&&!safe)choice='prairie_doors';
  const pct=Number(settings.background_overlay_percent);
