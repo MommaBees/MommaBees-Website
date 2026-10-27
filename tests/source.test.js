@@ -24,6 +24,7 @@ import {BUILTIN_PHOTO_PRESETS,photoFor} from '../site/photo-library.js';
 import {TEST_PRICES} from '../functions/_lib/demo-prices.js';
 import {STOCK_PHOTOGRAPHY,stockPhotoFor,sandboxProductPhoto,demoMatchesView} from '../site/stock-photography.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
+import {HOME_URL,qrSvg,qrMarkup} from '../site/qr-code.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
 const required=['site/account.js','site/message-center.js','functions/_lib/turnstile.js','functions/api/auth/login.js','functions/api/auth/register.js','supabase/migrations/20261026_customer_profiles_message_photos.sql','README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
@@ -287,8 +288,8 @@ test('demo catalog and placeholders are isolated from real sales',()=>{
  assert.match(migration,/create table if not exists public.demo_checkout_tests/);
  assert.match(migration,/revoke all on public.demo_catalog_items from anon,authenticated/);
  assert.match(migration,/role in \('owner','admin'\)/);
- assert.match(site,/demoStorePreview\(valid\)/);
- assert.match(site,/function sandboxStore\(mode='all'\)/);
+ assert.match(site,/demoStorePreview\(mode\|\|'all'/);
+ assert.doesNotMatch(site,/function sandboxStore\(/);
  assert.match(site,/(SANDBOX|TEST ONLY)/);
  assert.match(site,/placeholder_empty_shop===false/);
  assert.match(site,/placeholder_empty_gallery===false/);
@@ -516,24 +517,26 @@ test('six staff sandbox products have fixed stock photos and truly separate view
  assert.equal(stockPhotoFor('Bars & Brownies').category,'brownies');
  assert.equal(stockPhotoFor('Pies').category,'pies');
 });
-test('the public shop is not contaminated with private sandbox products',()=>{
+test('real shop routes contain staff-only test examples without customer test access',()=>{
  const app=read('site/app.js');
  const start=app.indexOf('function shop(mode=null,categoryId=null,subcategoryId=null)');
- const end=app.indexOf('function sandboxStore(',start);
+ const end=app.indexOf('function detail(id){',start);
  const shop=app.slice(start,end);
  assert.ok(start>0&&end>start);
- assert.doesNotMatch(shop,/demoStorePreview/);
+ assert.match(shop,/demoStorePreview\(mode\|\|'all'/);
  assert.match(shop,/filter\(productReady\)/);
  assert.match(shop,/filter\(productPreorder\)/);
  assert.match(shop,/shop-page--/);
  assert.match(shop,/Shop All/);
  assert.match(shop,/Ready to Sell/);
  assert.match(shop,/Preorder/);
- assert.match(app,/if\(route==='sandbox-store'\)sandboxStore/);
+ assert.match(app,/if\(route==='sandbox-store'\)\{nav\('#shop'\);return;\}/);
+ assert.doesNotMatch(app,/sandbox-nav-link|function sandboxStore\(/);
  assert.match(app,/aria-current="page"/);
  const home=app.slice(app.indexOf('function home(){'),app.indexOf('function shop('));
  assert.match(home,/stockPhotoFor\(c\.name\)/);
  assert.match(home,/categories\(\)\.map/);
+ assert.match(app,/\['owner','admin'\]\.includes\(verifiedBackOfficeRole\)/);
 });
 test('missing stock images are replaced with an accessible fallback instead of broken-image icons',()=>{
  const app=read('site/app.js'),styles=read('site/styles.css');
@@ -541,4 +544,33 @@ test('missing stock images are replaced with an accessible fallback instead of b
  assert.match(app,/graceful-image-fallback/);
  assert.match(styles,/\.shop-hero/);
  assert.match(styles,/\.sandbox-store-page/);
+});
+
+test('QR is generated locally for verified bakery homepage and supports downloads/printing',()=>{
+ assert.equal(HOME_URL,'https://mommabees-website.pages.dev/');
+ const svg=qrSvg();
+ assert.match(svg,/viewBox="0 0 45 45"/);
+ assert.match(svg,/shape-rendering="crispEdges"/);
+ assert.match(svg,/<path fill="#1b1713"/);
+ assert.ok(svg.length>4000);
+ assert.match(qrMarkup(),/data-qr-download="svg"/);
+ assert.match(qrMarkup(),/data-qr-download="png"/);
+ assert.match(qrMarkup(),/data-qr-print/);
+ const app=read('site/app.js');
+ assert.match(app,/route==='qr'\)qrPage/);
+ assert.match(app,/qrSvg\(\)/);
+ assert.match(app,/href="#qr"/);
+});
+test('mobile and tablet layouts take usable width and have accessible menu controls',()=>{
+ const app=read('site/app.js'),css=read('site/styles.css');
+ assert.match(app,/id="mobile-nav-toggle"/);
+ assert.match(app,/aria-expanded="false"/);
+ assert.match(app,/id="primary-navigation"/);
+ assert.match(app,/toggle\.setAttribute\('aria-expanded'/);
+ assert.match(css,/@media\(max-width:760px\)/);
+ assert.match(css,/@media\(max-width:460px\)/);
+ assert.match(css,/max-width:1760px/);
+ assert.match(css,/\.navlinks\.mobile-open/);
+ assert.match(css,/@media print/);
+ assert.doesNotMatch(app,/Missouri Prairie Roots/);
 });
