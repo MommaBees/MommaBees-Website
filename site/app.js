@@ -108,13 +108,43 @@ const card=p=>{
 const categories=()=>all.categories.filter(c=>c.active&&(sellable().some(p=>p.category_id===c.id)||(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true&&all.demoItems.some(x=>x.enabled&&x.category===c.name))));
 function layout(content){
  const settings=all.settings||{};
+ const routeName=(location.hash||'#home').slice(1).split('/')[0]||'home';
+ document.body.dataset.page=routeName;
+ const crumbLabels={shop:'Shop All',ready:'Ready to Sell',preorder:'Preorder',category:'Browse Categories',subcategory:'Browse Varieties',product:'Product Details',cart:'Your Cart',checkout:'Checkout',success:'Order Status',track:'Track Your Order',account:'My Account',contact:'Contact & Special Orders',faq:'Questions & Policies',gallery:'Past Bakes',qr:'Bakery QR Code',admin:'Admin Center'};
+ const crumb=routeName!=='home'&&crumbLabels[routeName]
+   ?'<nav class="page-crumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span aria-current="page">'+e(crumbLabels[routeName])+'</span></nav>'
+   :'';
  applyBakeryBackground(settings,config.supabaseUrl);
  $('#app').innerHTML=`<div class="topbar">Faith · Family · Homemade Goodness</div><header class="header"><div class="shell nav">
  <a href="#home" class="brand">Mamma Bee's Bakery <span>${e(settings.brand_subtitle||'Rooted in Faith. Made with Love. Shared with Joy.')}</span></a>
  <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">☰</span></button><nav id="primary-navigation" aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a><a href="#account">${currentUser()?'My Account':'Sign In'}</a>${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
- <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${content}</main><footer class="footer"><div class="shell"><strong>Mamma Bee's Bakery</strong><p>Rooted in Faith. Made with Love. Shared with Joy. · Country baking and sweet traditions</p><p><a href="#faq">FAQ & policies</a> · <a href="#contact">Contact</a> · <a href="#qr">Bakery QR Code</a></p><p class="tiny">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</p><a class="footer-qr" href="#qr" aria-label="Open downloadable bakery QR code">${qrSvg()}<span>Scan for our homepage</span></a></div></footer>`;
+ <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${crumb}${content}</main><footer class="footer"><div class="shell">
+  <div class="footer-inner">
+   <div class="footer-col"><div class="footer-brand-name">Mamma Bee's Bakery</div>
+    <p class="footer-pledge">Rooted in Faith. Made with Love. Shared with Joy.</p>
+    <p>Small-batch baking and sweet traditions in Nixa, Missouri.</p>
+    <p class="small">Pickup and local delivery are offered on selected bakery dates.</p></div>
+   <nav class="footer-col footer-navigation" aria-label="Footer navigation">
+    <p class="footer-col-title">Come on in</p><a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a>
+    <a href="#preorder">Preorder</a><a href="#gallery">Past Bakes</a>
+    <a href="#contact">Ask Mamma Bee</a><a href="#faq">Questions & Policies</a></nav>
+   <div class="footer-col"><p class="footer-col-title">Take us along</p>
+    <a class="footer-qr" href="#qr" aria-label="Open the downloadable bakery homepage QR code">
+     ${qrSvg()}<span>Scan to visit our bakery</span></a>
+    <p class="small">Share the shop at your next gathering.</p></div>
+  </div><div class="footer-bottom">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</div>
+ </div></footer>`;
  const toggle=$('#mobile-nav-toggle');
  const primary=$('#primary-navigation');
+ if(primary){
+  primary.querySelectorAll('a[href^="#"]').forEach(anchor=>{
+   const destination=anchor.getAttribute('href')?.slice(1).split('/')[0];
+   const selected=destination===routeName||(['category','subcategory','product'].includes(routeName)&&destination==='shop');
+   anchor.classList.toggle('current',selected);
+   if(selected)anchor.setAttribute('aria-current','page');
+   else anchor.removeAttribute('aria-current');
+  });
+ }
  if(toggle&&primary){
   toggle.onclick=()=>{const opened=primary.classList.toggle('mobile-open');toggle.setAttribute('aria-expanded',String(opened));};
   primary.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{primary.classList.remove('mobile-open');toggle.setAttribute('aria-expanded','false');}));
