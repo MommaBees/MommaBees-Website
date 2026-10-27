@@ -7,6 +7,7 @@ import {spawnSync} from 'node:child_process';
 import {createHmac} from 'node:crypto';
 import {verifyStripeSignature} from '../functions/_lib/stripe.js';
 import {onRequestPost as checkout} from '../functions/api/checkout.js';
+import {onRequestPost as demoCheckout,onRequestGet as demoHistory} from '../functions/api/admin/demo-checkout.js';
 import {onRequestPost as contact} from '../functions/api/contact.js';
 import {onRequestPost as orderStatus} from '../functions/api/order-status.js';
 import {onRequestPost as protectedLogin} from '../functions/api/auth/login.js';
@@ -268,4 +269,41 @@ test('product editor requires acknowledged allergen review before publication',(
  assert.match(admin,/body\.allergens=publicAllergenStatement\(groups\)/);
  assert.match(sql,/validate_allergens_before_publish/);
  assert.match(sql,/new\.allergen_reviewed/);
+});
+
+
+test('demo catalog and placeholders are isolated from real sales',()=>{
+ const migration=read('supabase/migrations/20261026_demo_catalog_placeholders.sql');
+ const site=read('site/app.js'),admin=read('site/admin.js');
+ assert.match(migration,/demo_store_enabled boolean not null default false/);
+ assert.match(migration,/create table if not exists public.demo_catalog_items/);
+ assert.match(migration,/create table if not exists public.demo_checkout_tests/);
+ assert.match(migration,/revoke all on public.demo_catalog_items from anon,authenticated/);
+ assert.match(migration,/role in \('owner','admin'\)/);
+ assert.match(site,/demoStorePreview\(\)/);
+ assert.match(site,/TEST ONLY/);
+ assert.match(site,/placeholder_empty_shop===false/);
+ assert.match(site,/placeholder_empty_gallery===false/);
+ assert.match(site,/placeholder_featured===false/);
+ assert.match(site,/placeholder_missing_image===false/);
+ assert.match(admin,/demo_catalog_items:\{label:'Sandbox Test Products'/);
+ assert.match(admin,/past_bakes:\{label:'Past Bakes Gallery'/);
+ assert.match(admin,/field\('demo_store_enabled'/);
+ assert.doesNotMatch(site,/Homemade in Nixa, Missouri/);
+});
+test('sandbox checkout denies anonymous access and never uses live Stripe credentials',async()=>{
+ const req=new Request('https://mommabees-website.pages.dev/api/admin/demo-checkout',
+  {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:crypto.randomUUID()})});
+ const emptyEnv={STRIPE_SECRET_KEY:'sk_live_not_a_real_key'};
+ assert.equal((await demoCheckout({request:req,env:emptyEnv})).status,401);
+ assert.equal((await demoHistory({request:req,env:emptyEnv})).status,401);
+ const src=read('functions/api/admin/demo-checkout.js');
+ assert.match(src,/!\/\^sk_test_\/\.test\(env\.STRIPE_SECRET_KEY/);
+ assert.match(src,/demo_store_enabled!==true/);
+ assert.match(src,/checkout\.livemode!==false/);
+ assert.doesNotMatch(src,/automatic_tax\[enabled\]/);
+ assert.doesNotMatch(src,/reserve_checkout/);
+ const webhook=read('functions/api/stripe-webhook.js');
+ assert.match(webhook,/event\.livemode!==false\|\|session\.livemode!==false/);
+ assert.match(webhook,/metadata\?\.demo_checkout_test_id/);
 });
