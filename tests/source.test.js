@@ -399,3 +399,12 @@ test('four-day fair generator and tax confirmation must be configured by staff',
  assert.match(form,/text_consent/);
  assert.match(form,/guest_contact_address|guest_address/);
 });
+
+test('available pickup dates respect cart product lead times and ready-stock limits',()=>{
+ const checkout=read('site/checkout-form.js');
+ assert.match(checkout,/canFulfillCartOn/);
+ assert.match(checkout,/futureDate\(product\.lead_days\)/);
+ assert.match(checkout,/batch\.best_before>=date/);
+ assert.match(checkout,/batch\.quantity_available>=item\.quantity/);
+ assert.match(checkout,/new Date\(d\.cutoff_at\)>new Date\(\)/);
+});
