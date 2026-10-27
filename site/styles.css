@@ -46,3 +46,24 @@
 .payment-choices label{display:flex;align-items:flex-start;gap:10px}
 .payment-choices input{flex:none;width:auto;margin-top:3px}
 @media(max-width:480px){#pickup-calendar{padding:8px}.calendar-day{min-height:35px}.calendar-days{gap:1px}}
+
+/* Real photography with provenance and welcoming country bakery storefront */
+.bakery-product-card{background:#fffdf9;overflow:hidden;border-radius:16px;box-shadow:0 4px 24px rgba(60,38,22,.06);display:flex;flex-direction:column}
+.bakery-product-card .card-content{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.bakery-product-card .card-content h3{margin:0;line-height:1.22;font-size:clamp(1.25rem,2vw,1.6rem)}
+.bakery-product-card .card-content .price{margin-top:auto}
+.bakery-product-card .card-content .button{margin-top:12px}
+.card-media{position:relative;overflow:hidden;background:#f6eee5}
+.card-media .product-photo{width:100%;height:245px;object-fit:cover;display:block;transition:transform .3s ease}
+.bakery-product-card:hover .product-photo{transform:scale(1.025)}
+.photo-disclosure{font-size:.67rem;line-height:1.45;color:#5e422e;background:#fff6e9;padding:5px 10px}
+.photo-disclosure a{color:inherit;text-decoration:underline}
+.subcategory-tabs{margin-block:15px;flex-wrap:wrap;gap:7px}
+.home-gallery-preview .card{text-decoration:none;color:inherit;overflow:hidden}
+.home-gallery-preview .product-photo{height:230px;object-fit:cover}
+.preset-preview img{width:min(100%,340px);height:200px;object-fit:cover;border-radius:10px;display:block;margin-top:8px}
+.preset-preview p{line-height:1.5}
+.demo-store{border-top:1px solid var(--line);margin-top:30px}
+.demo-store .bakery-product-card .card-content .badge{font-size:.7rem;align-self:flex-start}
+.demo-store .bakery-product-card .eyebrow{margin:7px 0 0}
+@media(max-width:600px){.card-media .product-photo{height:220px}.bakery-product-card .card-content{gap:7px}.home-gallery-preview .product-photo{height:195px}}
