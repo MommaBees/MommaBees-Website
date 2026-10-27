@@ -35,7 +35,7 @@ const titleFor=(table,row)=>row?.name||row?.title||row?.email||row?.description|
 const short=(value)=>{if(value===null||value===undefined)return '—';if(typeof value==='boolean')return value?'Yes':'No';if(typeof value==='object')return JSON.stringify(value).slice(0,90);return String(value).slice(0,105);};
 const formatCell=(key,val)=>key.endsWith('_cents')?money(val):key==='created_at'?fmt(val):short(val);
 function authShell(){const visibleGroups=ctx.role==='moderator'?[['Moderation',['messages','reviews']]]:groups;const sections=visibleGroups.map(([g,tables])=>`<div class="tiny muted" style="padding:9px 12px">${e(g.toUpperCase())}</div>${tables.map(id=>`<button class="${id===selected?'active':''}" data-panel="${id}">${e(id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id))}</button>`).join('')}`).join('');
- ctx.layout(`<section class="section"><div class="eyebrow">Mamma Bee's Bakery · Staff workspace</div><h1>Bakery Admin Center</h1><p class="muted">Your baking days, products, orders, customer conversations, and business records—all in one place.</p><div class="admin-layout"><aside class="admin-side" aria-label="Admin management sections">${sections}</aside><div id="admin-main"><div class="box">Loading…</div></div></div></section>`);
+ ctx.layout(`<section class="section"><div class="eyebrow">Mommy Bee Farmstand and Bakery · Staff workspace</div><h1>Bakery Admin Center</h1><p class="muted">Your baking days, products, orders, customer conversations, and business records—all in one place.</p><div class="admin-layout"><aside class="admin-side" aria-label="Admin management sections">${sections}</aside><div id="admin-main"><div class="box">Loading…</div></div></div></section>`);
  document.querySelectorAll('[data-panel]').forEach(el=>el.onclick=()=>{selected=el.dataset.panel;authShell();renderPanel();});
 }
 export async function admin(context){ctx=context;const user=currentUser();if(!user){ctx.layout('<div class="section box"><h1>Admin sign in required</h1><p>You must sign in to an Owner/Admin account before managing the bakery.</p><a class="button" href="#account">Sign in</a></div>');return;}
@@ -59,7 +59,7 @@ function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key
    const start=prompt('First fair date (YYYY-MM-DD):');
    if(start===null)return;
    if(!/^\d{4}-\d{2}-\d{2}$/.test(start)){ctx.showError('Enter the first date as YYYY-MM-DD');return;}
-   const label=prompt('Fair or event name:','Mamma Bee’s Bake Fair');
+   const label=prompt('Fair or event name:','Mommy Bee Farmstand and Bakery Fair');
    if(label===null||!label.trim())return;
    const cap=Number(prompt('Maximum preorder items per day:','30'));
    if(!Number.isInteger(cap)||cap<1||cap>1000){ctx.showError('Choose a capacity between 1 and 1000');return;}
