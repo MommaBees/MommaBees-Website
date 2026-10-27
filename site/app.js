@@ -2,6 +2,7 @@ import {config,isConfigured,currentUser,currentSession,signIn,signUp,signOut,lis
 import {isBackOfficeRole,backOfficeNavigation} from './role-navigation.js';
 import {photoFor,photoByUrl,photoStatusLabel} from './photo-library.js';
 import {applyBakeryBackground} from './background.js';
+import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
 let checkoutMode='pickup';
@@ -36,7 +37,7 @@ async function startSandboxCheckout(id){
  if(!/^https:\/\/checkout\.stripe\.com\//.test(json.checkout_url||''))throw Error('Invalid checkout redirect');
  location.assign(json.checkout_url);
 }
-function demoStorePreview(){
+function demoStorePreview(mode='all'){
  if(!['owner','admin'].includes(verifiedBackOfficeRole)||all.settings.demo_store_enabled!==true)return '';
  const previews={
  'Chocolate Chip Cookies':{cat:'Cookies',sub:'Chocolate Chip',blurb:'A classic dozen of chocolate chip cookies, warm and comforting.'},
@@ -46,16 +47,16 @@ function demoStorePreview(){
  'Classic Cheesecake':{cat:'Cheesecakes',sub:'Classic Cheesecakes',blurb:'Rich, smooth cheesecake made for special celebrations.'},
  'Brownie Box':{cat:'Bars & Brownies',sub:'Brownies',blurb:'Six fudgy brownies, sliced and ready to share.'}
  };
- const products=all.demoItems.filter(x=>x.enabled===true);
+ const products=all.demoItems.filter(x=>x.enabled===true&&demoMatchesView(x,mode));
  return '<section class="section demo-store"><div class="section-head"><div>'+
   '<div class="eyebrow">Owner/Admin preview · Stripe TEST mode</div><h2>Shop Preview</h2>'+
   '<p class="muted">Six illustrative products and example prices. This preview is private, and no actual product has been offered for purchase.</p>'+
   '</div></div><div class="grid">'+products.map(x=>{
   const d=previews[x.name]||{cat:x.category,sub:'',blurb:x.description};
-  const preset=photoFor(d.cat,d.sub);
+  const preset=sandboxProductPhoto(x);
   return '<article class="card bakery-product-card"><div class="card-media">'+
    image(preset?.url,'product-photo',x.name)+
-   (preset?'<div class="photo-disclosure">'+e(photoStatusLabel(preset))+'</div>':'')+'</div>'+
+   (preset?'<div class="photo-disclosure">Stock photo for layout testing · Not a photograph of a bakery product</div>':'')+'</div>'+
    '<div class="card-content"><span class="badge">SANDBOX</span>'+
    '<p class="eyebrow">'+e(d.cat)+(d.sub?' / '+e(d.sub):'')+'</p>'+
    '<h3>'+e(x.name)+'</h3><p class="small">'+e(d.blurb)+'</p>'+
@@ -105,8 +106,18 @@ function layout(content){
  applyBakeryBackground(settings,config.supabaseUrl);
  $('#app').innerHTML=`<div class="topbar">Missouri Prairie Roots · Faith · Family · Homemade Goodness</div><header class="header"><div class="shell nav">
  <a href="#home" class="brand">Mamma Bee's Bakery <span>${e(settings.brand_subtitle||'Rooted in Faith. Made with Love. Shared with Joy.')}</span></a>
- <nav aria-label="Primary navigation" class="navlinks"><a href="#shop">Shop</a><a href="#ready">Ready to Sell</a><a href="#preorder">Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a><a href="#account">${currentUser()?'My Account':'Sign In'}</a>${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
+ <nav aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a>${['owner','admin'].includes(verifiedBackOfficeRole)&&settings.demo_store_enabled===true?'<a href="#sandbox-store" class="sandbox-nav-link">Sandbox Store</a>':''}<a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a><a href="#account">${currentUser()?'My Account':'Sign In'}</a>${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
  <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${content}</main><footer class="footer"><div class="shell"><strong>Mamma Bee's Bakery</strong><p>Rooted in Faith. Made with Love. Shared with Joy. · Country baking and sweet traditions</p><p><a href="#faq">FAQ & policies</a> · <a href="#contact">Contact</a></p><p class="tiny">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</p></div></footer>`;
+ document.querySelectorAll('#app img').forEach(img=>{
+  img.addEventListener('error',()=>{
+   const placeholder=document.createElement('div');
+   placeholder.className='photo-empty graceful-image-fallback';
+   placeholder.setAttribute('role','img');
+   placeholder.setAttribute('aria-label',img.alt+' photo currently unavailable');
+   placeholder.textContent='Photo temporarily unavailable';
+   img.replaceWith(placeholder);
+  },{once:true});
+ });
 }
 async function load(){
  if(!isConfigured())return;
@@ -118,17 +129,83 @@ function announcements(place='home'){
  return all.announcements.filter(x=>x.placement===place||x.placement==='all').map(a=>`<aside class="announcement"><strong>${e(a.title)}</strong><p>${e(a.body)}</p>${a.link_url&&/^https?:\/\//.test(a.link_url)?`<a href="${photo(a.link_url)}" rel="noopener">Details</a>`:''}</aside>`).join('');
 }
 function home(){const s=all.settings;layout(`${announcements()}<div class="country-welcome-band" aria-label="Bakery values"><span>✦ Country Kitchen Traditions</span><span>Made with Love</span><span>✦ Gather Around Something Sweet</span></div><section class="hero"><div class="hero-copy"><div class="eyebrow">Rooted in Faith · Baked with Love</div><h1>${e(s.home_heading||'A Little Country. A Whole Lot of Homemade.')}</h1><p>${e(s.home_intro||'Explore handmade baked goods, ready to enjoy or preorder for a baking day.')}</p><div class="hero-actions"><a class="button" href="#ready">Shop ready-to-sell</a><a class="button secondary" href="#preorder">Schedule a preorder</a></div></div><div class="hero-art ${s.hero_url?'has-photo':'has-bakery-photo'}" style="background-image:url('${photo(s.hero_url||all.pastBakes.find(x=>x.published&&x.title?.includes('Carrot Cake'))?.image_url||'')}')" role="img" aria-label="An authentic photo of a dessert previously baked by Mamma Bee's Bakery"></div></section>
- <section class="section"><div class="section-head"><div><div class="eyebrow">Discover something delicious</div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div><div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url||photoFor(c.name)?.url)}<div class="card-content"><h3>${e(c.name)}</h3><p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||(s.placeholder_empty_shop===false?'':'<div class="empty">No products are currently available. Please check back for the next baking day.</div>')}</div></section>
+ <section class="section"><div class="section-head"><div><div class="eyebrow">Discover something delicious</div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div><div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url||stockPhotoFor(c.name).thumb)}<div class="card-content"><h3>${e(c.name)}</h3>${!c.photo_url?'<p class="stock-label">Stock photo · Category illustration</p>':''}<p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||(s.placeholder_empty_shop===false?'':'<div class="empty">No products are currently available. Please check back for the next baking day.</div>')}</div></section>
  <section class="section"><div class="section-head"><div><div class="eyebrow">Baked with love</div><h2>A Peek Into Our Kitchen</h2></div><a href="#gallery">Browse Past Bakes</a></div>
  <p class="muted">A few treats we have created before. These are examples of our baking and are not currently listed for sale.</p>
  <div class="grid home-gallery-preview">${all.pastBakes.filter(p=>p.published&&p.image_url).slice(0,3).map(p=>`<a class="card" href="#gallery">${image(p.image_url,'product-photo',p.title)}<div class="card-content"><strong>${e(p.title)}</strong><p class="small muted">Past creation</p></div></a>`).join('')}</div></section>
  <section class="section"><h2>Featured bakery treats</h2><div class="grid">${sellable().filter(p=>p.featured).slice(0,6).map(card).join('')||(s.placeholder_featured===false?'':'<div class="empty">Featured baked goods will appear here when available.</div>')}</div></section>`);}
-function shop(mode=null,categoryId=null,subcategoryId=null){let items=sellable();if(mode==='ready')items=items.filter(productReady);if(mode==='preorder')items=items.filter(productPreorder);if(categoryId)items=items.filter(p=>p.category_id===categoryId);if(subcategoryId)items=items.filter(p=>p.subcategory_id===subcategoryId);
- const title=subcategoryId?all.subcategories.find(c=>c.id===subcategoryId)?.name||'Bakery type':categoryId?all.categories.find(c=>c.id===categoryId)?.name||'Category':mode==='ready'?'Ready to Sell':mode==='preorder'?'Preorder':'Shop All';
- layout(`<section class="section">${announcements('shop')}<div class="eyebrow">Mamma Bee's Bakery</div><h1>${e(title)}</h1><p class="muted">Select a treat to see all available ordering options. Browse what is currently available.</p><nav class="tabs" aria-label="Shop filters"><a class="tab ${!mode&&!categoryId?'active':''}" href="#shop">All products</a><a class="tab ${mode==='ready'?'active':''}" href="#ready">Ready to Sell</a><a class="tab ${mode==='preorder'?'active':''}" href="#preorder">Preorder</a>${categories().map(c=>`<a class="tab ${categoryId===c.id?'active':''}" href="#category/${e(c.id)}">${e(c.name)}</a>`).join('')}</nav>${categoryId?'<nav class="tabs subcategory-tabs" aria-label="Subcategory filters">'+
+function shop(mode=null,categoryId=null,subcategoryId=null){
+ let items=sellable();
+ if(mode==='ready')items=items.filter(productReady);
+ if(mode==='preorder')items=items.filter(productPreorder);
+ if(categoryId)items=items.filter(p=>p.category_id===categoryId);
+ if(subcategoryId)items=items.filter(p=>p.subcategory_id===subcategoryId);
+ const title=subcategoryId?all.subcategories.find(c=>c.id===subcategoryId)?.name||'Bakery type':
+  categoryId?all.categories.find(c=>c.id===categoryId)?.name||'Category':
+  mode==='ready'?'Ready to Sell':mode==='preorder'?'Preorder':'Shop All';
+ const heading=mode==='ready'?'Baked and ready for scheduled pickup':
+  mode==='preorder'?'Made for an upcoming baking day':'Explore all currently available treats';
+ const description=mode==='ready'
+  ?'These are items already baked with stock available for a bakery pickup date. When an item sells out, it leaves this page.'
+  :mode==='preorder'
+  ?'These treats are baked to order for future baking days. Choose an available date during checkout.'
+  :'Browse everything available now, including ready-to-sell treats and preorders for scheduled baking days.';
+ const empty=mode==='ready'
+  ?'No ready-to-sell items are currently stocked. Check Preorder or return after the next bake.'
+  :mode==='preorder'
+  ?'No preorders are available for a scheduled baking date right now. Check Ready to Sell or ask about a special order.'
+  :'No items are currently available for ordering. Check back for the next baking day.';
+ const visual=stockPhotoFor(mode==='ready'?'Cookies':mode==='preorder'?'Cakes':'Pies');
+ layout(`<section class="section shop-page shop-page--${mode||'all'}" data-shop-view="${mode||'all'}">
+ ${announcements('shop')}
+ <div class="shop-hero">
+  <div class="shop-hero-copy"><div class="eyebrow">Mamma Bee's Bakery · ${e(title)}</div>
+   <h1>${e(title)}</h1><h2>${e(heading)}</h2><p>${e(description)}</p>
+   <p class="shop-result-count"><strong>${items.length}</strong> ${items.length===1?'item':'items'} currently available</p>
+  </div>
+  <div class="shop-hero-picture">${image(visual.url,'shop-hero-image',title+' illustrative stock photo')}
+   <div class="photo-disclosure">Stock photo · Illustrative category photography</div></div>
+ </div>
+ <nav class="tabs shop-mode-tabs" aria-label="Browse available products">
+  <a class="tab ${!mode&&!categoryId?'active':''}" href="#shop" ${!mode&&!categoryId?'aria-current="page"':''}>Shop All</a>
+  <a class="tab ${mode==='ready'?'active':''}" href="#ready" ${mode==='ready'?'aria-current="page"':''}>Ready to Sell</a>
+  <a class="tab ${mode==='preorder'?'active':''}" href="#preorder" ${mode==='preorder'?'aria-current="page"':''}>Preorder</a>
+ </nav>
+ ${categories().length?'<nav class="tabs subcategory-tabs" aria-label="Categories">'+categories().map(c=>
+  '<a class="tab '+(categoryId===c.id?'active':'')+'" href="#category/'+e(c.id)+'">'+e(c.name)+'</a>'
+ ).join('')+'</nav>':''}
+ ${categoryId?'<nav class="tabs subcategory-tabs" aria-label="Subcategory filters">'+
  '<a class="tab '+(!subcategoryId?'active':'')+'" href="#category/'+e(categoryId)+'">All '+e(all.categories.find(c=>c.id===categoryId)?.name||'')+'</a>'+
  all.subcategories.filter(x=>x.category_id===categoryId&&x.active&&sellable().some(p=>p.subcategory_id===x.id))
- .map(x=>'<a class="tab '+(subcategoryId===x.id?'active':'')+'" href="#subcategory/'+e(categoryId)+'/'+e(x.id)+'">'+e(x.name)+'</a>').join('')+'</nav>':''}<div class="grid">${items.map(card).join('')}||(all.settings.placeholder_empty_shop===false?'':'<p class="empty">No products currently available in this selection.</p>')}</div>${demoStorePreview()}</section>`);bindDemoStore();}
+ .map(x=>'<a class="tab '+(subcategoryId===x.id?'active':'')+'" href="#subcategory/'+e(categoryId)+'/'+e(x.id)+'">'+e(x.name)+'</a>').join('')+'</nav>':''}
+ <div class="grid product-results">${items.map(card).join('')||
+ (all.settings.placeholder_empty_shop===false?'':'<div class="empty shop-empty">'+e(empty)+
+ '<div class="actions" style="justify-content:center;margin-top:18px">'+(mode==='ready'?'<a class="button secondary" href="#preorder">Explore Preorders</a>':
+ mode==='preorder'?'<a class="button secondary" href="#ready">Browse Ready to Sell</a>':
+ '<a class="button secondary" href="#contact">Ask About a Special Order</a>')+'</div></div>')}</div>
+ </section>`);
+}
+function sandboxStore(mode='all'){
+ if(!['owner','admin'].includes(verifiedBackOfficeRole)||all.settings.demo_store_enabled!==true){
+  layout('<section class="section box"><h1>Page unavailable</h1><p>The sandbox store is available only to bakery Owner/Admin accounts.</p></section>');
+  return;
+ }
+ const valid=['all','ready','preorder'].includes(mode)?mode:'all';
+ const products=all.demoItems.filter(x=>x.enabled&&demoMatchesView(x,valid));
+ layout(`<section class="section sandbox-store-page">
+  <div class="eyebrow">Owner/Admin testing workspace · Stripe Sandbox</div>
+  <h1>Sandbox Test Shop</h1>
+  <p>Example items only. These are not for sale, do not create real bakery orders and never appear in customer listings.</p>
+  <nav class="tabs shop-mode-tabs" aria-label="Sandbox product filters">
+   <a href="#sandbox-store" class="tab ${valid==='all'?'active':''}" ${valid==='all'?'aria-current="page"':''}>All Test Products (${all.demoItems.filter(x=>x.enabled).length})</a>
+   <a href="#sandbox-store/ready" class="tab ${valid==='ready'?'active':''}" ${valid==='ready'?'aria-current="page"':''}>Ready-to-Sell Examples (${all.demoItems.filter(x=>x.enabled&&demoMatchesView(x,'ready')).length})</a>
+   <a href="#sandbox-store/preorder" class="tab ${valid==='preorder'?'active':''}" ${valid==='preorder'?'aria-current="page"':''}>Preorder Examples (${all.demoItems.filter(x=>x.enabled&&demoMatchesView(x,'preorder')).length})</a>
+  </nav>
+  <p class="shop-result-count"><strong>${products.length}</strong> sample items in this view</p>
+  ${demoStorePreview(valid)}
+ </section>`);
+ bindDemoStore();
+}
 function detail(id){const p=all.products.find(x=>x.id===id);if(!p||!p.published||!available(p)){layout('<div class="empty">Product not available. <a href="#shop">Return to shop</a>.</div>');return;}
  const batches=all.batches.filter(b=>b.product_id===p.id&&!b.disabled&&b.baked_on<=currentDate()&&b.quantity_available>0&&all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date<=b.best_before));
  const visual=productVisual(p);
@@ -173,7 +250,7 @@ function gallery(){
   '</div></section>');
 }
 async function render(){const [route,pid]=decodeURIComponent((location.hash||'#home').substring(1)).split('/');await refreshBackOfficeRole();all.demoItems=[];if(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true){all.demoItems=await list('demo_catalog_items',{order:'sort_order.asc',limit:100}).catch(()=>[]);}document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"Mamma Bee's Bakery";if(!isConfigured()){layout(`<section class="section"><h1>Welcome to Mamma Bee's Bakery</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in Mamma Bee’s Bakery.</p></section>`);return;}
- try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='shop')shop();else if(route==='ready')shop('ready');else if(route==='preorder')shop('preorder');else if(route==='category')shop(null,pid);else if(route==='subcategory'){const parts=(location.hash||'').slice(1).split('/');shop(null,parts[1],parts[2]);}else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')await checkoutPage();else if(route==='success')success();else if(route==='sandbox-success'&&['owner','admin'].includes(verifiedBackOfficeRole))layout('<section class="section box"><h1>Stripe Sandbox Return</h1><p>This was a TEST transaction only. Open Admin → Sandbox Test Products to check the result after Stripe sends its webhook. No real customer order was created.</p><a class="button secondary" href="#shop">Back to Test Store</a></section>');else if(route==='track')track(pid);else if(route==='account')await account();else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else home();}
+ try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='sandbox-store')sandboxStore(pid||'all');else if(route==='shop')shop();else if(route==='ready')shop('ready');else if(route==='preorder')shop('preorder');else if(route==='category')shop(null,pid);else if(route==='subcategory'){const parts=(location.hash||'').slice(1).split('/');shop(null,parts[1],parts[2]);}else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')await checkoutPage();else if(route==='success')success();else if(route==='sandbox-success'&&['owner','admin'].includes(verifiedBackOfficeRole))layout('<section class="section box"><h1>Stripe Sandbox Return</h1><p>This was a TEST transaction only. Open Admin → Sandbox Test Products to check the result after Stripe sends its webhook. No real customer order was created.</p><a class="button secondary" href="#shop">Back to Test Store</a></section>');else if(route==='track')track(pid);else if(route==='account')await account();else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else home();}
  catch(ex){layout(`<section class="section"><h1>Something went wrong</h1><div class="notice error">${e(ex.message)}</div><a class="button secondary" href="#home">Return home</a></section>`);}window.scrollTo({top:0,behavior:'instant'});}
 window.addEventListener('hashchange',render);
 (async()=>{try{await load();}catch(ex){console.error('Could not load storefront',ex);}await render();})();
