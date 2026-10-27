@@ -72,7 +72,12 @@ function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key
    let completed=0;
    try{
     for(const day of dates){
-     const cutoff=new Date(day+'T23:59:00-05:00').toISOString();
+     const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',timeZoneName:'shortOffset'}).formatToParts(new Date(day+'T18:00:00Z'));
+     const offset=parts.find(p=>p.type==='timeZoneName')?.value||'';
+     const match=/GMT([+-]\\d{1,2})(?::(\\d{2}))?/.exec(offset);
+     if(!match)throw Error('Could not establish America/Chicago time offset');
+     const minutes=Number(match[1])*60+Math.sign(Number(match[1]))*Number(match[2]||0);
+     const cutoff=new Date(Date.parse(day+'T23:59:00Z')-minutes*60000).toISOString();
      await add('baking_days',{date:day,cutoff_at:cutoff,capacity_total:cap,pickup_enabled:true,
       delivery_enabled:false,pickup_windows:[pickupWindow.trim()],delivery_windows:[],
       day_type:'fair',event_label:label.trim(),pay_at_pickup_available:true,
