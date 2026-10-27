@@ -1,7 +1,7 @@
 import {config,currentUser,currentSession,money,escapeHtml as e,currentDate,fmt} from './api.js';
 import {mountPickupCalendar} from './pickup-calendar.js';
 const dollars=n=>money(Math.max(0,Number(n)||0));
-export async function showCheckout({cart,all,layout,nav,showError}){
+export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
  if(!cart.length){nav('#cart');return;}
  const settings=all.settings||{};
  const days=(all.days||[]).filter(d=>d.enabled&&d.cutoff_at&&new Date(d.cutoff_at)>new Date()&&d.date>=currentDate())
@@ -142,7 +142,7 @@ export async function showCheckout({cart,all,layout,nav,showError}){
     '<p>Payment due when you collect the order: <strong>'+dollars(result.amount_due_cents)+'</strong>.</p>'+
     '<p>No online payment was taken. We will contact you using your selected contact method if needed.</p>'+
     '<a href="#shop" class="button secondary">Return to shop</a></section>');
-    sessionStorage.removeItem('mb_cart');return;
+    clearCart();return;
    }
    if(result.checkout_url)location.assign(result.checkout_url);
    else throw Error('Stripe did not supply a checkout link');
