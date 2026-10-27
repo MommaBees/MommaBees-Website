@@ -29,7 +29,7 @@ import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBac
 import {referenceKeyFor} from '../site/reference-keys.js';
 import {ADMIN_REQUIRED,adminFieldIsRequired} from '../site/admin-required.js';
 import {syncRequiredMarkers,bindRequiredMarkers} from '../site/required-fields.js';
-import {eligibleHomeSlides,homeCarouselMarkup,carouselIntervalMilliseconds,DEFAULT_CAROUSEL_INTERVAL_SECONDS} from '../site/home-carousel.js';
+import {eligibleHomeSlides,homeCarouselMarkup,carouselIntervalMilliseconds,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from '../site/home-carousel.js';
 import {ADMIN_GROUPS,adminGroupsForRole} from '../site/admin-navigation.js';
 
 import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from '../site/product-types.js';
@@ -1177,4 +1177,34 @@ test('homepage carousel keeps an equal slide size while changing slides on deskt
  assert.match(section,/\.admin-slide-preview \.home-carousel \.home-carousel-slides/);
  assert.match(markup,/home-carousel-slide/);
  assert.match(markup,/slide\.hidden=i!==index/);
+});
+
+test('carousel size presets use one shared frame and whitelist Admin-controlled values',()=>{
+ assert.deepEqual(CAROUSEL_SIZE_OPTIONS,['extra-small','small','medium','large']);
+ assert.equal(normalizeCarouselSize(undefined),'medium');
+ assert.equal(normalizeCarouselSize('huge'),'medium');
+ assert.equal(normalizeCarouselSize('large'),'large');
+ const slide={id:'original',published:true,image_url:'https://example.test/test.webp',title:'Bakery'};
+ for(const size of CAROUSEL_SIZE_OPTIONS){
+  const markup=homeCarouselMarkup([slide],x=>x,x=>x,size);
+  assert.match(markup,new RegExp('home-carousel--'+size));
+ }
+ assert.match(homeCarouselMarkup([slide],x=>x,x=>x,'<style>'),/home-carousel--medium/);
+ const app=read('site/app.js'),admin=read('site/admin.js'),css=read('site/country-home-v2.css');
+ const sql=read('supabase/migrations/20261027_carousel_size_v125.sql');
+ assert.match(app,/homeCarouselMarkup\(slides,e,photo,s\.home_carousel_size\)/);
+ assert.match(admin,/homeCarouselMarkup\(previewSlides,e,x=>e\(x\),size\)/);
+ assert.match(admin,/id="carousel-size-form"/);
+ assert.match(admin,/id="carousel-size"/);
+ assert.match(admin,/update\('site_settings',1,\{home_carousel_size:chosen\}\)/);
+ assert.match(admin,/refreshSizePreview\(\)/);
+ assert.match(css,/--carousel-height/);
+ assert.match(css,/\.home-carousel--extra-small/);
+ assert.match(css,/\.home-carousel--small/);
+ assert.match(css,/\.home-carousel--medium/);
+ assert.match(css,/\.home-carousel--large/);
+ assert.match(css,/height:var\(--carousel-height\)/);
+ assert.match(css,/grid-template-rows:var\(--carousel-photo-height\) minmax\(0,1fr\)/);
+ assert.match(sql,/home_carousel_size text not null default 'medium'/);
+ assert.match(sql,/check \(home_carousel_size in \('extra-small','small','medium','large'\)\)/);
 });

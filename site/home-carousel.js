@@ -1,5 +1,9 @@
 // MommaBee homepage carousel: server-filtered, Owner-controlled media, accessible controls.
 export const DEFAULT_CAROUSEL_INTERVAL_SECONDS=6.5;
+export const CAROUSEL_SIZE_OPTIONS=Object.freeze(['extra-small','small','medium','large']);
+export function normalizeCarouselSize(size){
+ return CAROUSEL_SIZE_OPTIONS.includes(size)?size:'medium';
+}
 // Minimum provides adequate reading time; maximum bounds accidental misconfiguration.
 export function carouselIntervalMilliseconds(seconds){
  const value=Number(seconds);
@@ -14,10 +18,10 @@ export function eligibleHomeSlides(slides,now=new Date()){
   (!s.starts_at||Date.parse(s.starts_at)<=timestamp)&&(!s.ends_at||Date.parse(s.ends_at)>timestamp))
   .sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)||String(a.id).localeCompare(String(b.id)));
 }
-export function homeCarouselMarkup(slides,escape,photo){
+export function homeCarouselMarkup(slides,escape,photo,size='medium'){
  const count=slides.length;
  if(!count)return '';
- return '<section class="home-carousel" role="region" aria-roledescription="carousel" aria-label="Featured bakery stories" tabindex="-1">'+
+ return '<section class="home-carousel home-carousel--'+normalizeCarouselSize(size)+'" role="region" aria-roledescription="carousel" aria-label="Featured bakery stories" tabindex="-1">'+
   '<div class="home-carousel-slides" aria-live="off">'+slides.map((s,i)=>{
    const first=i===0,hidden=first?'':' hidden';
    const img=photo(s.image_url);

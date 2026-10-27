@@ -4,7 +4,7 @@ import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from './product
 import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
 import {adminGroupsForRole,ADMIN_DESCRIPTIONS} from './admin-navigation.js';
 import {adminFieldIsRequired} from './admin-required.js';
-import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS} from './home-carousel.js';
+import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from './home-carousel.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
 import {pastBakeName} from './past-bakes.js';
 import {BUILTIN_PHOTO_PRESETS,photoByUrl} from './photo-library.js';
@@ -212,11 +212,12 @@ async function carouselPanel(){
  await Promise.all([loadTable('home_carousel_slides'),loadTable('site_settings')]);
  const settings=data.site_settings?.[0]||{};
  const interval=Number(settings.home_carousel_interval_seconds)||DEFAULT_CAROUSEL_INTERVAL_SECONDS;
+ const size=normalizeCarouselSize(settings.home_carousel_size);
  const rows=[...(data.home_carousel_slides||[])].sort((a,b)=>a.sort_order-b.sort_order);
  const visible=rows.filter(x=>x.published && (!x.starts_at||Date.parse(x.starts_at)<=Date.now()) && (!x.ends_at||Date.parse(x.ends_at)>Date.now())).length;
  const drafts=rows.filter(x=>!x.published).length;
  const previewSlides=rows.map(x=>({...x,published:true})); // Admin-only view; never persists draft publication
- const previewMarkup=previewSlides.length>1?homeCarouselMarkup(previewSlides,e,x=>e(x)):'';
+ const previewMarkup=previewSlides.length>1?homeCarouselMarkup(previewSlides,e,x=>e(x),size):'';
  const card=(r,i)=>`<article class="admin-carousel-card ${r.published?'':'is-draft'}">
  <div class="admin-carousel-thumb"><img src="${e(r.image_url)}" alt="${e(r.image_alt||r.title)}" loading="lazy"></div>
  <div class="admin-carousel-details">
@@ -244,6 +245,17 @@ async function carouselPanel(){
   </div>
   <p class="small muted" id="carousel-interval-help">Choose 3–60 seconds. Default: 6.5 seconds. Applies to the public homepage and private preview after refresh. A timer cannot rotate a single published slide.</p>
   <p id="carousel-interval-save-status" role="status" aria-live="polite"></p>
+ </form>
+ <form id="carousel-size-form" class="admin-carousel-interval admin-carousel-size" aria-label="Carousel size settings">
+  <label for="carousel-size">Carousel size <span class="required-indicator" aria-hidden="true">* Required</span></label>
+  <div class="admin-carousel-interval-controls">
+   <select id="carousel-size" name="size" required aria-describedby="carousel-size-help">
+    ${CAROUSEL_SIZE_OPTIONS.map(value=>`<option value="${value}" ${size===value?'selected':''}>${value==='extra-small'?'Extra Small':pretty(value)}</option>`).join('')}
+   </select>
+   <button class="button secondary" type="submit">Save size</button>
+  </div>
+  <p class="small muted" id="carousel-size-help">Sets the same responsive height for every slide on desktop and mobile. Medium keeps the current size. Try a size in the private preview, then select Save size to publish the layout choice.</p>
+  <p id="carousel-size-save-status" role="status" aria-live="polite"></p>
  </form>
  <p class="small muted">Only publish approved bakery content. You can preview an unpublished slide below without making it public.</p>
  ${previewMarkup?'<details id="admin-slide-preview" class="admin-slide-preview"><summary>Private preview — includes drafts</summary><p>The preview includes draft slides for testing and does not change their public visibility.</p>'+previewMarkup+'</details>':''}
@@ -273,6 +285,38 @@ async function carouselPanel(){
   }catch(err){status.textContent='Unable to save interval.';ctx.showError(err);}
   finally{submit.disabled=false;}
  };
+ const sizeInput=$('#carousel-size');
+ const sizeStatus=$('#carousel-size-save-status');
+ const refreshSizePreview=()=>{
+  const root=previewDetails?.querySelector('.home-carousel');
+  if(!root)return;
+  for(const option of CAROUSEL_SIZE_OPTIONS)root.classList.remove('home-carousel--'+option);
+  root.classList.add('home-carousel--'+normalizeCarouselSize(sizeInput.value));
+ };
+ sizeInput.addEventListener('change',()=>{
+  refreshSizePreview();
+  sizeStatus.textContent='Preview updated. Select Save size to apply it to the public website.';
+ });
+ $('#carousel-size-form').onsubmit=async event=>{
+  event.preventDefault();
+  const chosen=sizeInput.value;
+  if(!CAROUSEL_SIZE_OPTIONS.includes(chosen)){
+   sizeStatus.textContent='Choose Extra Small, Small, Medium, or Large.';
+   return;
+  }
+  const submit=event.currentTarget.querySelector('button[type="submit"]');
+  submit.disabled=true;
+  try{
+   await update('site_settings',1,{home_carousel_size:chosen});
+   settings.home_carousel_size=chosen;
+   refreshSizePreview();
+   sizeStatus.textContent='Saved: '+sizeInput.selectedOptions[0].textContent+'. All public slides now use this size after the homepage reloads.';
+  }catch(error){
+   sizeStatus.textContent='Unable to save carousel size.';
+   ctx.showError(error);
+  }finally{submit.disabled=false;}
+ };
+
  $('#carousel-interval-seconds').oninput=event=>event.currentTarget.setCustomValidity('');
  $('#new-carousel-slide').onclick=()=>openEditor(null);
  document.querySelectorAll('[data-slide-edit]').forEach(el=>el.onclick=()=>openEditor(rows[Number(el.dataset.slideEdit)]));

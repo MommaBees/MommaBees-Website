@@ -642,3 +642,76 @@ label.checkbox .required-indicator,label.allergen-confirm .required-indicator{wh
   min-height:0;
  }
 }
+
+/* MBB-UI-035 v1.25: Owner-selectable *uniform* carousel size presets.
+   Values affect the shared carousel viewport, never individual slides. */
+.home-carousel{
+ --carousel-height:clamp(440px,34vw,570px);
+ --carousel-photo-height:clamp(210px,34vw,280px);
+}
+.home-carousel--extra-small{
+ --carousel-height:clamp(300px,25vw,360px);
+ --carousel-photo-height:170px;
+}
+.home-carousel--small{
+ --carousel-height:clamp(370px,29vw,430px);
+ --carousel-photo-height:200px;
+}
+.home-carousel--medium{
+ --carousel-height:clamp(440px,34vw,570px);
+ --carousel-photo-height:clamp(210px,34vw,280px);
+}
+.home-carousel--large{
+ --carousel-height:clamp(540px,43vw,680px);
+ --carousel-photo-height:clamp(255px,38vw,330px);
+}
+.home-carousel .home-carousel-slides,
+.admin-slide-preview .home-carousel .home-carousel-slides{
+ height:var(--carousel-height);
+}
+.home-carousel .home-carousel-slide .hero-copy{
+ overflow-y:auto;
+ scrollbar-gutter:stable;
+}
+.home-carousel .home-carousel-slide .hero-art img{
+ object-fit:cover;
+}
+.admin-carousel-size select{
+ min-width:180px;
+ max-width:100%;
+ min-height:44px;
+ padding:9px 12px;
+ background:#fff;
+ border:1px solid #aa8769;
+ border-radius:4px;
+}
+#carousel-size-save-status:not(:empty){color:#51371e;font-weight:700;margin-top:12px}
+@media(max-width:850px){
+ .home-carousel--extra-small{
+  --carousel-height:440px;
+  --carousel-photo-height:160px;
+ }
+ .home-carousel--small{
+  --carousel-height:530px;
+  --carousel-photo-height:190px;
+ }
+ .home-carousel--medium{
+  --carousel-height:clamp(600px,110vw,730px);
+  --carousel-photo-height:clamp(210px,34vw,280px);
+ }
+ .home-carousel--large{
+  --carousel-height:clamp(740px,125vw,860px);
+  --carousel-photo-height:clamp(255px,40vw,340px);
+ }
+ .home-carousel .home-carousel-slides,
+ .admin-slide-preview .home-carousel .home-carousel-slides{
+  height:var(--carousel-height);
+ }
+ .home-carousel .home-carousel-slide.hero,
+ .admin-slide-preview .home-carousel .home-carousel-slide.hero{
+  grid-template-rows:var(--carousel-photo-height) minmax(0,1fr);
+ }
+}
+@media(max-width:450px){
+ .admin-carousel-size select{width:100%;}
+}
