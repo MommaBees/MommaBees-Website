@@ -1047,7 +1047,7 @@ test('managed carousel keeps the original hero, accepts owner slides and is acce
  assert.match(two,/Previous featured slide/);assert.match(two,/Next featured slide/);
  assert.match(two,/aria-pressed="true"/);
  assert.match(app,/eligibleHomeSlides\(all\.carouselSlides\)/);
- assert.match(app,/bindHomeCarousel\(\)/);
+ assert.match(app,/bindHomeCarousel\(settings\.home_carousel_interval_seconds\)/);
  assert.match(app,/stopHomeCarousel\(\)/);
  assert.match(admin,/home_carousel_slides:\{label:'Homepage Carousel'/);
  assert.match(admin,/upload\('carousel-photos'/);
@@ -1087,7 +1087,7 @@ test('carousel Admin navigation/editor CRUD use the actual canonical Supabase ta
  assert.match(admin,/selected==='home_carousel_slides'\)return carouselPanel\(\)/);
  assert.match(admin,/if\(selected==='home_carousel_slides'&&!record\)/);
  assert.match(admin,/if\(selected==='home_carousel_slides'\)\{/);
- assert.match(admin,/await loadTable\('home_carousel_slides'\)/);
+ assert.match(admin,/await Promise\.all\(\[loadTable\('home_carousel_slides'\),loadTable\('site_settings'\)\]\)/);
  assert.match(admin,/await update\('home_carousel_slides',a\.id/);
  assert.match(admin,/await update\('home_carousel_slides',slide\.id/);
  assert.match(admin,/await remove\('home_carousel_slides',slide\.id\)/);
@@ -1103,7 +1103,7 @@ test('carousel drafts remain private and Admin explains activation of slideshow'
  assert.match(admin,/Automatic rotation requires at least two currently visible published slides/);
  assert.match(admin,/Private preview — includes drafts/);
  assert.match(admin,/previewSlides=rows\.map\(x=>\(\{\.\.\.x,published:true\}\)\)/);
- assert.match(admin,/previewDetails\.open\)bindHomeCarousel\(\)/);
+ assert.match(admin,/previewDetails\.open\)bindHomeCarousel\(interval\)/);
  assert.match(app,/eligibleHomeSlides\(all\.carouselSlides\)/);
 });
 test('all website forms mark mandatory fields with * Required',()=>{
