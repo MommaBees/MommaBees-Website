@@ -616,6 +616,11 @@ test('username/email login UI offers one field without changing email-only regis
  assert.match(migration,/cp\.banned_at is null/);
  assert.match(migration,/revoke all on function public\.bakery_login_user_id\(text\) from public, anon, authenticated/);
  assert.match(migration,/grant execute on function public\.bakery_login_user_id\(text\) to service_role/);
+ const next=read('supabase/migrations/20261026_username_email_server_lookup_v115.sql');
+ assert.match(next,/security definer/);
+ assert.match(next,/security invoker/);
+ assert.match(next,/revoke all on function public\.bakery_login_email\(text\) from public, anon, authenticated/);
+ assert.match(next,/grant execute on function public\.bakery_login_email\(text\) to service_role/);
 });
 test('username login resolves email only on server and preserves single Supabase CAPTCHA verification',async()=>{
  const former=globalThis.fetch,calls=[],uuid='11111111-1111-4111-8111-111111111111';
@@ -623,15 +628,11 @@ test('username login resolves email only on server and preserves single Supabase
   SUPABASE_SECRET_KEY:'sb_secret_test_only',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test_only'};
  globalThis.fetch=async(url,options={})=>{
   const u=String(url);calls.push({url:u,headers:options.headers||{},body:options.body});
-  if(u.includes('/rest/v1/rpc/bakery_login_user_id')){
+  if(u.includes('/rest/v1/rpc/bakery_login_email')){
    assert.equal(options.headers.apikey,env.SUPABASE_SECRET_KEY);
+   assert.ok(!options.headers.Authorization,'No JWT-style bearer header with new secret');
    assert.equal(JSON.parse(options.body).p_username,'mommabee');
-   return new Response(JSON.stringify(uuid),{status:200});
-  }
-  if(u.includes('/auth/v1/admin/users/')){
-   assert.ok(!options.headers.Authorization,'New secret key is never an Authorization bearer token');
-   assert.equal(options.headers.apikey,env.SUPABASE_SECRET_KEY);
-   return new Response(JSON.stringify({id:uuid,email:'owner-for-test@example.test'}),{status:200});
+   return new Response(JSON.stringify('owner-for-test@example.test'),{status:200});
   }
   if(u.includes('/auth/v1/token?grant_type=password')){
    assert.equal(options.headers.apikey,env.SUPABASE_PUBLISHABLE_KEY);
@@ -650,7 +651,7 @@ test('username login resolves email only on server and preserves single Supabase
   const res=await protectedLogin({request:req,env});
   assert.equal(res.status,200);
   assert.equal((await res.json()).user.id,uuid);
-  assert.equal(calls.length,3);
+  assert.equal(calls.length,2);
   assert.equal(calls.filter(c=>c.url.includes('/token?grant_type=password')).length,1);
   assert.ok(calls.every(c=>!c.url.includes('siteverify')),'Do not redeem single-use CAPTCHA before Supabase');
  }finally{globalThis.fetch=former;}
@@ -662,10 +663,8 @@ test('unknown username and incorrect password return identical non-enumerating f
  let usernameExists=false;
  globalThis.fetch=async(url,options={})=>{
   const u=String(url);
-  if(u.includes('/rest/v1/rpc/bakery_login_user_id'))
-   return new Response(JSON.stringify(usernameExists?uuid:null),{status:200});
-  if(u.includes('/auth/v1/admin/users/'))
-   return new Response(JSON.stringify({user:{id:uuid,email:'private@example.test'}}),{status:200});
+  if(u.includes('/rest/v1/rpc/bakery_login_email'))
+   return new Response(JSON.stringify(usernameExists?'private@example.test':null),{status:200});
   if(u.includes('/auth/v1/token?grant_type=password')){
    const auth=JSON.parse(options.body);
    assert.equal(auth.gotrue_meta_security.captcha_token,'fake-captcha');
