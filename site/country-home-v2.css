@@ -1,0 +1,327 @@
+/* Mamma Bee's Bakery | Country Home V2 visual system
+   Warm, personal, hand-crafted design. Presentation only: existing orders,
+   authentication, permissions, pricing, and Owner background controls unchanged. */
+
+:root{
+  --cream:#f9f3e9;--paper:#fffaf2;--honey:#c99756;
+  --ink:#36291f;--brown:#704628;--muted:#6f6254;--line:#e2d2be;
+  --green:#4e654e;--red:#a23f36;
+  --bakery-plum:#663f39;--bakery-oat:#eee1cd;--bakery-wood:#785034;
+  --bakery-edge:#d9c4a7;--bakery-page:#fdf8f0;
+  --bakery-shadow:0 5px 24px rgba(62,37,19,.065);
+  color-scheme:light;
+  font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;
+  font-size:16px;
+}
+html{scroll-behavior:smooth;scroll-padding-top:114px}
+body{color:var(--ink);line-height:1.6;font-size:1rem}
+body,#app{min-width:320px}
+button,input,textarea,select{font-family:inherit}
+h1,h2,h3,h4,.brand{font-family:Georgia,"Times New Roman",serif;color:#432b1d;letter-spacing:-.023em}
+h1{font-size:clamp(2rem,3.4vw,3.1rem);font-weight:700;line-height:1.15}
+h2{font-size:clamp(1.5rem,2.35vw,2.15rem);line-height:1.2}
+h3{line-height:1.27}
+p{line-height:1.7}
+a{text-underline-offset:3px;text-decoration-thickness:1px}
+:where(button,a,input,select,textarea,summary):focus-visible{outline:3px solid #c28a43!important;outline-offset:3px!important}
+:where(.box,.card,.notice,dialog){overflow-wrap:anywhere}
+::selection{background:#e6c9a6;color:#3c2818}
+
+/* Masthead: a familiar local-business identity, not a corporate app bar. */
+.topbar{background:#513627;color:#fff8e9;font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;padding:9px 14px;line-height:1.35;border-bottom:2px solid #b98c50}
+.header{background:rgba(255,249,240,.98);box-shadow:0 4px 16px rgba(52,30,17,.07);border-bottom:1px solid #dbc5a7;backdrop-filter:blur(9px)}
+.nav{max-width:1760px;min-height:95px;gap:clamp(15px,2.5vw,44px)}
+.brand{display:block;flex:none;font-weight:700;color:#4d2e1b;font-size:clamp(1.5rem,2.2vw,2.22rem);line-height:1.03;white-space:normal}
+.brand span{margin-top:8px;font:italic 400 clamp(.73rem,.83vw,.93rem) Georgia,serif;text-transform:none;letter-spacing:.012em;color:#886044;max-width:310px;line-height:1.35}
+.navlinks{gap:clamp(6px,1vw,16px)}
+.navlinks a{position:relative;border-radius:0!important;background:transparent!important;color:#4e392a!important;padding:11px 2px!important;white-space:nowrap;font-size:.88rem;font-weight:650;text-decoration:none}
+.navlinks a:hover,.navlinks a.current{color:#7b4525!important}
+.navlinks a.current:after,.navlinks a[aria-current="page"]:after{content:"";position:absolute;bottom:6px;left:2px;right:2px;height:2px;background:#a67b49}
+#mobile-nav-toggle{background:#6b452b;color:#fffaf1;border:1px solid #67402a;box-shadow:none}
+
+/* The chosen rustic background is visible as a setting, not through the text. */
+#main.shell,body[data-site-background] #main.shell{max-width:1700px;min-height:56vh;
+  background:rgba(255,250,242,.955);border-left:1px solid rgba(125,79,46,.15);
+  border-right:1px solid rgba(125,79,46,.15);box-shadow:0 18px 65px rgba(68,37,15,.075);
+  padding-inline:clamp(18px,3.5vw,63px);padding-block:clamp(16px,2.5vw,38px)}
+body[data-site-background="photo"] #main.shell{background:rgba(255,251,244,.965)}
+body[data-page="admin"] #main.shell{background:rgba(255,250,241,.985)}
+.section{margin-block:clamp(30px,4.6vw,67px)}
+.eyebrow{font-size:.71rem;font-weight:750;letter-spacing:.145em;color:#89532e;text-transform:uppercase}
+.muted,.helper,.small,.card small{color:#776655}
+.section-head{border-bottom:1px solid var(--bakery-edge);padding-bottom:16px;margin-bottom:23px;align-items:end}
+.section-head:before{content:none!important}
+.section-head h2{margin:6px 0 0}
+.section-head>a,.section-head a:not(.button){color:#795033;font-weight:700;white-space:normal}
+.page-crumbs{font-size:.77rem;color:#76604c;margin:0 0 17px;display:flex;align-items:center;gap:8px}
+.page-crumbs a{color:#73513a;text-decoration:none;font-weight:650}
+.page-crumbs span[aria-hidden]{color:#b89870}
+body[data-page="home"] .page-crumbs{display:none}
+
+/* Primary calls to action, tactile and quiet. */
+.button,.btn,button.button{border-radius:5px;box-shadow:none;min-height:44px;background:#684329;border-color:#684329;color:#fff8ef;padding:10px 18px;letter-spacing:.005em;font-weight:700;transition:background .15s ease,transform .15s ease}
+.button:hover,.btn:hover{background:#50321f;color:#fff;filter:none;transform:translateY(-1px)}
+.button.secondary,.btn.secondary{background:transparent;color:#684329;border-color:#a98865}
+.button.secondary:hover{background:#f3e4d0;color:#53321c}
+.button.ghost,.btn.ghost{background:transparent;color:#5a3925;border-color:#d7c3aa}
+.button.danger{background:#923f35;border-color:#923f35}
+.button:disabled,.btn:disabled{transform:none}
+.tab{border:1px solid #dac7ae;background:#fff8ee;color:#62452d;border-radius:5px;font-weight:650;padding:10px 15px}
+.tab.active{background:#66432b;color:#fff;border-color:#66432b}
+.tabs{gap:8px}
+.pill,.badge{border-radius:4px}
+hr{border-color:#e6d7c4}
+.notice{border-radius:6px;box-shadow:none;border-width:1px}
+.empty{background:#fbf5ea;border:1px dashed #d1b99c;border-radius:7px;color:#755b43;line-height:1.7}
+.empty a{font-weight:700}
+
+/* Hand-crafted menu cards with honest product photography. */
+.grid{gap:clamp(14px,1.8vw,25px);grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border:1px solid #dfcdb4;border-radius:6px;box-shadow:var(--bakery-shadow);background:#fffbf5!important;transition:box-shadow .2s ease}
+.card:hover{box-shadow:0 9px 24px rgba(77,42,17,.12)}
+.card-media{position:relative;overflow:hidden}
+.card-content{padding:clamp(15px,1.6vw,22px)}
+.card h3{font-size:clamp(1.25rem,1.6vw,1.5rem);margin:4px 0 11px}
+.card p{line-height:1.55}
+.card .price{font-size:1.08rem;color:#75452a}
+.product-photo,body[data-site-background] .card-media .product-photo,
+.card-media .product-photo{width:100%;height:clamp(170px,14vw,225px);object-fit:cover;object-position:center;filter:saturate(.91) contrast(1.035)}
+.photo-empty{border-radius:0;font-size:.98rem}
+.stock-label,.photo-disclosure,.example-photo-note{font-size:.73rem;color:#78624e}
+.bakery-menu-grid{gap:clamp(16px,2vw,28px)}
+.bakery-menu-grid .example-menu-card{border-radius:6px}
+.bakery-menu-grid .example-menu-card .card-content{padding:20px}
+.handwritten-menu-note{font:italic 1.14rem/1.6 Georgia,serif;color:#704a2d;max-width:800px}
+.graceful-image-fallback{background:#f0e5d5!important}
+.product-results .card,.bakery-menu-grid .card{min-width:0}
+
+/* Home: a warmly layered photograph and a kitchen-note-style introduction. */
+.country-welcome-band{background:#f0e1c8;border-block:1px solid #dbc6a7;display:flex;align-items:center;justify-content:space-evenly;gap:18px;color:#775239;font:italic 1rem Georgia,serif;padding:15px 22px;margin-top:7px}
+.country-welcome-band span{max-width:34%;text-align:center}
+.hero{min-height:420px;grid-template-columns:minmax(0,1fr) minmax(310px,.92fr);
+  background:#f4e7d2;border:1px solid #d6bc99;border-radius:7px;
+  overflow:visible;position:relative;margin:35px 0 clamp(32px,5vw,67px);
+  box-shadow:0 12px 28px rgba(84,51,29,.075)}
+.hero-copy{padding:clamp(25px,4.2vw,70px);position:relative;z-index:1}
+.hero h1{font-size:clamp(2.5rem,4.45vw,4.65rem);line-height:1.08;letter-spacing:-.045em;color:#4a2b1b}
+.hero p{font-size:clamp(.99rem,1.14vw,1.12rem);line-height:1.75;max-width:53ch}
+.hero .eyebrow{color:#8d5430}
+.hero-art{min-height:410px;box-shadow:inset 0 0 0 7px rgba(255,250,240,.20);background-color:#d4b083;filter:saturate(.89)}
+.hero:after{content:"";position:absolute;z-index:2;width:75px;height:5px;left:clamp(25px,4vw,65px);bottom:-3px;background:#9b7148}
+.hero-actions{gap:12px;margin-top:27px}
+.bakery-home-note{display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:clamp(16px,4vw,62px);
+   margin:0 0 52px;padding:clamp(23px,3vw,42px);border-top:1px solid #d6c2a4;border-bottom:1px solid #d6c2a4;
+   background:linear-gradient(110deg,#fdf7ed,#f2e6d4)}
+.bakery-home-note h2{margin:7px 0 11px;font-size:clamp(1.65rem,2.5vw,2.6rem)}
+.bakery-home-note p{margin:0;max-width:62ch}
+.bakery-home-note-actions{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.bakery-home-note-actions a{border-left:3px solid #b78b53;background:#fffaf3;padding:18px;display:flex;flex-direction:column;gap:6px;text-decoration:none}
+.bakery-home-note-actions strong{font:700 1.16rem Georgia,serif;color:#50321f}
+.bakery-home-note-actions span{font-size:.81rem;color:#745b46;line-height:1.5}
+body[data-page="home"] .home-gallery-preview .product-photo,
+body[data-page="home"] .card-media .product-photo{height:clamp(165px,14vw,210px)}
+body[data-page="home"] .home-gallery-preview .card>a,body[data-page="home"] .home-gallery-preview .card{color:inherit}
+body[data-page="home"] .home-gallery-preview .card-content strong{font-family:Georgia,serif;font-size:1.2rem}
+
+/* Category and mode pages remain genuinely different shopping destinations. */
+.shop-page .shop-hero{border:1px solid #d9bd9c;box-shadow:none;border-radius:6px;
+  grid-template-columns:minmax(0,1.28fr) minmax(230px,.72fr);min-height:265px;
+  background:#f3e7d6}
+.shop-page--ready .shop-hero{background:#f0eadf;border-left:5px solid #66734f}
+.shop-page--preorder .shop-hero{background:#f7eae0;border-left:5px solid #9f6544}
+.shop-page--all .shop-hero{background:#f4e6d3;border-left:5px solid #a67a4b}
+.shop-page .shop-hero-copy{padding:clamp(24px,4vw,55px)}
+.shop-hero h1{font-size:clamp(2.2rem,3.7vw,3.35rem);margin:7px 0 15px}
+.shop-hero h2{font:italic 1.22rem/1.35 Georgia,serif;color:#805736}
+.shop-hero p{max-width:56ch}
+.shop-hero-picture{min-height:210px;background:#d9c4a3}
+.shop-hero-image{min-height:260px;max-height:330px;filter:saturate(.86)}
+.shop-hero-picture .photo-disclosure{background:rgba(255,248,238,.95);padding:7px 10px;font-size:.72rem}
+.shop-mode-tabs{border-bottom:1px solid #ceb797}
+.shop-mode-tabs .tab{min-width:130px}
+.shop-mode-tabs .tab.active{background:#69432b;border-radius:5px}
+.shop-result-count{color:#725139;font-style:italic}
+.subcategory-tabs{margin-bottom:24px}
+.shop-empty{background:#fbf4e9}
+
+/* Product pages: real-food photos, useful purchasing controls. */
+body[data-page="product"] .detail{max-width:1330px;gap:clamp(24px,4vw,67px);margin:20px auto 34px;align-items:start}
+.detail-photo{height:clamp(330px,38vw,540px);object-fit:cover;border-radius:5px;border:1px solid #d6c4aa}
+.thumbs img{border-radius:3px;outline:1px solid #d4bd9e}
+.detail>div:last-child{background:#fff9f0;border:1px solid #e2cfb5;padding:clamp(21px,3vw,44px);box-shadow:var(--bakery-shadow)}
+.detail h1{font-size:clamp(2rem,3.6vw,3.4rem)}
+.detail .price{font-size:1.45rem;margin-block:19px}
+#add-form{background:#f5ead9;padding:20px;border-top:3px solid #987047}
+#reviews{max-width:1100px;margin-inline:auto}
+
+/* Checkout, basket and account: calm, trustworthy, easy to complete. */
+body[data-page="cart"] #main>section,body[data-page="track"] #main>section,
+body[data-page="success"] #main>section{max-width:1160px;margin-inline:auto}
+body[data-page="cart"] .lineitem{background:#fffaf3;padding:20px 24px;border:1px solid #e1ceb4;margin-bottom:9px;border-radius:5px;align-items:center}
+body[data-page="cart"] .total{border-top:2px solid #c5a278;padding-top:19px;color:#5d3821}
+body[data-page="checkout"] #checkout-form{grid-template-columns:minmax(0,1.45fr) minmax(270px,.75fr);gap:clamp(19px,2.5vw,36px);align-items:start}
+body[data-page="checkout"] #checkout-form>.box{border:1px solid #dec6a9;padding:clamp(20px,3vw,40px);border-radius:6px}
+body[data-page="checkout"] #checkout-form>.box:last-child{position:sticky;top:126px;background:#f2e6d3!important;border-top:4px solid #986d40}
+body[data-page="checkout"] #checkout-form h2{padding-bottom:12px;border-bottom:1px solid #dac2a0}
+body[data-page="checkout"] #checkout-form .lineitem{font-size:.9rem}
+body[data-page="checkout"] .payment-choices{padding:15px;background:#fff9f0}
+body[data-page="checkout"] #submit-order{width:100%;margin-top:20px}
+body[data-page="checkout"] #calendar-picker{background:#fdf7eb;border:1px solid #dfc6a6;padding:12px 18px;border-radius:6px;margin:15px 0}
+body[data-page="checkout"] #calendar-picker summary{cursor:pointer;font-weight:700;color:#714527}
+#pickup-calendar{max-width:100%;border-radius:6px;background:#fff9ee}
+#pickup-calendar .calendar-day.calendar-available{background:#e8d2a4;border-color:#92633c}
+#pickup-calendar .calendar-day.calendar-selected{background:#5c6a4e;border-color:#5c6a4e}
+body[data-page="account"] #main>.section:first-of-type{max-width:1330px;margin-inline:auto}
+body[data-page="account"] #bakery-login{max-width:700px;margin:24px auto}
+body[data-page="account"] #bakery-login,#bakery-register,
+body[data-page="account"] #my-profile,body[data-page="account"] .cols>.box{border-top:3px solid #ad8252}
+body[data-page="account"] #bakery-login>.field{max-width:100%}
+body[data-page="account"] .account-fields fieldset{background:#fbf4e8}
+body[data-page="account"] .account-fields legend{font-family:Georgia,serif;font-size:1.13rem;color:#61412a}
+.message-thread{border-left:3px solid #bc9d72!important}
+.message-form,.message-reply-form{max-width:880px}
+.message-images img{border-radius:4px}
+body[data-page="contact"] #contact-form{max-width:820px;margin:20px auto 45px;padding:clamp(20px,3.5vw,45px);border-top:4px solid #a17b4c}
+body[data-page="contact"] #main>.section>h1,
+body[data-page="contact"] #main>.section>p{max-width:920px;margin-inline:auto}
+body[data-page="faq"] #main>.section{max-width:1080px;margin-inline:auto}
+body[data-page="faq"] .box{padding:clamp(22px,3.5vw,50px)}
+body[data-page="faq"] .box h2{font-size:1.5rem;margin:32px 0 8px;border-bottom:1px solid #e5d4bb;padding-bottom:9px}
+body[data-page="faq"] .box h2:first-child{margin-top:0}
+
+/* Photo portfolio: real past bakes deserve equal treatment and no novelty overlays. */
+body[data-page="gallery"] #main>.section{max-width:1520px;margin-inline:auto}
+body[data-page="gallery"] .past-bakes-gallery{grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(15px,2vw,28px)}
+.past-bakes-gallery .card{border-radius:4px}
+body[data-site-background] .past-bakes-gallery .product-photo,
+.past-bakes-gallery .product-photo{height:clamp(180px,20vw,280px);filter:saturate(.93)}
+.past-bakes-gallery .card-content h3{margin:3px 0 9px;font-size:1.4rem}
+.past-bakes-gallery .card-content .small{font-size:.82rem}
+
+/* Back office: functional navigation, strong grouping, no private data in customer pages. */
+body[data-page="admin"] #main.shell{max-width:1700px}
+body[data-page="admin"] .admin-layout{display:grid;grid-template-columns:minmax(205px,245px) minmax(0,1fr);gap:clamp(18px,2vw,34px);align-items:start}
+body[data-page="admin"] .admin-side{background:#f3e7d6;border:1px solid #decaac;border-radius:6px;padding:12px 8px;max-height:calc(100vh - 135px)}
+body[data-page="admin"] .admin-side button{border-radius:4px;padding:12px 11px;border-left:3px solid transparent;text-align:left;font-size:.89rem}
+body[data-page="admin"] .admin-side button.active{background:#fffaf2;border-left-color:#8c5b37;color:#4f321e}
+body[data-page="admin"] .admin-side button:hover{background:#fdf6ea}
+body[data-page="admin"] #admin-main{min-width:0}
+body[data-page="admin"] #admin-main>.box{padding:clamp(16px,2.6vw,37px);border:1px solid #dfcbb0}
+body[data-page="admin"] .table-wrap{border:1px solid #dfccb1;border-radius:5px}
+body[data-page="admin"] th{background:#f0e4d3;color:#422d1d;font-size:.84rem;font-weight:750}
+body[data-page="admin"] td{background:#fffaf4;border-bottom:1px solid #e9dbca}
+body[data-page="admin"] table tr:hover td{background:#faf0e1}
+body[data-page="admin"] .stat{border:1px solid #dcc5a4;border-top:3px solid #94704d;border-radius:5px;background:#fffbf5}
+body[data-page="admin"] .stat strong{font-family:Georgia,serif;color:#5d3d26}
+body[data-page="admin"] .filters{background:#faf0e3;border:1px solid #e2cfb5;padding:14px;border-radius:5px}
+body[data-page="admin"] dialog{max-height:88vh;overflow-y:auto}
+body[data-page="admin"] .site-background-preview{min-height:220px}
+
+/* Paper forms, candid notices and consistency across all routes. */
+.box{background:#fffbf4!important;border:1px solid #e1cfb5;border-radius:6px;box-shadow:var(--bakery-shadow)}
+.field input,.field select,.field textarea,
+.account-fields input,form input:not([type=checkbox]):not([type=radio]):not([type=file]),
+form select,form textarea{background:#fffefb;color:#36291f;border:1px solid #bfa88e;border-radius:5px;min-height:44px}
+form textarea,.field textarea{min-height:112px}
+input:disabled,select:disabled{background:#f0eadf!important;color:#695f53}
+.field:focus-within{color:#674026}
+label{line-height:1.48}
+fieldset{border-color:#decbb1;border-radius:5px}
+dialog{border:1px solid #b99972;border-radius:8px;box-shadow:0 30px 80px #2e1a14aa;background:#fffaf2}
+dialog::backdrop{background:rgba(30,17,10,.7)}
+.announcement{border-left:4px solid #936d40;background:#f0e2c8}
+.notice.error{background:#fff1ed;color:#852c26}
+.notice.success{background:#edf4e8;color:#355b30}
+.bakery-qr-panel{background:#f9eedb;border-color:#bc9671;border-radius:7px}
+.bakery-qr-art{border-color:#d7c5b1}
+
+/* Footer resembles a bakery's printed calling card. */
+.footer{margin-top:55px;background:#3c2a20;border-top:5px solid #b18a53;color:#f6e8d6;padding:clamp(30px,4vw,55px) 0}
+.footer .shell{max-width:1700px}
+.footer a{color:#fdf0df}
+.footer .footer-inner{display:grid;grid-template-columns:minmax(200px,1.25fr) minmax(150px,.65fr) minmax(130px,.55fr);gap:clamp(20px,5vw,70px);align-items:start}
+.footer .footer-brand-name{font:700 clamp(1.65rem,2.2vw,2.25rem) Georgia,serif;letter-spacing:-.02em}
+.footer .footer-pledge{font:italic 1.05rem/1.6 Georgia,serif;color:#ebcc9f;max-width:43ch}
+.footer .footer-col-title{font:.75rem "Trebuchet MS",sans-serif;text-transform:uppercase;letter-spacing:.14em;font-weight:700;color:#e5c796;margin:0 0 15px}
+.footer .footer-navigation{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.footer .footer-navigation a{text-decoration:none;font-weight:600}
+.footer .footer-navigation a:hover{text-decoration:underline}
+.footer .footer-qr{margin:0;background:#fff8ee;color:#4c2c1c!important;display:flex;align-items:center;max-width:270px;border-radius:5px}
+.footer .footer-bottom{border-top:1px solid #7b6250;margin-top:30px;padding-top:17px;font-size:.8rem;color:#eadac5;max-width:90ch}
+
+/* Device-specific layout: preserve full display without squeezing the Admin. */
+@media(max-width:1190px){
+ .nav{flex-wrap:wrap;min-height:78px;justify-content:space-between;padding-block:12px}
+ .navlinks{width:100%;justify-content:center;margin-left:0;gap:12px 22px}
+ .hero{grid-template-columns:1fr .87fr}
+ .bakery-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:850px){
+ .navlinks{justify-content:flex-start}
+ .hero{grid-template-columns:1fr}
+ .hero-art{min-height:250px;max-height:400px;order:-1}
+ .hero-copy{padding:32px}
+ .bakery-home-note{grid-template-columns:1fr}
+ .admin-layout,body[data-page="admin"] .admin-layout{grid-template-columns:1fr}
+ body[data-page="admin"] .admin-side{position:static;display:flex;flex-direction:row;max-height:none;overflow-x:auto;white-space:nowrap;padding:6px}
+ body[data-page="admin"] .admin-side button{flex:none;min-height:44px}
+ body[data-page="checkout"] #checkout-form{grid-template-columns:1fr}
+ body[data-page="checkout"] #checkout-form>.box:last-child{position:static}
+ .shop-page .shop-hero{grid-template-columns:1fr 1fr}
+ body[data-page="gallery"] .past-bakes-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .footer .footer-inner{grid-template-columns:1fr 1fr}
+ .footer .footer-inner>.footer-col:first-child{grid-column:1 / -1}
+}
+@media(max-width:760px){
+ .header{position:relative}
+ .nav{min-height:72px;flex-wrap:wrap;justify-content:space-between}
+ .brand{max-width:calc(100% - 108px);min-width:0;font-size:clamp(1.35rem,5vw,1.75rem)}
+ .brand span{font-size:.76rem}
+ .navlinks{display:none;width:100%;margin:3px 0 0;padding:10px;flex-direction:column;align-items:stretch;gap:0;background:#fff8ef;border:1px solid #dbc3a0;box-shadow:0 8px 18px #42230f18}
+ .navlinks.mobile-open{display:flex}
+ .navlinks a,.navlinks a.current{display:block;min-height:44px;padding:11px 14px!important;border-radius:3px!important}
+ .navlinks a.current{background:#f0e0c9!important}
+ .navlinks a.current:after{left:14px;right:auto;width:32px;bottom:6px}
+ #main.shell,body[data-site-background] #main.shell{width:100%;padding-inline:clamp(14px,4vw,27px);padding-top:20px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .shop-page .shop-hero{grid-template-columns:1fr}
+ .shop-hero-picture{order:-1}
+ .shop-hero-image{min-height:180px;max-height:215px}
+ .hero{margin-top:21px}
+ .country-welcome-band{font-size:.88rem;padding:12px;gap:10px}
+ .bakery-home-note-actions{grid-template-columns:1fr 1fr}
+ .bakery-home-note-actions a{padding:14px}
+ .detail{grid-template-columns:1fr!important}
+ body[data-page="product"] .detail{gap:22px}
+ .detail-photo{height:300px}
+ .topbar{font-size:.63rem;letter-spacing:.12em}
+}
+@media(max-width:530px){
+ .grid,.bakery-menu-grid,body[data-page="gallery"] .past-bakes-gallery{grid-template-columns:1fr}
+ body[data-page="home"] .home-gallery-preview{grid-template-columns:1fr}
+ .country-welcome-band{justify-content:center}
+ .country-welcome-band span{max-width:49%}
+ .country-welcome-band span:nth-child(3){display:none}
+ .bakery-home-note-actions{grid-template-columns:1fr}
+ .hero h1{font-size:clamp(2.25rem,10vw,3rem)}
+ .hero-art{min-height:215px}
+ .hero-copy{padding:26px 23px}
+ .product-photo,body[data-site-background] .card-media .product-photo{height:210px}
+ .shop-mode-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .shop-mode-tabs .tab{font-size:.76rem;padding:10px 5px;min-width:0}
+ .qr-actions{flex-direction:column}
+ .qr-actions button{width:100%}
+ .footer .footer-inner{grid-template-columns:1fr}
+ .footer .footer-inner>.footer-col:first-child{grid-column:auto}
+ body[data-page="account"] #bakery-login,body[data-page="account"] #bakery-register{padding:22px}
+ body[data-page="admin"] #admin-main>.box{padding:16px}
+ .footer-qr{width:100%;justify-content:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
+@media print{
+ .header,.topbar,.footer,.page-crumbs,.country-welcome-band{display:none!important}
+ #main.shell,body[data-site-background] #main.shell{background:#fff!important;box-shadow:none!important;border:0!important}
+ body{background:#fff!important}
+}
