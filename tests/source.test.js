@@ -1334,7 +1334,7 @@ test('store routes have department tabs only in split mode, and Admin holds cata
  assert.match(site,/categoryChoices=categories\(department\)/);
  assert.match(site,/split\?'':demoStorePreview/);
  assert.match(admin,/selected==='store_display'\)return storeDisplayPanel\(\)/);
- assert.match(admin,/update\('site_settings',1,\{split_store_enabled:enabled\}\)/);
+ assert.match(admin,/update\('site_settings',1,next\)/);
  assert.match(admin,/id="product-taxonomy-search"/);
  assert.match(admin,/searchTaxonomyPaths\(paths,query,20\)/);
  assert.match(admin,/field\('variety_id','Variety'/);
