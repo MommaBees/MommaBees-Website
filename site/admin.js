@@ -52,6 +52,17 @@ const field=(key,label,type='text',extra={})=>({key,label,type,...extra});
 const configs={
  categories:{label:'Categories',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('name','Category name'),field('slug','URL slug (example: cookies)'),field('description','Description','textarea'),field('photo_url','Category image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
  products:{label:'Products',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('category_id','Category','ref',{table:'categories'}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('variety_id','Variety','ref',{table:'catalog_varieties'}),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Sold by','select',{options:['each','dozen','tray','box','slice','bag','bunch','basket','pint','quart','pound']}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
+ store_showcase_items:{label:'Store Showcase Items',fields:cols(
+  field('department','Department','select',{options:STORE_DEPARTMENTS}),
+  field('category_id','Category','ref',{table:'categories'}),
+  field('subcategory_id','Subcategory (optional)','ref',{table:'subcategories'}),
+  field('variety_id','Variety (optional)','ref',{table:'catalog_varieties'}),
+  field('name','Display name'),
+  field('slug','Identifier'),
+  field('photo_url','Photo (optional)','image'),
+  field('sort_order','Display order','number'),
+  field('active','Show on website','bool')
+ )},
  catalog_varieties:{label:'Product Varieties',fields:cols(field('category_id','Category','ref',{table:'categories'}),field('subcategory_id','Subcategory (optional)','ref',{table:'subcategories'}),field('name','Variety name'),field('slug','Variety slug'),field('sort_order','Display order','number'),field('active','Active','bool'))},
  subcategories:{label:'Subcategories',fields:cols(field('category_id','Parent category','ref',{table:'categories'}),field('name','Subcategory name'),field('slug','Subcategory slug'),field('description','Description','textarea'),field('photo_url','Subcategory image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
  past_bakes:{label:'Past Bakes Gallery',fields:cols(field('title','Gallery photo title'),field('description','Optional photo description','textarea'),field('image_url','Past bake photograph','image'),field('sort_order','Display order','number'),field('published','Display in gallery','bool'))},
@@ -691,6 +702,34 @@ async function openEditor(record){const c=configs[selected];
   search?.addEventListener('input',showMatches);
   if(record?.category_id){const c=refs.categories.find(c=>c.id===record.category_id);dep.value=departmentForCategory(c);}
   updateHierarchy('department');
+ }
+ if(selected==='store_showcase_items'){
+  const dept=$('#field_department'),cat=$('#field_category_id'),sub=$('#field_subcategory_id'),variety=$('#field_variety_id');
+  const refresh=(stage='department')=>{
+   if(stage==='department'&&cat){
+    for(const opt of cat.options){if(!opt.value)continue;
+     const item=refs.categories?.find(x=>x.id===opt.value);
+     opt.disabled=!item||departmentForCategory(item)!==dept.value;opt.hidden=opt.disabled;
+    }
+    if(cat.selectedOptions[0]?.disabled)cat.value='';
+   }
+   if(sub){for(const opt of sub.options){if(!opt.value)continue;
+     const item=refs.subcategories?.find(x=>x.id===opt.value);
+     opt.disabled=!item||item.category_id!==cat?.value;opt.hidden=opt.disabled;
+    }if(sub.selectedOptions[0]?.disabled)sub.value='';}
+   if(variety){for(const opt of variety.options){if(!opt.value)continue;
+    const item=refs.catalog_varieties?.find(x=>x.id===opt.value);
+    opt.disabled=!item||item.category_id!==cat?.value||String(item.subcategory_id||'')!==String(sub?.value||'');opt.hidden=opt.disabled;
+   }if(variety.selectedOptions[0]?.disabled)variety.value='';}
+  };
+  dept?.addEventListener('change',()=>{cat.value='';if(sub)sub.value='';if(variety)variety.value='';refresh();});
+  cat?.addEventListener('change',()=>{if(sub)sub.value='';if(variety)variety.value='';refresh('category');});
+  sub?.addEventListener('change',()=>{if(variety)variety.value='';refresh('subcategory');});
+  if(record?.category_id){
+   const parent=refs.categories?.find(x=>x.id===record.category_id);
+   if(parent&&dept)dept.value=departmentForCategory(parent);
+  }
+  refresh();
  }
  if(selected==='catalog_varieties'){
   const cat=$('#field_category_id'),sub=$('#field_subcategory_id');

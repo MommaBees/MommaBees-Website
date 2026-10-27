@@ -1433,3 +1433,38 @@ test('homepage departments use real sellable cards, mobile stacking and staff-on
  assert.match(migration,/home_bakery_visible boolean not null default true/);
  assert.match(migration,/home_homestand_visible boolean not null default true/);
 });
+
+
+import {showcaseItemsFor,showcaseIcon,SHOWCASE_ICONS} from '../site/store-showcase.js';
+test('six specified showcase entries are grouped and ordered by department',()=>{
+ const products=[
+ {slug:'banana-creme-pie',name:'Banana Creme Pie',department:'bakery',active:true,sort_order:10},
+ {slug:'cinnamon-swirl-bread',name:'Cinnamon Swirl Bread',department:'bakery',active:true,sort_order:20},
+ {slug:'dream-cookie-drommar',name:'Dream Cookie (drömmar)',department:'bakery',active:true,sort_order:30},
+ {slug:'ginger-bread',name:'Ginger Bread',department:'bakery',active:true,sort_order:40},
+ {slug:'green-beans',name:'Green Beans',department:'homestand',active:true,sort_order:10},
+ {slug:'blackberries',name:'Blackberries',department:'homestand',active:true,sort_order:20}
+ ];
+ assert.deepEqual(showcaseItemsFor(products,'bakery').map(x=>x.slug),['banana-creme-pie','cinnamon-swirl-bread','dream-cookie-drommar','ginger-bread']);
+ assert.deepEqual(showcaseItemsFor(products,'homestand').map(x=>x.slug),['green-beans','blackberries']);
+ assert.deepEqual(showcaseItemsFor(products,'bakery',null,null,2).map(x=>x.slug),['banana-creme-pie','cinnamon-swirl-bread']);
+ assert.equal(showcaseIcon(products[4]),SHOWCASE_ICONS['green-beans']);
+ assert.deepEqual(showcaseItemsFor(products,'invalid'),[]);
+});
+test('owner catalog showcases render in split home and department Shop All without checkout fields',()=>{
+ const app=read('site/app.js'),admin=read('site/admin.js'),css=read('site/country-home-v2.css');
+ const sql=read('supabase/migrations/20261027_store_showcase_items_v131.sql');
+ assert.match(app,/\['store_showcase_items',\{order:'sort_order\.asc'\}\]/);
+ assert.match(app,/t==='store_showcase_items'\?'showcaseItems'/);
+ assert.match(app,/showcaseItemsFor\(all\.showcaseItems,view\.department/);
+ assert.match(app,/showcaseItemsFor\(all\.showcaseItems,department\|\|'bakery'/);
+ assert.match(app,/\.map\(showcaseCard\)/);
+ const component=app.slice(app.indexOf('const showcaseCard=item=>'),app.indexOf('const categories='));
+ assert.doesNotMatch(component,/price_cents|Add to Cart|not for sale|Not available/i);
+ assert.match(admin,/store_showcase_items:\{label:'Store Showcase Items'/);
+ assert.match(css,/\.showcase-illustration--homestand/);
+ assert.match(sql,/create table if not exists public\.store_showcase_items/);
+ assert.match(sql,/create policy "owner admin manage store showcase items"/);
+ assert.match(sql,/references public\.catalog_varieties/);
+ assert.doesNotMatch(sql,/insert into public\.products/);
+});

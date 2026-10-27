@@ -10,8 +10,9 @@ import {accountNavigationMarkup,bindAccountNavigation} from './account-navigatio
 import {bindRequiredMarkers} from './required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
 import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts} from './store-departments.js';
+import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
-let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],settings:{},reviews:[]};
+let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],showcaseItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
 let checkoutMode='pickup';
 let verifiedBackOfficeRole=null;
@@ -111,7 +112,16 @@ const card=p=>{
   '<p class="price">'+money(p.price_cents)+' <small>/ '+e(p.unit)+'</small></p>'+
   '<a class="button secondary" href="#product/'+encodeURIComponent(p.id)+'">View details</a></div></article>';
 };
-const categories=(department=null)=>all.categories.filter(c=>c.active&&(!department||departmentForCategory(c)===department)&&(sellable().some(p=>p.category_id===c.id)||(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true&&all.demoItems.some(x=>x.enabled&&x.category===c.name))));
+const showcaseCard=item=>{
+ const icon=showcaseIcon(item);
+ const picture=item.photo_url?image(item.photo_url,'product-photo',item.name):
+  '<div class="showcase-illustration showcase-illustration--'+e(item.department)+'" aria-hidden="true">'+e(icon)+'</div>';
+ return '<article class="card bakery-product-card store-showcase-card">'+
+  '<div class="card-media">'+picture+'</div>'+
+  '<div class="card-content"><p class="eyebrow">'+e(all.categories.find(c=>c.id===item.category_id)?.name||'')+'</p>'+
+  '<h3>'+e(item.name)+'</h3></div></article>';
+};
+const categories=(department=null)=>all.categories.filter(c=>c.active&&(!department||departmentForCategory(c)===department)&&(sellable().some(p=>p.category_id===c.id)||(all.settings.split_store_enabled===true&&all.showcaseItems.some(i=>i.active&&i.category_id===c.id))||(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true&&all.demoItems.some(x=>x.enabled&&x.category===c.name))));
 function layout(content){
  const settings=all.settings||{};
  const routeName=(location.hash||'#home').slice(1).split('/')[0]||'home';
@@ -181,9 +191,9 @@ function layout(content){
 }
 async function load(){
  if(!isConfigured())return;
- const tables=[['categories',{order:'sort_order.asc'}],['subcategories',{order:'sort_order.asc'}],['products',{}],['stock_batches',{}],['baking_days',{order:'date.asc',date:'gte.'+currentDate()}],['product_photos',{}],['announcements',{}],['past_bakes',{order:'sort_order.asc'}],['home_carousel_slides',{order:'sort_order.asc'}],['site_settings',{}]];
+ const tables=[['categories',{order:'sort_order.asc'}],['subcategories',{order:'sort_order.asc'}],['products',{}],['stock_batches',{}],['baking_days',{order:'date.asc',date:'gte.'+currentDate()}],['product_photos',{}],['announcements',{}],['past_bakes',{order:'sort_order.asc'}],['home_carousel_slides',{order:'sort_order.asc'}],['store_showcase_items',{order:'sort_order.asc'}],['site_settings',{}]];
  const values=await Promise.all(tables.map(async ([t,q])=>list(t,q).catch(()=>[])));
- tables.forEach(([t],i)=>all[t==='stock_batches'?'batches':t==='baking_days'?'days':t==='product_photos'?'photos':t==='past_bakes'?'pastBakes':t==='home_carousel_slides'?'carouselSlides':t==='site_settings'?'settings':t]=t==='site_settings'?values[i][0]||{}:values[i]);
+ tables.forEach(([t],i)=>all[t==='stock_batches'?'batches':t==='baking_days'?'days':t==='product_photos'?'photos':t==='past_bakes'?'pastBakes':t==='home_carousel_slides'?'carouselSlides':t==='store_showcase_items'?'showcaseItems':t==='site_settings'?'settings':t]=t==='site_settings'?values[i][0]||{}:values[i]);
 }
 function announcements(place='home'){
  return all.announcements.filter(x=>x.placement===place||x.placement==='all').map(a=>`<aside class="announcement"><strong>${e(a.title)}</strong><p>${e(a.body)}</p>${a.link_url&&/^https?:\/\//.test(a.link_url)?`<a href="${photo(a.link_url)}" rel="noopener">Details</a>`:''}</aside>`).join('');
@@ -202,7 +212,7 @@ function home(){
  const slides=active.length?active:backup;
  const split=s.split_store_enabled===true;
  const currentProducts=sellable();
- const storefronts=homepageStorefronts(s,currentProducts,all.categories,3);
+ const storefronts=homepageStorefronts(s,currentProducts,all.categories,4);
  const departmentPanels=storefronts.length?
   '<section class="section home-departments-section" aria-label="Bakery and Homestand products">'+
   '<div class="home-departments-grid '+(storefronts.length===1?'is-single':'')+'">'+
@@ -211,8 +221,11 @@ function home(){
     '<div class="home-department-heading"><h2 id="home-'+view.department+'-heading">'+e(view.label)+'</h2>'+
       '<a href="'+view.href+'">Shop '+e(view.label)+'</a></div>'+
     '<div class="home-department-products">'+
-      (view.products.length?view.products.map(card).join(''):
-       '<div class="home-department-empty">No '+e(view.label)+' products available yet.</div>')+
+      (view.products.map(card).join('')+
+       showcaseItemsFor(all.showcaseItems,view.department,null,null,4)
+        .filter(item=>!view.products.some(p=>p.variety_id&&p.variety_id===item.variety_id))
+        .slice(0,Math.max(0,4-view.products.length))
+        .map(showcaseCard).join(''))+
     '</div></section>').join('')+
   '</div></section>':'';
  const combinedCategories=`<section class="section ${categories().length?'':'empty-category-section'}">
@@ -258,6 +271,7 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
  const pageTitle=department?departmentLabel(department)+(categoryId?'':mode==='ready'?' · Ready to Sell':mode==='preorder'?' · Preorder':' · Shop All'):title;
  const departmentSuffix=department?'/'+department:'';
  const categoryChoices=categories(department);
+ const showcase=split&&!mode?showcaseItemsFor(all.showcaseItems,department||'bakery',categoryId,subcategoryId,20):[];
  layout(`<section class="section shop-page shop-page--${mode||'all'}" data-shop-view="${mode||'all'}">
  ${announcements('shop')}
  <div class="shop-hero">
@@ -284,7 +298,8 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
  '<a class="tab '+(!subcategoryId?'active':'')+'" href="#category/'+e(categoryId)+'">All '+e(all.categories.find(c=>c.id===categoryId)?.name||'')+'</a>'+
  all.subcategories.filter(x=>x.category_id===categoryId&&x.active&&items.some(p=>p.subcategory_id===x.id))
  .map(x=>'<a class="tab '+(subcategoryId===x.id?'active':'')+'" href="#subcategory/'+e(categoryId)+'/'+e(x.id)+'">'+e(x.name)+'</a>').join('')+'</nav>':''}
- <div class="grid product-results">${items.map(card).join('')||
+ <div class="grid product-results">${items.map(card).join('')+
+ showcase.filter(item=>!items.some(p=>p.variety_id&&p.variety_id===item.variety_id)).map(showcaseCard).join('')||
  ((!split&&samplesFor(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null).length>0&&all.settings.placeholder_empty_shop!==false)?'':all.settings.placeholder_empty_shop===false?'':'<div class="empty shop-empty">'+e(empty)+
  '<div class="actions" style="justify-content:center;margin-top:18px">'+(mode==='ready'?'<a class="button secondary" href="#preorder'+departmentSuffix+'">Explore Preorders</a>':
  mode==='preorder'?'<a class="button secondary" href="#ready'+departmentSuffix+'">Browse Ready to Sell</a>':

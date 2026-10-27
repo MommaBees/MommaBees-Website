@@ -2,7 +2,7 @@
 export const ADMIN_GROUPS=Object.freeze([
  ['Overview',['dashboard']],
  ['Orders & Fulfillment',['orders','baking_days','product_day_limits','stock_batches','shopping']],
- ['Products & Inventory',['products','categories','subcategories','catalog_varieties','product_photos','recipes','recipe_ingredients','ingredients','past_bakes']],
+ ['Products & Inventory',['products','store_showcase_items','categories','subcategories','catalog_varieties','product_photos','recipes','recipe_ingredients','ingredients','past_bakes']],
  ['Customers & Communication',['messages','reviews','notifications','customer_profiles']],
  ['Marketing & Promotions',['announcements','announcement_recipients','promotions','promotion_recipients']],
  ['Website & Design',['home_carousel_slides','store_display','website_size','website_background','site_settings']],
@@ -23,6 +23,7 @@ export const ADMIN_DESCRIPTIONS=Object.freeze({
  categories:'Organize major product families.',
  subcategories:'Manage named product groups within a family.',
  catalog_varieties:'Search and manage selectable product varieties, not inventory.',
+ store_showcase_items:'Manage Bakery and Homestand showcase cards and their photos.',
  product_photos:'Maintain product gallery images.',
  recipes:'Recipe yields and preparation instructions.',
  recipe_ingredients:'Recipe ingredient quantities.',

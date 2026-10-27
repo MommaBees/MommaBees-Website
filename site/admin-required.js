@@ -1,6 +1,6 @@
 
 export const ADMIN_REQUIRED=Object.freeze({
- categories:['department','name','slug'],subcategories:['category_id','name','slug'],catalog_varieties:['category_id','name','slug'],
+ categories:['department','name','slug'],subcategories:['category_id','name','slug'],catalog_varieties:['category_id','name','slug'],store_showcase_items:['department','category_id','name','slug'],
  products:['department','category_id','product_type','name','slug','price_cents'],
  past_bakes:['title','image_url'],demo_catalog_items:['name','category','price_cents'],
  product_photos:['product_id','url'],stock_batches:['product_id','baked_on','best_before'],

@@ -1182,3 +1182,21 @@ body[data-website-size] #main .home-carousel .home-carousel-slide .hero-art img{
 @media(max-width:480px){
  .home-department-products{grid-template-columns:minmax(0,1fr)}
 }
+
+
+/* MBB-CATALOG-041: clean visual-only showcase cards, no fabricated prices. */
+.store-showcase-card{overflow:hidden;min-width:0}
+.store-showcase-card .card-content{padding:clamp(13px,1.55vw,21px)}
+.store-showcase-card .card-content h3{margin:7px 0 3px;overflow-wrap:anywhere;line-height:1.3}
+.store-showcase-card .card-content .eyebrow{font-size:.74rem;letter-spacing:.065em}
+.showcase-illustration{
+ display:flex;align-items:center;justify-content:center;width:100%;
+ height:clamp(150px,14vw,220px);font-size:clamp(4rem,7vw,6.8rem);
+ background:radial-gradient(circle at 48% 42%,#f8ebd4 0%,#e2c9a2 100%);
+ border-bottom:1px solid #cba985;user-select:none;
+}
+.showcase-illustration--homestand{
+ background:radial-gradient(circle at 48% 42%,#e7efda 0%,#bdd6ad 100%);
+ border-bottom-color:#9bb58b;
+}
+body[data-page="home"] .home-department-products .showcase-illustration{height:clamp(140px,15vw,210px)}
