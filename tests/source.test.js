@@ -1560,6 +1560,39 @@ test('harvest crop maps original images to their named store cards',()=>{
  assert.equal(harvestCrop('https://evil.test/assets/harvest-2027-sprite.webp#broccoli'),null);
  assert.equal(harvestCrop('https://mommabees-website.pages.dev/assets/harvest-2027-sprite.webp#cherry-tomatoes'),null);
  const app=read('site/app.js'),carousel=read('site/home-carousel.js');
- assert.match(app,/harvest-photo-sprite/);
+ assert.doesNotMatch(app,/harvest-photo-sprite/);
  assert.match(carousel,/harvest-carousel-photo/);
+});
+
+
+test('owner photo gallery items have individual navigable pages but never fake checkout prices',()=>{
+ const app=read('site/app.js'),css=read('site/country-home-v2.css');
+ assert.match(app,/const showcaseCard=item=>/);
+ assert.match(app,/href="#product\/['"]?\+encodeURIComponent\(item\.slug\)/);
+ assert.match(app,/function showcaseDetail\(item\)/);
+ assert.match(app,/all\.showcaseItems\.find\(x=>x\.active!==false&&x\.slug===id\)/);
+ assert.match(app,/showcaseDetail\(item\)/);
+ assert.match(app,/Homegrown without chemical sprays/);
+ assert.match(app,/Homemade at MommaBee Bakery&Farmstand/);
+ const showcase=app.slice(app.indexOf('function showcaseDetail(item)'),app.indexOf('function detail(id)'));
+ assert.doesNotMatch(showcase,/Add to Cart|price_cents|\$0\.00|certified organic/i);
+ assert.match(css,/\.showcase-detail-grid/);
+ assert.match(css,/\.showcase-detail-photo/);
+ assert.match(css,/a\.store-showcase-card:focus-visible/);
+ assert.match(css,/@media\(max-width:760px\)/);
+});
+test('nineteen individually named owner images replace the old blurred harvest collage',()=>{
+ const app=read('site/app.js');
+ const sql=read('supabase/migrations/20261027_showcase_photos_pages_v136.sql');
+ assert.doesNotMatch(app,/harvestCrop\(|harvestCropStyles\(/);
+ assert.doesNotMatch(app,/harvest-photo-sprite/);
+ const slugs=['banana-creme-pie','blackberries','broccoli','cauliflower','chocolate-chip-cookies','cinnamon-swirl-bread',
+ 'dream-cookie-drommar','ginger-bread','green-beans','jalapenos','meringue-cookies','mini-green-peppers','oatmeal-old-fashioned-cookies',
+ 'pecan-dreams','salad-cucumbers','spineless-okra','tomatoes','yellow-summer-squash','zucchini'];
+ for(const slug of slugs){
+  assert.match(sql,new RegExp(slug));
+  assert.ok(existsSync(path.join(__dirname,'../site/assets/showcase',slug+'.webp')),slug+' image missing');
+ }
+ assert.doesNotMatch(sql,/cherry-tomatoes/);
+ assert.doesNotMatch(sql,/insert into public\.products/);
 });

@@ -13,7 +13,6 @@ import {bindRequiredMarkers} from './required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
 import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts} from './store-departments.js';
 import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
-import {harvestCrop,harvestCropStyles} from './harvest-sprite.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],showcaseItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -116,12 +115,12 @@ const card=p=>{
   '<a class="button secondary" href="#product/'+encodeURIComponent(p.id)+'">View details</a></div></article>';
 };
 const showcaseCard=item=>{
- const harvest=harvestCrop(item.photo_url);
- const picture=harvest?'<div class="card-media"><div class="harvest-photo-sprite" role="img" aria-label="'+e(item.name)+'" style="'+harvestCropStyles(harvest)+'"></div></div>':
-  item.photo_url?'<div class="card-media">'+image(item.photo_url,'product-photo',item.name)+'</div>':'';
- return '<article class="card bakery-product-card store-showcase-card'+(item.photo_url?'':' is-text-only')+'">'+picture+
-  '<div class="card-content"><p class="eyebrow">'+e(all.categories.find(c=>c.id===item.category_id)?.name||'')+'</p>'+
-  '<h3>'+e(item.name)+'</h3></div></article>';
+ const imageMarkup=item.photo_url?'<div class="card-media">'+image(item.photo_url,'product-photo',item.name)+'</div>':'';
+ const parent=all.categories.find(c=>c.id===item.category_id);
+ return '<a class="card bakery-product-card store-showcase-card'+(item.photo_url?'':' is-text-only')+
+  '" href="#product/'+encodeURIComponent(item.slug)+'" aria-label="View '+e(item.name)+' details">'+imageMarkup+
+  '<div class="card-content"><p class="eyebrow">'+e(parent?.name||departmentLabel(item.department))+'</p>'+
+  '<h3>'+e(item.name)+'</h3><span class="showcase-card-link">View details</span></div></a>';
 };
 const categories=(department=null)=>all.categories.filter(c=>c.active&&(!department||departmentForCategory(c)===department)&&(sellable().some(p=>p.category_id===c.id)||(all.settings.split_store_enabled===true&&all.showcaseItems.some(i=>i.active&&i.category_id===c.id))||(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true&&all.demoItems.some(x=>x.enabled&&x.category===c.name))));
 function layout(content){
@@ -310,7 +309,39 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
  ${split?'':demoStorePreview(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null,items.length>0)}
  </section>`);bindDemoStore();
 }
-function detail(id){const p=all.products.find(x=>x.id===id);if(!p||!p.published||!available(p)){layout('<div class="empty">Product not available. <a href="#shop">Return to shop</a>.</div>');return;}
+/** An Owner-supplied catalog item's own page; the existing purchasable product route remains separate. */
+function showcaseDetail(item){
+ const department=item.department==='homestand'?'homestand':'bakery';
+ const category=all.categories.find(c=>c.id===item.category_id);
+ const subcategory=all.subcategories.find(c=>c.id===item.subcategory_id);
+ const allDepartment=showcaseItemsFor(all.showcaseItems,department,null,null,40);
+ const related=allDepartment.filter(x=>x.id!==item.id).slice(0,4);
+ const departmentName=departmentLabel(department);
+ const backHref='#shop/'+department;
+ const provenance=department==='homestand'?'Homegrown without chemical sprays.':'Homemade at MommaBee Bakery&Farmstand.';
+ const photoMarkup=item.photo_url?'<figure class="showcase-detail-photo-wrap">'+image(item.photo_url,'showcase-detail-photo',item.name)+'</figure>':'';
+ const crumb=[departmentName,category?.name,subcategory?.name].filter(Boolean).map(e).join(' / ');
+ layout('<section class="section showcase-item-page">'+
+  '<nav class="showcase-detail-breadcrumb" aria-label="Product classification"><a href="'+backHref+'">'+e(departmentName)+'</a>'+
+   (category?' <span aria-hidden="true">/</span> <a href="#category/'+encodeURIComponent(category.id)+'">'+e(category.name)+'</a>':'')+
+  '</nav>'+
+  '<div class="showcase-detail-grid">'+photoMarkup+
+  '<div class="showcase-detail-copy"><p class="eyebrow">'+crumb+'</p><h1>'+e(item.name)+'</h1>'+
+   '<p class="showcase-detail-provenance">'+e(provenance)+'</p>'+
+   '<a class="button secondary" href="'+backHref+'">Browse '+e(departmentName)+'</a>'+
+  '</div></div>'+
+  (related.length?'<section class="showcase-detail-related" aria-label="More '+e(departmentName)+' items">'+
+   '<h2>More '+e(departmentName)+'</h2><div class="grid">'+related.map(showcaseCard).join('')+'</div></section>':'')+
+  '</section>');
+}
+function detail(id){
+ const p=all.products.find(x=>x.id===id || (x.slug===id&&x.published&&available(x)));
+ if(!p||!p.published||!available(p)){
+  const item=all.showcaseItems.find(x=>x.active!==false&&x.slug===id);
+  if(item){showcaseDetail(item);return;}
+  layout('<div class="empty">Item not found. <a href="#shop">Return to shop</a>.</div>');
+  return;
+ }
  const batches=all.batches.filter(b=>b.product_id===p.id&&!b.disabled&&b.baked_on<=currentDate()&&b.quantity_available>0&&all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date<=b.best_before));
  const visual=productVisual(p);
  const gallery=[visual.src,...all.photos.filter(x=>x.product_id===p.id).sort((a,b)=>a.sort_order-b.sort_order).map(x=>x.url)].filter(Boolean);
