@@ -269,7 +269,7 @@ function faq(){const s=all.settings;layout(`<section class="section"><div class=
 function gallery(){
  const photos=all.pastBakes.filter(x=>x.published&&x.image_url);
  layout('<section class="section"><div class="eyebrow">Made with care at Mamma Bee’s Bakery</div>'+
-  '<h1>A Look Back at Our Baking</h1>'+
+  '<h1>Past Bakes Gallery</h1>'+
   '<p class="muted">A collection of desserts previously made by the bakery. These photographs showcase earlier creations and are <strong>not currently offered for sale</strong>. For current ordering options, visit the <a href="#shop">Shop</a>.</p>'+
   '<div class="grid past-bakes-gallery">'+
   (photos.map(p=>'<article class="card">'+image(p.image_url,'product-photo',p.title)+
