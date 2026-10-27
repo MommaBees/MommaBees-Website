@@ -188,27 +188,6 @@ function shop(mode=null,categoryId=null,subcategoryId=null){
  ${demoStorePreview(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null)}
  </section>`);bindDemoStore();
 }
-function sandboxStore(mode='all'){
- if(!['owner','admin'].includes(verifiedBackOfficeRole)||all.settings.demo_store_enabled!==true){
-  layout('<section class="section box"><h1>Page unavailable</h1><p>The sandbox store is available only to bakery Owner/Admin accounts.</p></section>');
-  return;
- }
- const valid=['all','ready','preorder'].includes(mode)?mode:'all';
- const products=all.demoItems.filter(x=>x.enabled&&demoMatchesView(x,valid));
- layout(`<section class="section sandbox-store-page">
-  <div class="eyebrow">Owner/Admin testing workspace · Stripe Sandbox</div>
-  <h1>Sandbox Test Shop</h1>
-  <p>Example items only. These are not for sale, do not create real bakery orders and never appear in customer listings.</p>
-  <nav class="tabs shop-mode-tabs" aria-label="Sandbox product filters">
-   <a href="#sandbox-store" class="tab ${valid==='all'?'active':''}" ${valid==='all'?'aria-current="page"':''}>All Test Products (${all.demoItems.filter(x=>x.enabled).length})</a>
-   <a href="#sandbox-store/ready" class="tab ${valid==='ready'?'active':''}" ${valid==='ready'?'aria-current="page"':''}>Ready-to-Sell Examples (${all.demoItems.filter(x=>x.enabled&&demoMatchesView(x,'ready')).length})</a>
-   <a href="#sandbox-store/preorder" class="tab ${valid==='preorder'?'active':''}" ${valid==='preorder'?'aria-current="page"':''}>Preorder Examples (${all.demoItems.filter(x=>x.enabled&&demoMatchesView(x,'preorder')).length})</a>
-  </nav>
-  <p class="shop-result-count"><strong>${products.length}</strong> sample items in this view</p>
-  ${demoStorePreview(valid)}
- </section>`);
- bindDemoStore();
-}
 function detail(id){const p=all.products.find(x=>x.id===id);if(!p||!p.published||!available(p)){layout('<div class="empty">Product not available. <a href="#shop">Return to shop</a>.</div>');return;}
  const batches=all.batches.filter(b=>b.product_id===p.id&&!b.disabled&&b.baked_on<=currentDate()&&b.quantity_available>0&&all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date<=b.best_before));
  const visual=productVisual(p);
@@ -252,8 +231,12 @@ function gallery(){
     (all.settings.placeholder_empty_gallery===false?'':'<div class="empty">Gallery photographs will appear here when available.</div>'))+
   '</div></section>');
 }
+function qrPage(){
+ layout('<section class="section qr-page"><div class="eyebrow">Country Bakery · Share Our Shop</div><h1>Scan to Visit Mamma Bee\'s Bakery</h1><p>Use this printable code on flyers, booth signs, business cards, and packaging. It leads directly to our homepage.</p>'+qrMarkup()+'</section>');
+ bindQrActions();
+}
 async function render(){const [route,pid]=decodeURIComponent((location.hash||'#home').substring(1)).split('/');await refreshBackOfficeRole();all.demoItems=[];if(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true){all.demoItems=await list('demo_catalog_items',{order:'sort_order.asc',limit:100}).catch(()=>[]);}document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"Mamma Bee's Bakery";if(!isConfigured()){layout(`<section class="section"><h1>Welcome to Mamma Bee's Bakery</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in Mamma Bee’s Bakery.</p></section>`);return;}
- try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='sandbox-store')sandboxStore(pid||'all');else if(route==='shop')shop();else if(route==='ready')shop('ready');else if(route==='preorder')shop('preorder');else if(route==='category')shop(null,pid);else if(route==='subcategory'){const parts=(location.hash||'').slice(1).split('/');shop(null,parts[1],parts[2]);}else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')await checkoutPage();else if(route==='success')success();else if(route==='sandbox-success'&&['owner','admin'].includes(verifiedBackOfficeRole))layout('<section class="section box"><h1>Stripe Sandbox Return</h1><p>This was a TEST transaction only. Open Admin → Sandbox Test Products to check the result after Stripe sends its webhook. No real customer order was created.</p><a class="button secondary" href="#shop">Back to Test Store</a></section>');else if(route==='track')track(pid);else if(route==='account')await account();else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else home();}
+ try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='sandbox-store'){nav('#shop');return;}else if(route==='shop')shop();else if(route==='ready')shop('ready');else if(route==='preorder')shop('preorder');else if(route==='category')shop(null,pid);else if(route==='subcategory'){const parts=(location.hash||'').slice(1).split('/');shop(null,parts[1],parts[2]);}else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')await checkoutPage();else if(route==='success')success();else if(route==='sandbox-success'&&['owner','admin'].includes(verifiedBackOfficeRole))layout('<section class="section box"><h1>Stripe Sandbox Return</h1><p>This was a TEST transaction only. Open Admin → Sandbox Test Products to check the result after Stripe sends its webhook. No real customer order was created.</p><a class="button secondary" href="#shop">Back to Shop All</a></section>');else if(route==='track')track(pid);else if(route==='account')await account();else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else if(route==='qr')qrPage();else home();}
  catch(ex){layout(`<section class="section"><h1>Something went wrong</h1><div class="notice error">${e(ex.message)}</div><a class="button secondary" href="#home">Return home</a></section>`);}window.scrollTo({top:0,behavior:'instant'});}
 window.addEventListener('hashchange',render);
 (async()=>{try{await load();}catch(ex){console.error('Could not load storefront',ex);}await render();})();
