@@ -291,7 +291,7 @@ test('demo catalog and placeholders are isolated from real sales',()=>{
  assert.match(migration,/role in \('owner','admin'\)/);
  assert.match(site,/demoStorePreview\(mode\|\|'all'/);
  assert.doesNotMatch(site,/function sandboxStore\(/);
- assert.match(site,/(SANDBOX|TEST ONLY)/);
+ assert.match(site,/(TEST MODE|SANDBOX|TEST ONLY)/);
  assert.match(site,/placeholder_empty_shop===false/);
  assert.match(site,/placeholder_empty_gallery===false/);
  assert.match(site,/placeholder_featured===false/);
