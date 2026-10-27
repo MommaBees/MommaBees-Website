@@ -285,3 +285,50 @@ body,#app{width:100%;max-width:100%;overflow-x:clip}
  .bakery-qr-art{box-shadow:none;border:0;margin:0 auto;width:350px}
  .bakery-qr-art svg{width:310px!important;height:310px!important}
 }
+
+
+/* Bakery visual personality, intentionally restrained: paper, timber, natural photographs. */
+.shop-page .shop-hero{border-radius:8px;background:#f5eee2;border-color:#d8c7ae;box-shadow:none;min-height:220px}
+.shop-page--ready .shop-hero{background:#f4efe5;border-left:4px solid #67755b}
+.shop-page--preorder .shop-hero{background:#f8efe5;border-left:4px solid #a36b49}
+.shop-page--all .shop-hero{border-left:4px solid #8e6a45}
+.shop-hero-copy{padding:clamp(22px,3.4vw,44px)}
+.shop-hero h1{font-size:clamp(2rem,4vw,3rem);letter-spacing:-.035em}
+.shop-hero h2{font-weight:400;font-style:italic;color:#745039;line-height:1.4}
+.shop-hero p{line-height:1.55}
+.shop-hero-picture .photo-disclosure{padding:7px 12px;line-height:1.4;font-size:.73rem}
+.bakery-menu-inspiration{border-top:1px solid #dcc9ae;padding-top:22px;margin-top:25px}
+.bakery-menu-inspiration .section-head{border:0;max-width:770px;margin-bottom:20px;padding-bottom:0}
+.bakery-menu-inspiration .section-head:before{display:none}
+.bakery-menu-inspiration .section-head h2{font-size:clamp(1.65rem,2.9vw,2.35rem);letter-spacing:-.025em}
+.bakery-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,1.8vw,24px)}
+.bakery-menu-grid .example-menu-card{display:flex;flex-direction:column;background:#fffaf1;border:1px solid #e0d3bf;border-radius:8px;box-shadow:0 3px 14px rgba(65,39,21,.055);overflow:hidden}
+.bakery-menu-grid .example-menu-card .card-media{background:#eadac2;line-height:0}
+.bakery-menu-grid .example-menu-card .product-photo,
+body[data-site-background] .bakery-menu-grid .example-menu-card .product-photo{
+ width:100%;height:clamp(160px,14vw,228px);object-fit:cover;object-position:center;display:block;filter:saturate(.9) contrast(1.025);transition:none
+}
+.bakery-menu-grid .example-menu-card:hover .product-photo{transform:none}
+.bakery-menu-grid .example-menu-card .card-content{padding:18px 20px 22px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;flex:1}
+.bakery-menu-grid .example-menu-card h3{font-size:clamp(1.34rem,1.8vw,1.58rem);line-height:1.22;margin:0 0 3px}
+.bakery-menu-grid .example-menu-card .eyebrow{font-size:.72rem;text-transform:none;letter-spacing:.045em;font-weight:700;color:#85684f}
+.bakery-menu-grid .example-menu-card .example-description{font-size:.94rem;color:#625141;line-height:1.55;margin:0}
+.bakery-menu-grid .example-photo-note{font-size:.75rem;line-height:1.4;color:#796953;border-top:1px solid #eee4d5;padding-top:8px;margin:10px 0 0}
+.bakery-menu-grid .example-availability{font-size:.8rem;letter-spacing:.02em;color:#6c5943;font-weight:700;margin:auto 0 0;padding-top:13px}
+.bakery-menu-grid .example-test-label{display:block;font-size:.71rem;font-weight:650;color:#76553b;letter-spacing:.025em}
+.bakery-menu-grid .example-test-price{font-size:1.15rem;font-weight:750;margin:10px 0 1px;color:#603b22}
+.bakery-menu-grid button[data-demo-checkout]{margin-top:8px;width:100%;background:#6c422a;color:white;border-color:#6c422a}
+.bakery-menu-grid button[data-demo-checkout]:focus-visible{outline:3px solid #e7ac67;outline-offset:3px}
+.handwritten-menu-note{font:italic 1.12rem/1.55 Georgia,serif;color:#7a5a3b;border-top:1px solid #ddccb6;margin-top:25px;padding:20px 8px 0;max-width:750px;text-align:left}
+.country-welcome-band{background:#eee0c9;border-color:#d0b693;gap:clamp(14px,4vw,60px);letter-spacing:.07em}
+.country-welcome-band span{max-width:34%}
+.section-head:before{content:none}
+@media(max-width:1040px){.bakery-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){
+ .bakery-menu-grid{grid-template-columns:1fr}
+ .bakery-menu-grid .example-menu-card .product-photo,
+ body[data-site-background] .bakery-menu-grid .example-menu-card .product-photo{height:190px}
+ .bakery-menu-inspiration .section-head h2{font-size:1.9rem}
+ .handwritten-menu-note{font-size:1rem}
+ .country-welcome-band span:nth-child(3){display:none}
+}
