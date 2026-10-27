@@ -2,6 +2,7 @@ import {config,isConfigured,currentUser,currentSession,signIn,signUp,signOut,lis
 import {isBackOfficeRole,backOfficeNavigation} from './role-navigation.js';
 import {photoFor,photoByUrl,photoStatusLabel} from './photo-library.js';
 import {applyBakeryBackground} from './background.js';
+import {qrMarkup,bindQrActions} from './qr-code.js';
 import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -104,7 +105,7 @@ const categories=()=>all.categories.filter(c=>c.active&&sellable().some(p=>p.cat
 function layout(content){
  const settings=all.settings||{};
  applyBakeryBackground(settings,config.supabaseUrl);
- $('#app').innerHTML=`<div class="topbar">Missouri Prairie Roots · Faith · Family · Homemade Goodness</div><header class="header"><div class="shell nav">
+ $('#app').innerHTML=`<div class="topbar">Faith · Family · Homemade Goodness</div><header class="header"><div class="shell nav">
  <a href="#home" class="brand">Mamma Bee's Bakery <span>${e(settings.brand_subtitle||'Rooted in Faith. Made with Love. Shared with Joy.')}</span></a>
  <nav aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a>${['owner','admin'].includes(verifiedBackOfficeRole)&&settings.demo_store_enabled===true?'<a href="#sandbox-store" class="sandbox-nav-link">Sandbox Store</a>':''}<a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a><a href="#account">${currentUser()?'My Account':'Sign In'}</a>${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
  <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${content}</main><footer class="footer"><div class="shell"><strong>Mamma Bee's Bakery</strong><p>Rooted in Faith. Made with Love. Shared with Joy. · Country baking and sweet traditions</p><p><a href="#faq">FAQ & policies</a> · <a href="#contact">Contact</a></p><p class="tiny">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</p></div></footer>`;
