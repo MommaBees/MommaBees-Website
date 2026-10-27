@@ -544,3 +544,13 @@ label.checkbox .required-indicator,label.allergen-confirm .required-indicator{wh
 .home-carousel-slide:not([hidden]){animation:bakery-carousel-enter .42s ease-out both}
 @media(prefers-reduced-motion:reduce){.home-carousel-slide:not([hidden]){animation:none!important}}
 @media(max-width:650px){.admin-slide-preview .hero{grid-template-columns:1fr}.admin-slide-preview .hero-art{order:-1;min-height:175px}}
+
+/* MBB-ADMIN-033: Owner-adjustable timing control for homepage carousel. */
+.admin-carousel-interval{margin:14px 0 16px;padding:17px 18px;background:#fff9f1;border:1px solid #d5b899;border-radius:7px;max-width:630px}
+.admin-carousel-interval>label{display:block;font-size:.96rem;font-weight:700;margin:0 0 9px}
+.admin-carousel-interval-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.admin-carousel-interval input[type="number"]{width:min(190px,100%);min-height:44px;padding:9px 12px;font-size:1rem;background:#fff;border:1px solid #aa8769;border-radius:4px}
+.admin-carousel-interval .button{min-height:44px;white-space:nowrap}
+.admin-carousel-interval p{margin:10px 0 0;line-height:1.6}
+#carousel-interval-save-status:not(:empty){color:#51371e;font-weight:700;margin-top:12px}
+@media(max-width:450px){.admin-carousel-interval-controls>*{flex:1 1 100%}.admin-carousel-interval input[type="number"]{width:100%}}

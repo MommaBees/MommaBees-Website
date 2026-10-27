@@ -29,7 +29,7 @@ import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBac
 import {referenceKeyFor} from '../site/reference-keys.js';
 import {ADMIN_REQUIRED,adminFieldIsRequired} from '../site/admin-required.js';
 import {syncRequiredMarkers,bindRequiredMarkers} from '../site/required-fields.js';
-import {eligibleHomeSlides,homeCarouselMarkup} from '../site/home-carousel.js';
+import {eligibleHomeSlides,homeCarouselMarkup,carouselIntervalMilliseconds,DEFAULT_CAROUSEL_INTERVAL_SECONDS} from '../site/home-carousel.js';
 import {ADMIN_GROUPS,adminGroupsForRole} from '../site/admin-navigation.js';
 
 import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from '../site/product-types.js';
@@ -1124,4 +1124,26 @@ test('all website forms mark mandatory fields with * Required',()=>{
  assert.match(css,/\.required-indicator/);
  assert.equal(typeof syncRequiredMarkers,'function');
  assert.equal(typeof bindRequiredMarkers,'function');
+});
+
+test('carousel interval setting is bounded and passed from persisted site settings to public and Admin renderers',()=>{
+ assert.equal(DEFAULT_CAROUSEL_INTERVAL_SECONDS,6.5);
+ assert.equal(carouselIntervalMilliseconds(6.5),6500);
+ assert.equal(carouselIntervalMilliseconds(3),3000);
+ assert.equal(carouselIntervalMilliseconds(10),10000);
+ assert.equal(carouselIntervalMilliseconds(60),60000);
+ for(const invalid of [null,0,2,100,'banana',Infinity]){
+  assert.equal(carouselIntervalMilliseconds(invalid),6500);
+ }
+ const slider=read('site/home-carousel.js'),app=read('site/app.js'),admin=read('site/admin.js');
+ const sql=read('supabase/migrations/20261027_carousel_interval_v123.sql');
+ assert.match(slider,/setInterval\(tick,carouselIntervalMilliseconds\(intervalSeconds\)\)/);
+ assert.match(app,/bindHomeCarousel\(settings\.home_carousel_interval_seconds\)/);
+ assert.match(admin,/id="carousel-interval-form"/);
+ assert.match(admin,/id="carousel-interval-seconds"/);
+ assert.match(admin,/home_carousel_interval_seconds:seconds/);
+ assert.match(admin,/previewDetails\.open\)bindHomeCarousel\(interval\)/);
+ assert.match(admin,/A timer cannot rotate a single published slide/);
+ assert.match(sql,/home_carousel_interval_seconds numeric\(4,1\) not null default 6\.5/);
+ assert.match(sql,/between 3 and 60/);
 });

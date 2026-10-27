@@ -1,4 +1,10 @@
 // MommaBee homepage carousel: server-filtered, Owner-controlled media, accessible controls.
+export const DEFAULT_CAROUSEL_INTERVAL_SECONDS=6.5;
+// Minimum provides adequate reading time; maximum bounds accidental misconfiguration.
+export function carouselIntervalMilliseconds(seconds){
+ const value=Number(seconds);
+ return Number.isFinite(value)&&value>=3&&value<=60?Math.round(value*1000):6500;
+}
 let activeTimer=null;
 let currentRoot=null;
 let stopHandlers=[];
@@ -35,7 +41,7 @@ export function stopHomeCarousel(){
  if(activeTimer!==null){clearInterval(activeTimer);activeTimer=null;}
  stopHandlers.forEach(clean=>clean());stopHandlers=[];currentRoot=null;
 }
-export function bindHomeCarousel(){
+export function bindHomeCarousel(intervalSeconds=DEFAULT_CAROUSEL_INTERVAL_SECONDS){
  stopHomeCarousel();
  const root=document.querySelector('.home-carousel');if(!root)return;
  currentRoot=root;
@@ -53,7 +59,7 @@ export function bindHomeCarousel(){
   if(userAction)pause.textContent='Play';
  };
  const tick=()=>{if(!document.hidden&&!hovered&&!focused&&!manuallyPaused&&currentRoot===root)show(index+1);};
- if(!reduced)activeTimer=setInterval(tick,6500);
+ if(!reduced)activeTimer=setInterval(tick,carouselIntervalMilliseconds(intervalSeconds));
  const on=(target,event,handler)=>{target.addEventListener(event,handler);stopHandlers.push(()=>target.removeEventListener(event,handler));};
  on(root.querySelector('.home-carousel-prev'),'click',()=>show(index-1,true));
  on(root.querySelector('.home-carousel-next'),'click',()=>show(index+1,true));

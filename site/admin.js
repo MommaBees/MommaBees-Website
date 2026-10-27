@@ -4,7 +4,7 @@ import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from './product
 import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
 import {adminGroupsForRole,ADMIN_DESCRIPTIONS} from './admin-navigation.js';
 import {adminFieldIsRequired} from './admin-required.js';
-import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
+import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS} from './home-carousel.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
 import {pastBakeName} from './past-bakes.js';
 import {BUILTIN_PHOTO_PRESETS,photoByUrl} from './photo-library.js';
@@ -209,7 +209,9 @@ function listPanel(){if(selected==='site_settings')return siteSettingsSummary();
 
 }
 async function carouselPanel(){
- await loadTable('home_carousel_slides');
+ await Promise.all([loadTable('home_carousel_slides'),loadTable('site_settings')]);
+ const settings=data.site_settings?.[0]||{};
+ const interval=Number(settings.home_carousel_interval_seconds)||DEFAULT_CAROUSEL_INTERVAL_SECONDS;
  const rows=[...(data.home_carousel_slides||[])].sort((a,b)=>a.sort_order-b.sort_order);
  const visible=rows.filter(x=>x.published && (!x.starts_at||Date.parse(x.starts_at)<=Date.now()) && (!x.ends_at||Date.parse(x.ends_at)>Date.now())).length;
  const drafts=rows.filter(x=>!x.published).length;
@@ -232,8 +234,17 @@ async function carouselPanel(){
  <p class="muted">Control the homepage feature without editing site code. Only published slides within their scheduled dates appear to customers.</p></div>
  <button type="button" class="button" id="new-carousel-slide">Add slide</button></div>
  <div class="admin-carousel-readiness" role="status"><strong>${visible} published and currently visible · ${drafts} draft${drafts===1?'':'s'}.</strong>
- ${visible<2?'Automatic rotation requires at least two currently visible published slides. Draft or expired slides cannot rotate on the public homepage.':'The homepage rotates eligible slides every 6.5 seconds. Reduced-motion and pause controls are respected.'}
+ ${visible<2?'Automatic rotation requires at least two currently visible published slides. Draft or expired slides cannot rotate on the public homepage.':'The homepage rotates eligible slides every ${interval} seconds. Reduced-motion and pause controls are respected.'}
  </div>
+ <form id="carousel-interval-form" class="admin-carousel-interval" aria-label="Carousel timing settings">
+  <label for="carousel-interval-seconds">Time between slides (seconds) <span class="required-indicator" aria-hidden="true">* Required</span></label>
+  <div class="admin-carousel-interval-controls">
+    <input type="number" id="carousel-interval-seconds" name="interval" min="3" max="60" step="0.5" value="${e(interval)}" required aria-describedby="carousel-interval-help">
+    <button class="button secondary" type="submit">Save interval</button>
+  </div>
+  <p class="small muted" id="carousel-interval-help">Choose 3–60 seconds. Default: 6.5 seconds. Applies to the public homepage and private preview after refresh. A timer cannot rotate a single published slide.</p>
+  <p id="carousel-interval-save-status" role="status" aria-live="polite"></p>
+ </form>
  <p class="small muted">Only publish approved bakery content. You can preview an unpublished slide below without making it public.</p>
  ${previewMarkup?'<details id="admin-slide-preview" class="admin-slide-preview"><summary>Private preview — includes drafts</summary><p>The preview includes draft slides for testing and does not change their public visibility.</p>'+previewMarkup+'</details>':''}
  <div class="admin-carousel-list">${rows.map(card).join('')||'<p>No slides have been added. Upload your first bakery photograph to begin.</p>'}</div>
@@ -241,7 +252,28 @@ async function carouselPanel(){
  <dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit slide</h2><div id="editor-fields"></div>
  <div class="actions"><button class="button" type="submit">Save changes</button><button type="button" class="button secondary" id="close-editor">Cancel</button></div></form></dialog>`;
  const previewDetails=$('#admin-slide-preview');
- if(previewDetails)previewDetails.addEventListener('toggle',()=>{if(previewDetails.open)bindHomeCarousel();else stopHomeCarousel();});
+ if(previewDetails)previewDetails.addEventListener('toggle',()=>{if(previewDetails.open)bindHomeCarousel(interval);else stopHomeCarousel();});
+ $('#carousel-interval-form').onsubmit=async event=>{
+  event.preventDefault();
+  const input=$('#carousel-interval-seconds');
+  const status=$('#carousel-interval-save-status');
+  const seconds=Number(input.value);
+  if(!Number.isFinite(seconds)||seconds<3||seconds>60||Math.round(seconds*2)!==seconds*2){
+   input.setCustomValidity('Choose a value from 3 to 60 seconds in half-second increments.');
+   input.reportValidity();return;
+  }
+  input.setCustomValidity('');
+  const submit=event.currentTarget.querySelector('button[type="submit"]');
+  submit.disabled=true;
+  try{
+   await update('site_settings',1,{home_carousel_interval_seconds:seconds});
+   settings.home_carousel_interval_seconds=seconds;
+   status.textContent='Interval saved: '+seconds+' seconds. It takes effect when the homepage or preview is reloaded.';
+   if(previewDetails?.open)bindHomeCarousel(seconds);
+  }catch(err){status.textContent='Unable to save interval.';ctx.showError(err);}
+  finally{submit.disabled=false;}
+ };
+ $('#carousel-interval-seconds').oninput=event=>event.currentTarget.setCustomValidity('');
  $('#new-carousel-slide').onclick=()=>openEditor(null);
  document.querySelectorAll('[data-slide-edit]').forEach(el=>el.onclick=()=>openEditor(rows[Number(el.dataset.slideEdit)]));
  const orderUpdate=async(i,j)=>{

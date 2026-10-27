@@ -139,7 +139,7 @@ function layout(content){
     <p class="small">Share the shop at your next gathering.</p></div>
   </div><div class="footer-bottom">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</div>
  </div></footer>`;
- bindHomeCarousel();
+ bindHomeCarousel(settings.home_carousel_interval_seconds);
  const toggle=$('#mobile-nav-toggle');
  const primary=$('#primary-navigation');
  if(primary){
