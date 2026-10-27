@@ -464,9 +464,9 @@ test('subcategory migration enforces same-parent consistency and preserves blank
  assert.match(sql,/product_subcategory_consistency/);
  assert.match(sql,/s\.category_id=new\.category_id/);
  assert.match(store,/subcategory-tabs/);
- assert.match(store,/sellable\(\)\.some\(p=>p\.subcategory_id===x\.id\)/);
- assert.match(admin,/selected==='products' && refs\.subcategories/);
- assert.match(admin,/if\(!el&&f\.key==='subcategory_id'\)continue/);
+ assert.match(store,/items\.some\(p=>p\.subcategory_id===x\.id\)/);
+ assert.match(admin,/const updateHierarchy=\(level='department'\)/);
+ assert.match(admin,/if\(!el&&\['subcategory_id','variety_id'\]\.includes\(f\.key\)\)/);
 });
 test('terms do not treat an off-schedule inquiry as an accepted order',()=>{
  const store=read('site/app.js');
@@ -532,7 +532,7 @@ test('six staff sandbox products have fixed stock photos and truly separate view
 });
 test('real shop routes contain staff-only test examples without customer test access',()=>{
  const app=read('site/app.js');
- const start=app.indexOf('function shop(mode=null,categoryId=null,subcategoryId=null)');
+ const start=app.indexOf('function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=null)');
  const end=app.indexOf('function detail(id){',start);
  const shop=app.slice(start,end);
  assert.ok(start>0&&end>start);
@@ -901,7 +901,7 @@ test('admin category options use referenced row primary keys, never undefined fo
  assert.match(admin,/const refValue=x\[rowKey\]/);
  assert.doesNotMatch(admin,/x\[f\.key\|\|'id'\]/);
  assert.match(admin,/String\(value\)===String\(refValue\)/);
- assert.match(admin,/\['categories','subcategories'\]\.includes\(f\.table\)/);
+ assert.match(admin,/\['categories','subcategories','catalog_varieties'\]\.includes\(f\.table\)/);
 });
 
 test('header offerings replace the previous pledge without duplicating footer catalog',()=>{
@@ -1095,7 +1095,7 @@ test('carousel Admin navigation/editor CRUD use the actual canonical Supabase ta
  assert.match(admin,/await remove\('home_carousel_slides',slide\.id\)/);
  assert.match(admin,/await add\(selected,body\)/,'New slide insertion must use the canonical selected panel');
  assert.match(admin,/await update\(selected,record\[key\],body,key\)/,'Existing slide editing must use the canonical selected panel');
- assert.match(nav,/\['home_carousel_slides','website_size','website_background','site_settings'\]/);
+ assert.match(nav,/\['home_carousel_slides','store_display','website_size','website_background','site_settings'\]/);
  assert.match(migration,/create table if not exists public\.home_carousel_slides/);
  assert.match(app,/\['home_carousel_slides',\{order:'sort_order\.asc'\}\]/);
 });
@@ -1260,7 +1260,7 @@ test('sitewide size is independent from carousel and applied on every page',()=>
  const app=read('site/app.js'),admin=read('site/admin.js'),nav=read('site/admin-navigation.js');
  assert.match(app,/applyWebsiteSize\(settings\.website_size\)/);
  assert.match(admin,/selected==='website_size'\)return websiteSizePanel\(\)/);
- assert.match(nav,/\['home_carousel_slides','website_size','website_background','site_settings'\]/);
+ assert.match(nav,/\['home_carousel_slides','store_display','website_size','website_background','site_settings'\]/);
  assert.match(admin,/website_size:value/);
  assert.match(admin,/await ctx\.load\(\)/);
  assert.match(admin,/Preview: /);
