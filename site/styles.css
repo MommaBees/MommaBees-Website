@@ -162,3 +162,31 @@ body[data-site-background] .past-bakes-gallery .product-photo{height:190px}
 .site-background-tools button{width:auto}
 @media(max-width:850px){body[data-site-background="prairie_doors"]::before,body[data-site-background="prairie_doors"]::after{opacity:.35;width:7vw}}
 @media(max-width:600px){body[data-site-background="prairie_doors"]::before,body[data-site-background="prairie_doors"]::after{display:none}body[data-site-background="photo"]{background-attachment:scroll}body[data-site-background] #main{padding-inline:14px}body[data-site-background] .card-media .product-photo{height:148px}body[data-site-background] .home-gallery-preview .product-photo{height:145px}}
+
+
+/* Distinct shopping destinations and consistently proportioned licensed stock photos */
+.shop-page .shop-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,.7fr);align-items:stretch;min-height:230px;background:#f5e9d4;border:1px solid #d3b28c;border-radius:12px;overflow:hidden;margin:0 0 25px;box-shadow:0 5px 24px rgba(63,42,24,.08)}
+.shop-page--ready .shop-hero{background:#f1eadb;border-left:6px solid #536848}
+.shop-page--preorder .shop-hero{background:#f6e7d9;border-left:6px solid #9b5838}
+.shop-page--all .shop-hero{border-left:6px solid #ac7b44}
+.shop-hero-copy{padding:clamp(22px,4vw,38px);display:flex;flex-direction:column;justify-content:center}
+.shop-hero h1{font:700 clamp(1.9rem,4vw,2.7rem) Georgia,serif;margin:8px 0}
+.shop-hero h2{font:600 clamp(1rem,2vw,1.25rem) Georgia,serif;margin:0 0 8px}
+.shop-hero p{max-width:62ch;line-height:1.6;margin:6px 0}
+.shop-hero-picture{position:relative;background:#f1ddbd}
+.shop-hero-image{width:100%;height:100%;min-height:230px;max-height:300px;object-fit:cover;display:block}
+.shop-hero-picture .photo-disclosure{position:absolute;bottom:0;left:0;right:0;background:#fff6e9ef}
+.shop-result-count{font-size:.9rem;color:#66442e}
+.shop-mode-tabs{border-bottom:2px solid #dbc29c;padding-bottom:12px;gap:11px;margin:0 0 19px}
+.shop-mode-tabs .tab{border-radius:7px;text-decoration:none;min-width:130px;text-align:center;font-weight:750}
+.shop-mode-tabs .tab.active,.navlinks a.current{background:#765032;color:#fff;padding:9px 13px;border-radius:6px}
+.shop-mode-tabs .tab:focus-visible,.navlinks a:focus-visible{outline:3px solid #9e713c;outline-offset:3px}
+.shop-empty{grid-column:1/-1;min-height:170px;background:#fffaf3}
+.stock-label{font-size:.73rem!important;color:#805e44;margin:.35rem 0 0!important}
+.sandbox-nav-link{border:1px solid #9c7552;padding:7px 10px;border-radius:6px;background:#fff2df}
+.sandbox-store-page{background:#fffaf1;border:1px solid #debf94;padding:clamp(16px,3vw,30px);border-radius:12px}
+.sandbox-store-page .demo-store{border-top:0;margin-top:8px}
+.sandbox-store-page .demo-store>.section-head{display:none}
+.sandbox-store-page .bakery-product-card .product-photo{height:176px}
+.graceful-image-fallback{font:italic .95rem Georgia,serif;color:#695642;height:160px!important;min-height:150px;padding:14px}
+@media(max-width:680px){.shop-page .shop-hero{grid-template-columns:1fr}.shop-hero-picture{order:-1}.shop-hero-image{max-height:200px;min-height:180px}.shop-hero-copy{padding:19px}.shop-mode-tabs .tab{flex:1;min-width:0;padding:9px 8px;font-size:.85rem}.sandbox-store-page{padding:12px}.sandbox-store-page .bakery-product-card .product-photo{height:150px}}
