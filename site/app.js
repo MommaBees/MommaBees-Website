@@ -156,6 +156,7 @@ function layout(content){
    await signOut();
    verifiedBackOfficeRole=null;
    all.demoItems=[];
+   await load(); // Drop any staff-visible cached records before rendering the guest view.
    if(!location.hash||location.hash==='#home')await render();
    else nav('#home');
   }catch(error){showError(error);throw error;}
