@@ -292,7 +292,7 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
  .map(x=>'<a class="tab '+(subcategoryId===x.id?'active':'')+'" href="#subcategory/'+e(categoryId)+'/'+e(x.id)+'">'+e(x.name)+'</a>').join('')+'</nav>':''}
  <div class="grid product-results">${items.map(card).join('')+
  showcase.filter(item=>!items.some(p=>p.variety_id&&p.variety_id===item.variety_id)).map(showcaseCard).join('')||
- '<p class="shop-empty">'+e(empty)+'</p>')}</div>
+ '<p class="shop-empty">'+e(empty)+'</p>'}</div>
  
  </section>`);bindDemoStore();
 }
