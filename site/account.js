@@ -101,17 +101,17 @@ async function authPage({layout,rerender,showError}){
   }catch(e){showError(e);window.turnstile?.reset();button.disabled=false;}
  };
 }
-export async function account({layout,rerender,showError}){
+export async function account({layout,rerender,showError,section=null}){
  if(!currentUser())return authPage({layout,rerender,showError});
  const user=currentUser();
  layout('<section class="section"><div class="eyebrow">A place for your bakery favorites</div><h1>My Bakery Account</h1><p class="muted">Welcome back. Here you can follow orders, update your contact details and write to Mamma Bee.</p><p>Signed in as '+h(user.email)+'</p>'+
   '<button class="button secondary" id="signout">Sign Out</button><div class="cols">'+
   '<section class="box"><h2>Customer Account ID</h2><div id="my-account-code">Loading…</div>'+
-  '<h2>Profile & Addresses</h2><div id="my-profile">Loading…</div></section>'+
+  '<div id="account-profile-section"><h2>Profile & Addresses</h2><div id="my-profile">Loading…</div></div></section>'+ 
   '<section class="box"><h2>My Orders</h2><div id="my-orders">Loading…</div>'+
   '<h2>Notifications</h2><div id="my-notices">Loading…</div>'+
-  '<label class="checkbox"><input type="checkbox" id="optin"> Receive promotional messages in my account</label>'+
-  '<button class="button secondary" id="save-optin">Save Preference</button></section></div>'+
+  '<section id="account-settings" aria-label="Account Settings"><h2>Account Settings</h2><label class="checkbox"><input type="checkbox" id="optin"> Receive promotional messages in my account</label>'+ 
+  '<button class="button secondary" id="save-optin">Save Preference</button></section></section></div>'+ 
   '<section class="section" id="my-messages" aria-label="Private customer messages">Loading messages…</section></section>');
  document.getElementById('signout').onclick=async()=>{await signOut();await rerender();};
  try{
