@@ -37,15 +37,31 @@ async function startSandboxCheckout(id){
 }
 function demoStorePreview(){
  if(!['owner','admin'].includes(verifiedBackOfficeRole)||all.settings.demo_store_enabled!==true)return '';
+ const previews={
+ 'Chocolate Chip Cookies':{cat:'Cookies',sub:'Chocolate Chip',blurb:'A classic dozen of chocolate chip cookies, warm and comforting.'},
+ 'Cinnamon Rolls':{cat:'Pastries',sub:'Cinnamon Rolls',blurb:'Tender swirls with a sweet cinnamon filling and creamy icing.'},
+ 'Apple Pie':{cat:'Pies',sub:'Apple Pies',blurb:'A golden pie with traditional apple filling and a buttery crust.'},
+ 'Carrot Cake':{cat:'Cakes',sub:'Carrot Cakes',blurb:'Spiced carrot cake with a generous swirl of icing.'},
+ 'Classic Cheesecake':{cat:'Cheesecakes',sub:'Classic Cheesecakes',blurb:'Rich, smooth cheesecake made for special celebrations.'},
+ 'Brownie Box':{cat:'Bars & Brownies',sub:'Brownies',blurb:'Six fudgy brownies, sliced and ready to share.'}
+ };
  const products=all.demoItems.filter(x=>x.enabled===true);
- return '<section class="section demo-store"><h2>Sandbox Test Store — Owner/Admin Only</h2>'+
- '<p class="muted">These are fictitious examples for testing Stripe. No actual bakery products, inventory, orders or live charges are involved.</p>'+
- '<div class="grid">'+products.map(x=>
- '<article class="card"><div class="card-content"><span class="badge">TEST ONLY</span><h3>'+e(x.name)+'</h3>'+
- '<p class="small">'+e(x.category)+' · '+e(x.description)+'</p>'+
- '<p class="price">'+money(x.price_cents)+' / '+e(x.unit)+'</p>'+
- '<button type="button" class="button secondary" data-demo-checkout="'+e(x.id)+'">Test Stripe checkout</button></div></article>').join('')+
- '</div><p class="small">The test-payment button is disabled at the server until the MommaBeesBakery <strong>sk_test_</strong> key is configured. Tax testing and the real-order workflow remain separate.</p></section>';
+ return '<section class="section demo-store"><div class="section-head"><div>'+
+  '<div class="eyebrow">Owner/Admin preview · Stripe TEST mode</div><h2>Shop Preview</h2>'+
+  '<p class="muted">Six illustrative products and example prices. This preview is private, and no actual product has been offered for purchase.</p>'+
+  '</div></div><div class="grid">'+products.map(x=>{
+  const d=previews[x.name]||{cat:x.category,sub:'',blurb:x.description};
+  const preset=photoFor(d.cat,d.sub);
+  return '<article class="card bakery-product-card"><div class="card-media">'+
+   image(preset?.url,'product-photo',x.name)+
+   (preset?'<div class="photo-disclosure">'+e(photoStatusLabel(preset))+'</div>':'')+'</div>'+
+   '<div class="card-content"><span class="badge">SANDBOX</span>'+
+   '<p class="eyebrow">'+e(d.cat)+(d.sub?' / '+e(d.sub):'')+'</p>'+
+   '<h3>'+e(x.name)+'</h3><p class="small">'+e(d.blurb)+'</p>'+
+   '<p class="price">'+money(x.price_cents)+' <small>/ '+e(x.unit)+'</small></p>'+
+   '<button type="button" class="button secondary" data-demo-checkout="'+e(x.id)+'">Test Checkout</button>'+
+   '</div></article>';
+ }).join('')+'</div><p class="small muted">Sample photos are reference images or earlier bakes, not photographs of purchasable products. Test payments run in MommaBeesBakery sandbox only.</p></section>';
 }
 function bindDemoStore(){
  document.querySelectorAll('[data-demo-checkout]').forEach(button=>button.onclick=async()=>{
@@ -101,6 +117,9 @@ function announcements(place='home'){
 }
 function home(){const s=all.settings;layout(`${announcements()}<section class="hero"><div class="hero-copy"><div class="eyebrow">Country roots and a love for baking</div><h1>${e(s.home_heading||'Made with care. Shared with joy.')}</h1><p>${e(s.home_intro||'Explore handmade baked goods, ready to enjoy or preorder for a baking day.')}</p><div class="hero-actions"><a class="button" href="#ready">Shop ready-to-sell</a><a class="button secondary" href="#preorder">Schedule a preorder</a></div></div><div class="hero-art ${s.hero_url?'has-photo':''}" ${s.hero_url?`style="background-image:url('${photo(s.hero_url)}')"`:''} role="img" aria-label="Mamma Bee's Bakery storefront header"></div></section>
  <section class="section"><div class="section-head"><div><div class="eyebrow">Discover something delicious</div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div><div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url||photoFor(c.name)?.url)}<div class="card-content"><h3>${e(c.name)}</h3><p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||(s.placeholder_empty_shop===false?'':'<div class="empty">No products are currently available. Please check back for the next baking day.</div>')}</div></section>
+ <section class="section"><div class="section-head"><div><div class="eyebrow">Baked with love</div><h2>A Peek Into Our Kitchen</h2></div><a href="#gallery">Browse Past Bakes</a></div>
+ <p class="muted">A few treats we have created before. These are examples of our baking and are not currently listed for sale.</p>
+ <div class="grid home-gallery-preview">${all.pastBakes.filter(p=>p.published&&p.image_url).slice(0,3).map(p=>`<a class="card" href="#gallery">${image(p.image_url,'product-photo',p.title)}<div class="card-content"><strong>${e(p.title)}</strong><p class="small muted">Past creation</p></div></a>`).join('')}</div></section>
  <section class="section"><h2>Featured bakery treats</h2><div class="grid">${sellable().filter(p=>p.featured).slice(0,6).map(card).join('')||(s.placeholder_featured===false?'':'<div class="empty">Featured baked goods will appear here when available.</div>')}</div></section>`);}
 function shop(mode=null,categoryId=null,subcategoryId=null){let items=sellable();if(mode==='ready')items=items.filter(productReady);if(mode==='preorder')items=items.filter(productPreorder);if(categoryId)items=items.filter(p=>p.category_id===categoryId);if(subcategoryId)items=items.filter(p=>p.subcategory_id===subcategoryId);
  const title=subcategoryId?all.subcategories.find(c=>c.id===subcategoryId)?.name||'Bakery type':const title=categoryId?all.categories.find(c=>c.id===categoryId)?.name||'Category':mode==='ready'?'Ready to Sell':mode==='preorder'?'Preorder':'Shop All';
