@@ -2,6 +2,7 @@
 // Error correction M; generated offline, verified to decode to exact homepage URL.
 // No third-party QR service, trackers, or API calls.
 export const HOME_URL='https://mommabees-website.pages.dev/';
+export const QR_PNG_PATH='/assets/MammaBeesBakery-Homepage-QR.png';
 const QR_SIZE=37;
 const PACKED='AAAAAAAAAAAAAAAAAAAAAAAAAP79e/gEFWYQQC6WSLoBdfSV0AujNy6AQQpZBAP6qq/gAB07AAC3bHJYBoa1/EAXtzgMAOgwfxAFabYGAAYRyRwCXfPs4ByGd+IA+4ol0AInGUuALOnKSABwH4lAByL+/gAAXBR8A/qLa0AQX/cZALpRz6AF126uQC6+HEoBBIszoA/oo8kAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
 function qrMatrix(){
@@ -26,7 +27,7 @@ export function qrMarkup(){
  '<div><h2>Scan to Visit Our Bakery</h2><p>Open Mamma Bee\'s Bakery on your phone to view the shop, baking dates, and Past Bakes gallery.</p>'+
  '<p class="small">QR destination: <a href="'+HOME_URL+'">'+HOME_URL+'</a></p>'+
  '<div class="qr-actions"><button type="button" class="button" data-qr-download="svg">Download SVG</button>'+
- '<button type="button" class="button secondary" data-qr-download="png">Download PNG</button>'+
+ '<a class="button secondary" href="'+QR_PNG_PATH+'" download="MammaBeesBakery-Homepage-QR.png" data-qr-download="png">Download PNG</a>'+
  '<button type="button" class="button secondary" data-qr-print>Print / Save as PDF</button></div>'+
  '<p class="small" role="status" id="qr-download-feedback"></p></div></div>';
 }
@@ -35,26 +36,24 @@ function saveFile(blob,name){
  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),4000);
 }
+// PNG is a pre-generated first-party file. No SVG-to-Image conversion, canvas,
+// blob image loading or asynchronous PNG generation is needed in the browser.
 export function bindQrActions(root=document){
- root.querySelectorAll('[data-qr-download]').forEach(button=>button.onclick=async()=>{
-  const kind=button.dataset.qrDownload;const feedback=root.querySelector('#qr-download-feedback');
+ root.querySelectorAll('button[data-qr-download="svg"]').forEach(button=>button.onclick=()=>{
+  const feedback=root.querySelector('#qr-download-feedback');
   try{
-   const svg=qrSvg();
-   if(kind==='svg'){
-    saveFile(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}),'MammaBeesBakery-Homepage-QR.svg');
-   }else{
-    const canvas=document.createElement('canvas'),size=900;canvas.width=size;canvas.height=size;
-    const ctx=canvas.getContext('2d');if(!ctx)throw Error('Canvas unsupported');
-    const img=new Image();
-    const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
-    try{await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url;});
-     ctx.imageSmoothingEnabled=false;ctx.drawImage(img,0,0,size,size);
-    }finally{URL.revokeObjectURL(url);}
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-    if(!blob)throw Error('Could not create PNG');saveFile(blob,'MammaBeesBakery-Homepage-QR.png');
-   }
-   if(feedback)feedback.textContent='QR image prepared for download.';
-  }catch(err){if(feedback)feedback.textContent='Download unavailable: '+err.message;}
+   saveFile(new Blob([qrSvg()],{type:'image/svg+xml;charset=utf-8'}),'MammaBeesBakery-Homepage-QR.svg');
+   if(feedback)feedback.textContent='SVG download started.';
+  }catch(err){
+   console.error('Bakery QR download failed',err);
+   const detail=err instanceof Error&&err.message?err.message:'Your browser could not start the download.';
+   if(feedback)feedback.textContent='SVG download unavailable: '+detail+' Try Download PNG instead.';
+  }
  });
+ root.querySelectorAll('a[data-qr-download="png"]').forEach(link=>
+  link.addEventListener('click',()=>{
+   const feedback=root.querySelector('#qr-download-feedback');
+   if(feedback)feedback.textContent='PNG download started.';
+  }));
  root.querySelectorAll('[data-qr-print]').forEach(button=>button.onclick=()=>window.print());
 }
