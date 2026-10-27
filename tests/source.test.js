@@ -23,6 +23,7 @@ import {PAST_BAKE_IMAGE_NAMES,pastBakeName} from '../site/past-bakes.js';
 import {BUILTIN_PHOTO_PRESETS,photoFor} from '../site/photo-library.js';
 import {TEST_PRICES} from '../functions/_lib/demo-prices.js';
 import {STOCK_PHOTOGRAPHY,stockPhotoFor,sandboxProductPhoto,demoMatchesView} from '../site/stock-photography.js';
+import {SAMPLE_MENU,samplesFor} from '../site/sample-menu.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
 import {HOME_URL,qrSvg,qrMarkup} from '../site/qr-code.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -504,16 +505,16 @@ test('website background settings, image storage and owner-only editor are conne
 test('six staff sandbox products have fixed stock photos and truly separate view filters',()=>{
  const names=['Chocolate Chip Cookies','Cinnamon Rolls','Apple Pie','Carrot Cake','Classic Cheesecake','Brownie Box'];
  assert.equal(Object.keys(STOCK_PHOTOGRAPHY).length,7);
- assert.equal(new Set(names.map(name=>sandboxProductPhoto({name,category:'Test'}).id)).size,6);
+ assert.equal(new Set(names.map(name=>sandboxProductPhoto({name,category:'Test'}).url)).size,6);
  for(const name of names){
   const picture=sandboxProductPhoto({name});
-  assert.match(picture.url,/^https:\/\/images\.unsplash\.com\/photo-/);
-  assert.equal(picture.license,'Unsplash License');
-  assert.equal(picture.disclosure,'Stock photo — example only');
+  assert.match(picture.url,/^\/assets\/demo\/[a-z0-9-]+\.webp$/);
+  assert.equal(picture.license,'Bakery-commissioned illustrative concept artwork');
+  assert.equal(picture.disclosure,'Sample image — not an actual bakery product');
  }
  assert.equal(names.filter(name=>demoMatchesView({name},'all')).length,6);
  assert.equal(names.filter(name=>demoMatchesView({name},'ready')).length,3);
- assert.equal(names.filter(name=>demoMatchesView({name},'preorder')).length,4);
+ assert.equal(names.filter(name=>demoMatchesView({name},'preorder')).length,3);
  assert.equal(stockPhotoFor('Bars & Brownies').category,'brownies');
  assert.equal(stockPhotoFor('Pies').category,'pies');
 });
@@ -573,4 +574,33 @@ test('mobile and tablet layouts take usable width and have accessible menu contr
  assert.match(css,/\.navlinks\.mobile-open/);
  assert.match(css,/@media print/);
  assert.doesNotMatch(app,/Missouri Prairie Roots/);
+});
+
+test('six actual optimized bakery photos are stored locally and all show modes differ',()=>{
+ const expected=['chocolate-chip-cookies','apple-pie','cinnamon-rolls','brownie-box','strawberry-cake','caramel-pecan-cheesecake'];
+ for(const imageName of expected){
+  const filename='site/assets/demo/'+imageName+'.webp';
+  assert.ok(existsSync(path.join(root,filename)),filename+' must be uploaded to GitHub');
+  const bytes=readFileSync(path.join(root,filename));
+  assert.ok(bytes.length>3000,filename+' contains image data');
+  assert.equal(bytes.toString('ascii',0,4),'RIFF');
+  assert.equal(bytes.toString('ascii',8,12),'WEBP');
+ }
+ assert.equal(SAMPLE_MENU.length,6);
+ assert.equal(samplesFor('all').length,6);
+ assert.equal(samplesFor('ready').length,3);
+ assert.equal(samplesFor('preorder').length,3);
+ assert.equal(samplesFor('ready').filter(x=>samplesFor('preorder').some(y=>y.name===x.name)).length,0);
+ assert.equal(samplesFor('all','Pies').length,1);
+});
+test('sample descriptions cannot claim product availability or take payments from guests',()=>{
+ const app=read('site/app.js');
+ const preview=app.slice(app.indexOf('function demoStorePreview('),app.indexOf('function bindDemoStore()'));
+ assert.match(preview,/Menu example · Not available to order/);
+ assert.match(preview,/staff&&stored/);
+ assert.match(preview,/TEST MODE · NOT REAL INVENTORY/);
+ assert.match(preview,/hasRealProducts/);
+ assert.match(preview,/samplesFor\(mode,categoryName\)/);
+ assert.match(app,/demoStorePreview\(mode\|\|'all'/);
+ assert.doesNotMatch(read('site/stock-photography.js'),/images\.unsplash\.com/);
 });
