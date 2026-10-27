@@ -1274,3 +1274,43 @@ a.store-showcase-card .card-content{flex:1}
 .shop-empty{grid-column:1/-1;margin:0;padding:12px 0;color:inherit;font-size:1rem}
 .showcase-detail-info>span{line-height:1.5}
 #field_availability_date{min-height:44px}
+
+
+/* MBB-UI-051: Denser Bakery/Homestand product grids. Intentionally does NOT style the carousel. */
+#main .home-departments-section{margin-block:clamp(16px,2.4vw,34px)}
+#main .home-departments-grid{gap:clamp(10px,1.6vw,20px)}
+#main .home-department-panel{padding:clamp(10px,1.35vw,18px)}
+#main .home-department-heading{margin-bottom:10px;gap:8px}
+#main .home-department-products{gap:clamp(8px,1vw,13px);grid-template-columns:repeat(2,minmax(0,1fr))}
+#main .home-departments-grid.is-single .home-department-products{grid-template-columns:repeat(4,minmax(0,1fr))}
+#main .home-department-products .card,
+#main .product-results .card{min-width:0}
+body[data-website-size] #main .home-department-products .card-content,
+body[data-website-size] #main .product-results .card-content{padding:calc(clamp(10px,1.1vw,14px) * var(--website-density))}
+#main .home-department-products .store-showcase-card .card-content h3,
+#main .product-results .store-showcase-card .card-content h3{margin:4px 0 2px;line-height:1.25}
+#main .home-department-products .showcase-card-price,
+#main .product-results .showcase-card-price{margin-top:5px}
+#main .home-department-products .showcase-card-link,
+#main .product-results .showcase-card-link{margin-top:7px}
+body[data-website-size] #main .home-department-products .card-media .product-photo,
+body[data-website-size] #main .product-results .card-media .product-photo{height:calc(clamp(130px,12vw,178px) * var(--website-image-scale))}
+body[data-website-size] #main .product-results.grid{gap:calc(clamp(9px,1.3vw,16px) * var(--website-density));grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1150px){
+ #main .home-departments-grid.is-single .home-department-products{grid-template-columns:repeat(3,minmax(0,1fr))}
+ body[data-website-size] #main .product-results.grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:950px){
+ #main .home-department-products{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #main .home-departments-grid.is-single .home-department-products{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+ body[data-website-size] #main .product-results.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:500px){
+ #main .home-department-products,
+ #main .home-departments-grid.is-single .home-department-products{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body[data-website-size] #main .product-results.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body[data-website-size] #main .home-department-products .card-content,
+ body[data-website-size] #main .product-results .card-content{padding:calc(10px * var(--website-density))}
+}

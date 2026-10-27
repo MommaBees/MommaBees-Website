@@ -392,7 +392,7 @@ async function storeDisplayPanel(){
   </label>
   <fieldset class="admin-home-visibility">
    <legend>Homepage storefront visibility</legend>
-   <p class="small muted" id="home-visibility-help">When Split Store is enabled, choose which departments appear on the homepage. These settings do not hide their shopping pages.</p>
+   <p class="small muted" id="home-visibility-help">Select which departments appear on the homepage and in Shop All. Direct department links remain available.</p>
    <label class="admin-store-switch" for="home-bakery-visible">
     <input id="home-bakery-visible" type="checkbox" ${original.home_bakery_visible?'checked':''}>
     <span><strong>Show Bakery on homepage</strong></span>
@@ -402,7 +402,7 @@ async function storeDisplayPanel(){
     <span><strong>Show Homestand on homepage</strong></span>
    </label>
   </fieldset>
-  <p class="small muted">With both visible, Bakery and Homestand appear side by side on desktop and stack on mobile. Only published products with available inventory or preorder dates appear.</p>
+  <p class="small muted">One department: 8 featured items. Both departments: 4 each, side by side on desktop.</p>
   <button type="submit" class="button" id="store-display-save">Save store display</button>
   <p id="store-display-status" role="status" aria-live="polite"></p>
  </form></section>`;

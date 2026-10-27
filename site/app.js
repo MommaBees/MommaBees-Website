@@ -11,7 +11,7 @@ import {catalogCarouselSlides} from './catalog-carousel.js';
 import {normalizeIdle,startIdleWatch,stopIdleWatch,isIdle,idleActivityTime} from './idle-session.js';
 import {bindRequiredMarkers} from './required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
-import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts} from './store-departments.js';
+import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts,homepageVisibleDepartments,shopVisibleDepartments} from './store-departments.js';
 import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
 import {showcaseEnabled,showcaseDescription,showcasePrice,showcaseOrigin,showcaseFields} from './product-showcase-details.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
@@ -215,7 +215,8 @@ function home(){
  const slides=[...(active.length?active:backup),...catalogCarouselSlides({settings:s,products:sellable(),showcase:showcaseEnabled(s)?all.showcaseItems:[],categories:all.categories})];
  const split=s.split_store_enabled===true;
  const currentProducts=sellable();
- const storefronts=homepageStorefronts(s,currentProducts,all.categories,4);
+ const homepageLimit=homepageVisibleDepartments(s).length===1?8:4;
+ const storefronts=homepageStorefronts(s,currentProducts,all.categories,homepageLimit);
  const departmentPanels=storefronts.length?
   '<section class="section home-departments-section" aria-label="Bakery and Homestand products">'+
   '<div class="home-departments-grid '+(storefronts.length===1?'is-single':'')+'">'+
@@ -225,9 +226,9 @@ function home(){
       '<a href="'+view.href+'">Shop '+e(view.label)+'</a></div>'+
     '<div class="home-department-products">'+
       (view.products.map(card).join('')+
-       (showcaseEnabled(s)?showcaseItemsFor(all.showcaseItems,view.department,null,null,4):[])
+       (showcaseEnabled(s)?showcaseItemsFor(all.showcaseItems,view.department,null,null,homepageLimit):[])
         .filter(item=>!view.products.some(p=>p.variety_id&&p.variety_id===item.variety_id))
-        .slice(0,Math.max(0,4-view.products.length))
+        .slice(0,Math.max(0,homepageLimit-view.products.length))
         .map(showcaseCard).join(''))+
     '</div></section>').join('')+
   '</div></section>':'';
@@ -246,9 +247,10 @@ function home(){
 }
 function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=null){
  const category=all.categories.find(x=>x.id===categoryId);
- const department=effectiveDepartment(all.settings,requestedDepartment,category);
  const split=all.settings.split_store_enabled===true;
- let items=department?filterStoreProducts(sellable(),all.settings,department,all.categories):sellable();
+ const visibleDepartments=shopVisibleDepartments(all.settings,requestedDepartment,category);
+ const department=split&&visibleDepartments.length===1?visibleDepartments[0]:null;
+ let items=split?sellable().filter(product=>visibleDepartments.includes(departmentForCategory(categoryFor(product)))):sellable();
  if(mode==='ready')items=items.filter(productReady);
  if(mode==='preorder')items=items.filter(productPreorder);
  if(categoryId)items=items.filter(p=>p.category_id===categoryId);
@@ -264,8 +266,11 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
  const isShopAll=(!mode&&!categoryId&&!subcategoryId)||department==='homestand';
  const pageTitle=department?departmentLabel(department)+(categoryId?'':mode==='ready'?' · Ready to Sell':mode==='preorder'?' · Preorder':' · Shop All'):title;
  const departmentSuffix=department?'/'+department:'';
- const categoryChoices=categories(department);
- const showcase=split&&!mode&&showcaseEnabled(all.settings)?showcaseItemsFor(all.showcaseItems,department||'bakery',categoryId,subcategoryId,20):[];
+ const categoryChoices=categories(department).filter(c=>!split||visibleDepartments.includes(departmentForCategory(c)));
+ const showcase=split&&!mode&&showcaseEnabled(all.settings)
+  ?visibleDepartments.flatMap(d=>showcaseItemsFor(all.showcaseItems,d,categoryId,subcategoryId,40)):[];
+ const navigationDepartments=split?Array.from(new Set([...visibleDepartments,
+  ...(requestedDepartment&&['bakery','homestand'].includes(requestedDepartment)?[requestedDepartment]:[])])):[];
  layout(`<section class="section shop-page shop-page--${mode||'all'}" data-shop-view="${mode||'all'}">
  ${announcements('shop')}
  <div class="shop-hero">
@@ -274,9 +279,8 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
   </div>
   <div class="shop-hero-picture shop-hero-picture--brand"><img class="shop-hero-image shop-hero-brand-image" src="/assets/branding/mommabee-shop-logo.webp" alt="MommaBee Bakery&Farmstand" decoding="async" fetchpriority="high"></div>
  </div>
- ${split?'<nav class="tabs shop-department-tabs" aria-label="Store departments">'+
-  '<a class="tab '+(department==='bakery'?'active':'')+'" href="#shop/bakery" '+(department==='bakery'?'aria-current="page"':'')+'>Bakery</a>'+
-  '<a class="tab '+(department==='homestand'?'active':'')+'" href="#shop/homestand" '+(department==='homestand'?'aria-current="page"':'')+'>Homestand</a>'+
+ ${split&&navigationDepartments.length?'<nav class="tabs shop-department-tabs" aria-label="Store departments">'+
+  navigationDepartments.map(d=>'<a class="tab '+(department===d?'active':'')+'" href="#shop/'+d+'" '+(department===d?'aria-current="page"':'')+'>'+e(departmentLabel(d))+'</a>').join('')+
   '</nav>':''}
  <nav class="tabs shop-mode-tabs" aria-label="Browse available products">
   <a class="tab ${!mode&&!categoryId?'active':''}" href="#shop${departmentSuffix}" ${!mode&&!categoryId?'aria-current="page"':''}>Shop All</a>

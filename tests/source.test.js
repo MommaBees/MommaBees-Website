@@ -1293,7 +1293,7 @@ test('whole-site sizing changes layouts and text while preserving accessible con
 
 
 import {STORE_DEPARTMENTS,normalizeDepartment,departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,taxonomyPaths,searchTaxonomyPaths} from '../site/store-departments.js';
-import {homepageStorefronts} from '../site/store-departments.js';
+import {homepageStorefronts,homepageVisibleDepartments,shopVisibleDepartments} from '../site/store-departments.js';
 
 test('Bakery and Homestand storefront filtering respects the Owner toggle and category truth',()=>{
  assert.deepEqual(STORE_DEPARTMENTS,['bakery','homestand']);
@@ -1420,7 +1420,7 @@ test('Split Store homepage showcases respect independent visibility and availabl
 test('homepage departments use real sellable cards, mobile stacking and staff-only visibility controls',()=>{
  const app=read('site/app.js'),admin=read('site/admin.js'),css=read('site/country-home-v2.css');
  const migration=read('supabase/migrations/20261027_home_department_visibility_v130.sql');
- assert.match(app,/homepageStorefronts\(s,currentProducts,all\.categories,4\)/);
+ assert.match(app,/homepageStorefronts\(s,currentProducts,all\.categories,homepageLimit\)/);
  assert.match(app,/const currentProducts=sellable\(\)/);
  assert.match(app,/home-departments-grid/);
  assert.match(app,/home-department--/);
@@ -1668,4 +1668,49 @@ test('Average showcase price is explicit and stays separate from owner price',()
  assert.match(migration,/add column if not exists availability_date date/);
  assert.match(migration,/update public\.store_showcase_items set availability_note=null/);
  assert.doesNotMatch(migration,/update public\.products/);
+});
+
+
+test('one selected storefront shows 8 homepage products while two display 4 each',()=>{
+ const cats=[{id:'cookies',department:'bakery'},{id:'veg',department:'homestand'}];
+ const entries=[
+  ...Array.from({length:10},(_,i)=>({id:'cookie-'+i,category_id:'cookies',name:'Cookie '+i})),
+  ...Array.from({length:10},(_,i)=>({id:'veg-'+i,category_id:'veg',name:'Vegetable '+i}))
+ ];
+ const both={split_store_enabled:true,home_bakery_visible:true,home_homestand_visible:true};
+ const bakery={...both,home_homestand_visible:false};
+ const homestand={...both,home_bakery_visible:false};
+ const neither={...both,home_bakery_visible:false,home_homestand_visible:false};
+ assert.deepEqual(homepageVisibleDepartments(both),['bakery','homestand']);
+ assert.deepEqual(homepageVisibleDepartments(bakery),['bakery']);
+ assert.deepEqual(homepageVisibleDepartments(homestand),['homestand']);
+ assert.deepEqual(homepageVisibleDepartments(neither),[]);
+ assert.deepEqual(homepageStorefronts(both,entries,cats,4).map(v=>v.products.length),[4,4]);
+ assert.deepEqual(homepageStorefronts(bakery,entries,cats,8).map(v=>v.products.length),[8]);
+ assert.deepEqual(homepageStorefronts(homestand,entries,cats,8).map(v=>v.products.length),[8]);
+ assert.deepEqual(homepageStorefronts(neither,entries,cats,8),[]);
+ assert.deepEqual(shopVisibleDepartments(both),['bakery','homestand']);
+ assert.deepEqual(shopVisibleDepartments(bakery),['bakery']);
+ assert.deepEqual(shopVisibleDepartments(homestand),['homestand']);
+ assert.deepEqual(shopVisibleDepartments(neither),[]);
+ assert.deepEqual(shopVisibleDepartments(bakery,'homestand'),['homestand']);
+ assert.deepEqual(shopVisibleDepartments(homestand,null,cats[0]),['bakery']);
+ assert.equal(shopVisibleDepartments({split_store_enabled:false}),null);
+});
+test('Shop All follows selected departments and denser cards do not alter the carousel',()=>{
+ const app=read('site/app.js');
+ const css=read('site/country-home-v2.css');
+ const admin=read('site/admin.js');
+ assert.match(app,/homepageVisibleDepartments\(s\)\.length===1\?8:4/);
+ assert.match(app,/showcaseItemsFor\(all\.showcaseItems,view\.department,null,null,homepageLimit\)/);
+ assert.match(app,/Math\.max\(0,homepageLimit-view\.products\.length\)/);
+ assert.match(app,/shopVisibleDepartments\(all\.settings,requestedDepartment,category\)/);
+ assert.match(app,/visibleDepartments\.includes\(departmentForCategory\(categoryFor\(product\)\)\)/);
+ assert.match(app,/visibleDepartments\.flatMap\(d=>showcaseItemsFor/);
+ assert.match(admin,/One department: 8 featured items\. Both departments: 4 each/);
+ const compact=css.slice(css.indexOf('/* MBB-UI-051:'));
+ assert.match(compact,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+ assert.match(compact,/\.product-results\.grid/);
+ assert.match(compact,/\.home-department-products/);
+ assert.doesNotMatch(compact,/\.home-carousel|\.hero-art|carousel-size/);
 });
