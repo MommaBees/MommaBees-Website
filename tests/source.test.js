@@ -374,7 +374,7 @@ test('unpaid pickup cancellation and payment recording are owner/admin-only',asy
  const sql=read('supabase/migrations/20261026_cancel_unpaid_pickup.sql');
  const protect=read('supabase/migrations/20261026_prevent_cancelled_pickup_collection.sql');
  assert.match(sql,/quantity_available=quantity_available\+row_item.quantity/);
- assert.match(sql,/r\.payment_status/);
+ assert.match(sql,/o\.payment_status/);
  assert.match(sql,/payment_status<>'awaiting_pickup'/);
  assert.match(protect,/r\.reservation_released or r\.status='cancelled'/);
 });
