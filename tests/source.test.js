@@ -1332,7 +1332,7 @@ test('store routes have department tabs only in split mode, and Admin holds cata
  const site=read('site/app.js'),admin=read('site/admin.js'),nav=read('site/admin-navigation.js'),css=read('site/country-home-v2.css'),types=read('site/product-types.js');
  const sql=read('supabase/migrations/20261027_split_store_taxonomy_v128.sql');
  assert.match(site,/split_store_enabled===true/);
- assert.match(site,/filterStoreProducts\(sellable\(\),all\.settings,department,all\.categories\)/);
+ assert.match(site,/shopVisibleDepartments\(all\.settings,requestedDepartment,category\)/);
  assert.match(site,/#shop\/bakery/);
  assert.match(site,/#shop\/homestand/);
  assert.match(site,/#ready\$\{departmentSuffix\}/);
@@ -1462,7 +1462,7 @@ test('owner catalog showcases render in split home and department Shop All witho
  assert.match(app,/\['store_showcase_items',\{order:'sort_order\.asc'\}\]/);
  assert.match(app,/t==='store_showcase_items'\?'showcaseItems'/);
  assert.match(app,/showcaseItemsFor\(all\.showcaseItems,view\.department/);
- assert.match(app,/showcaseItemsFor\(all\.showcaseItems,department\|\|'bakery'/);
+ assert.match(app,/visibleDepartments\.flatMap\(d=>showcaseItemsFor\(all\.showcaseItems,d/);
  assert.match(app,/\.map\(showcaseCard\)/);
  const component=app.slice(app.indexOf('const showcaseCard=item=>'),app.indexOf('const categories='));
  assert.doesNotMatch(component,/price_cents|Add to Cart|not for sale|Not available/i);
