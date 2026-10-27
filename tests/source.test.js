@@ -27,6 +27,9 @@ import {SAMPLE_MENU,samplesFor} from '../site/sample-menu.js';
 import {accountNavigationMarkup,ACCOUNT_MENU_OPEN_MS,ACCOUNT_MENU_CLOSE_MS} from '../site/account-navigation.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
 import {referenceKeyFor} from '../site/reference-keys.js';
+import {eligibleHomeSlides,homeCarouselMarkup} from '../site/home-carousel.js';
+import {ADMIN_GROUPS,adminGroupsForRole} from '../site/admin-navigation.js';
+
 import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from '../site/product-types.js';
 import {centralInputFromIso,isoFromCentralInput} from '../site/admin-time.js';
 import {HOME_URL,QR_PNG_PATH,qrSvg,qrMarkup} from '../site/qr-code.js';
@@ -1024,4 +1027,50 @@ test('Non-food drafts can be classified under inactive subcategories without exp
  assert.match(sql,/create or replace function private\.check_product_subcategory\(\)/);
  assert.match(sql,/s\.active or not new\.published/);
  assert.match(sql,/Published products require an active matching subcategory/);
+});
+
+test('managed carousel keeps the original hero, accepts owner slides and is accessible',()=>{
+ const sql=read('supabase/migrations/20261027_home_carousel_admin_v120.sql');
+ const app=read('site/app.js'),admin=read('site/admin.js'),styles=read('site/country-home-v2.css');
+ const slides=[{id:'a',published:true,sort_order:20,eyebrow:'Test',title:'Original Bakery Creation',description:'Owner photo',image_url:'https://example.test/storage/v1/object/public/carousel-photos/test.jpg',image_alt:'Bakery creation',primary_label:'Shop now',primary_href:'#shop',secondary_label:'Ask us',secondary_href:'#contact'},
+ {id:'b',published:false,sort_order:10,title:'Private draft',image_url:'https://example.test/image.jpg'}];
+ assert.equal(eligibleHomeSlides(slides).length,1);
+ const markup=homeCarouselMarkup([slides[0]],x=>String(x).replaceAll('&','&amp;'),x=>x);
+ assert.match(markup,/aria-roledescription="carousel"/);
+ assert.match(markup,/alt="Bakery creation"/);
+ assert.match(markup,/href="#shop"/);
+ assert.doesNotMatch(markup,/home-carousel-controls/);
+ const second={...slides[0],id:'c',sort_order:30,title:'Other true photograph'};
+ const two=homeCarouselMarkup([slides[0],second],x=>x,x=>x);
+ assert.match(two,/Previous featured slide/);assert.match(two,/Next featured slide/);
+ assert.match(two,/aria-pressed="true"/);
+ assert.match(app,/eligibleHomeSlides\(all\.carouselSlides\)/);
+ assert.match(app,/bindHomeCarousel\(\)/);
+ assert.match(app,/stopHomeCarousel\(\)/);
+ assert.match(admin,/carousel_slides:\{label:'Homepage Carousel'/);
+ assert.match(admin,/upload\('carousel-photos'/);
+ assert.match(admin,/data-slide-up/);assert.match(admin,/data-slide-down/);
+ assert.match(admin,/data-slide-delete/);
+ assert.match(sql,/create table if not exists public\.home_carousel_slides/);
+ assert.match(sql,/public active homepage slides/);
+ assert.match(sql,/owner and admin manage homepage slides/);
+ assert.match(sql,/public\.site_settings s where s\.id=1/);
+ assert.match(sql,/home_carousel_enabled=true/);
+ assert.match(styles,/prefers-reduced-motion/);
+});
+test('Admin Center organizes all panels into navigable role-aware groups',()=>{
+ const admin=read('site/admin.js'),css=read('site/country-home-v2.css');
+ const owner=adminGroupsForRole('owner'),moderator=adminGroupsForRole('moderator');
+ assert.deepEqual(owner,ADMIN_GROUPS);
+ assert.ok(owner.length>=6);
+ assert.ok(owner.some(([name,ids])=>name==='Website & Design'&&ids.includes('carousel_slides')));
+ assert.deepEqual(moderator,[['Customer Moderation',['messages','reviews']]]);
+ assert.deepEqual(adminGroupsForRole('customer'),[]);
+ const moduleIds=owner.flatMap(([,ids])=>ids);
+ assert.equal(moduleIds.length,new Set(moduleIds).size);
+ assert.match(admin,/id="admin-menu-search"/);
+ assert.match(admin,/id="admin-jump"/);
+ assert.match(admin,/admin-nav-group/);
+ assert.match(admin,/visibleGroups\.some/);
+ assert.match(css,/admin-content-toolbar/);
 });

@@ -2,6 +2,7 @@ import {currentUser,list,add,update,remove,rpc,upload,signedImage,money,escapeHt
 import {referenceKeyFor} from './reference-keys.js';
 import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from './product-types.js';
 import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
+import {adminGroupsForRole,ADMIN_DESCRIPTIONS} from './admin-navigation.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
 import {pastBakeName} from './past-bakes.js';
 import {BUILTIN_PHOTO_PRESETS,photoByUrl} from './photo-library.js';
@@ -31,15 +32,59 @@ const configs={
  recipes:{label:'Recipe Yields',fields:cols(field('product_id','Product','ref',{table:'products'}),field('yield_quantity','Recipe yield (sellable units)','number'),field('instructions','Instructions','textarea'))},
  recipe_ingredients:{label:'Recipe Ingredient Quantities',fields:cols(field('recipe_id','Recipe','ref',{table:'recipes'}),field('ingredient_id','Ingredient','ref',{table:'ingredients'}),field('quantity','Quantity required per batch','number'))},
  customer_profiles:{label:'Customer Accounts',readMostly:true,fields:cols(field('first_name','First name'),field('last_name','Last name'),field('username','Username'),field('phone','Phone'),field('address_line1','Account street'),field('address_line2','Apt / suite'),field('city','City'),field('state','State'),field('country','Country'),field('postal_code','ZIP / postal'),field('billing_same','Billing same as account','bool'),field('billing_line1','Billing street'),field('billing_line2','Billing apt / suite'),field('billing_city','Billing city'),field('billing_state','Billing state'),field('billing_country','Billing country'),field('billing_postal_code','Billing ZIP / postal'),field('marketing_opt_in','Marketing permission','bool'))},
+ carousel_slides:{label:'Homepage Carousel',fields:cols(field('sort_order','Display position','number'),field('eyebrow','Small heading'),field('title','Main headline'),field('description','Supporting text','textarea'),field('image_url','Carousel photo','carousel_image'),field('image_alt','Image description for screen readers'),field('primary_label','Main button label'),field('primary_href','Main button destination','select',{options:['#shop','#ready','#preorder','#gallery','#contact','#faq']}),field('secondary_label','Second button label (optional)'),field('secondary_href','Second button destination','select',{options:['#shop','#ready','#preorder','#gallery','#contact','#faq']}),field('published','Published / visible','bool'),field('starts_at','Start showing (Central Time)','datetime'),field('ends_at','Stop showing (Central Time)','datetime'))},
  site_settings:{label:'Website Appearance & Settings',single:true,fields:cols(field('brand_subtitle','Header products & services line','textarea'),field('placeholder_empty_shop','Show empty-shop message','bool'),field('placeholder_empty_gallery','Show empty-gallery message','bool'),field('placeholder_missing_image','Show missing-photo placeholder','bool'),field('placeholder_featured','Show empty-featured message','bool'),field('demo_store_enabled','Show test products to Owner/Admin ONLY','bool'),field('home_heading','Homepage headline'),field('home_intro','Homepage introduction','textarea'),field('hero_url','Homepage background photo','image'),field('header_url','Header image','image'),field('email','Contact email'),field('phone','Contact phone'),field('pickup_instructions','Pickup instructions','textarea'),field('delivery_zips','Allowed delivery ZIP codes (comma-separated)','csv'),field('delivery_fee_cents','Local delivery fee (dollars)','money'),field('pickup_enabled','Offer pickup','bool'),field('delivery_enabled','Offer local delivery','bool'),field('checkout_enabled','ENABLE LIVE CHECKOUT AFTER TESTING','bool'),field('pay_at_pickup_enabled','Offer Pay at Pickup (separate from Stripe)','bool'),field('pay_at_pickup_tax_reviewed','Pay-at-pickup tax configuration (staff-only; do not enable until supported)','bool'),field('pay_at_pickup_tax_rate_bps','Pay-at-pickup fallback tax rate (restricted legacy setting)','number'),field('special_date_requests_enabled','Offer off-schedule special date inquiries','bool'),field('special_date_convenience_fee_cents','Proposed off-day convenience fee (dollars; subject to approval)','money'),field('food_notice','Food/allergen disclosure','textarea'),field('terms','Cancellation, return and store terms','textarea'))}
 };
-const groups=[['Operations',['dashboard','demo_checkout_tests','orders','stock_batches','baking_days','product_day_limits','shopping','messages','reviews','notifications']],['Catalog',['products','categories','subcategories','demo_catalog_items','past_bakes','product_photos','recipes','recipe_ingredients','ingredients']],['Marketing',['promotions','promotion_recipients','announcements','announcement_recipients']],['Design',['website_background','site_settings']],['Business',['expenses','reports','users','customer_profiles']]];
+// Administrative groups are centralized in admin-navigation.js.
 const titleFor=(table,row)=>row?.name||row?.title||row?.email||row?.description||row?.date||row?.product_name||row?.full_name||row?.subject||String(row?.id||row?.product_id||'').slice(0,8);
 const short=(value)=>{if(value===null||value===undefined)return '—';if(typeof value==='boolean')return value?'Yes':'No';if(typeof value==='object')return JSON.stringify(value).slice(0,90);return String(value).slice(0,105);};
 const formatCell=(key,val)=>key.endsWith('_cents')?money(val):key==='created_at'?fmt(val):short(val);
-function authShell(){const visibleGroups=ctx.role==='moderator'?[['Moderation',['messages','reviews']]]:groups;const sections=visibleGroups.map(([g,tables])=>`<div class="tiny muted" style="padding:9px 12px">${e(g.toUpperCase())}</div>${tables.map(id=>`<button class="${id===selected?'active':''}" data-panel="${id}">${e(id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id))}</button>`).join('')}`).join('');
- ctx.layout(`<section class="section"><div class="eyebrow">MommaBee Bakery&Farmstand · Staff workspace</div><h1>Bakery Admin Center</h1><p class="muted">Your baking days, products, orders, customer conversations, and business records—all in one place.</p><div class="admin-layout"><aside class="admin-side" aria-label="Admin management sections">${sections}</aside><div id="admin-main"><div class="box">Loading…</div></div></div></section>`);
- document.querySelectorAll('[data-panel]').forEach(el=>el.onclick=()=>{selected=el.dataset.panel;authShell();renderPanel();});
+function authShell(){
+ const visibleGroups=adminGroupsForRole(ctx.role);
+ const labelFor=id=>id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id);
+ const groupFor=visibleGroups.find(([,ids])=>ids.includes(selected))?.[0]||'Overview';
+ const sections=visibleGroups.map(([group,ids],i)=>
+  `<details class="admin-nav-group" ${group===groupFor?'open':''}>
+    <summary>${e(group)}<span class="admin-nav-count">${ids.length}</span></summary>
+    <div class="admin-nav-items">${ids.map(id=>
+     `<button type="button" class="admin-nav-link ${id===selected?'active':''}" data-panel="${id}" ${id===selected?'aria-current="page"':''}>
+       <strong>${e(labelFor(id))}</strong><small>${e(ADMIN_DESCRIPTIONS[id]||'Manage records')}</small>
+     </button>`).join('')}</div></details>`).join('');
+ const jump=visibleGroups.flatMap(([,ids])=>ids).map(id=>
+  `<option value="${e(id)}" ${id===selected?'selected':''}>${e(labelFor(id))}</option>`).join('');
+ ctx.layout(`<section class="section admin-workspace">
+  <div class="eyebrow">MommaBee Bakery&Farmstand · Staff workspace</div>
+  <h1>Bakery Admin Center</h1><p class="muted">Orders, inventory, customers, marketing and website management in one workspace.</p>
+  <div class="admin-layout">
+    <aside class="admin-side" aria-label="Admin management sections">
+      <label class="admin-menu-search-label" for="admin-menu-search">Find a module</label>
+      <input type="search" id="admin-menu-search" placeholder="Search Admin…" autocomplete="off" aria-label="Search Admin modules">
+      ${sections}
+    </aside>
+    <div class="admin-content">
+     <div class="admin-content-toolbar">
+      <div class="admin-content-path">${e(groupFor)} <span aria-hidden="true">/</span> <strong>${e(labelFor(selected))}</strong></div>
+      <label for="admin-jump">Go to module</label><select id="admin-jump" aria-label="Go to Admin module">${jump}</select>
+     </div>
+     <div id="admin-main"><div class="box">Loading…</div></div>
+    </div>
+  </div>
+ </section>`);
+ const navigate=id=>{if(!visibleGroups.some(([,ids])=>ids.includes(id)))return;selected=id;authShell();renderPanel();};
+ document.querySelectorAll('[data-panel]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.panel)));
+ document.querySelector('#admin-jump')?.addEventListener('change',ev=>navigate(ev.target.value));
+ document.querySelector('#admin-menu-search')?.addEventListener('input',ev=>{
+  const term=ev.target.value.trim().toLowerCase();
+  document.querySelectorAll('.admin-nav-group').forEach(group=>{
+   let any=false;
+   group.querySelectorAll('[data-panel]').forEach(button=>{
+    const matched=!term||(button.textContent||'').toLowerCase().includes(term)||button.dataset.panel.includes(term);
+    button.hidden=!matched;if(matched)any=true;
+   });
+   group.hidden=!any;
+   if(term&&any)group.open=true;
+  });
+ });
 }
 export async function admin(context){ctx=context;const user=currentUser();if(!user){ctx.layout('<div class="section box"><h1>Admin sign in required</h1><p>You must sign in to an Owner/Admin account before managing the bakery.</p><a class="button" href="#account">Sign in</a></div>');return;}
  try{
@@ -51,7 +96,7 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  catch(x){ctx.layout(`<div class="section box"><h1>Access denied</h1><p>${e(x.message)}</p><a href="#shop">Return to shop</a></div>`);return;}
  if(ctx.role==='moderator')selected='messages';
  authShell();await renderPanel();}
-async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
+async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='carousel_slides')return carouselPanel();if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
 function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['name','product_type','price_cents','mode','published']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
 
@@ -161,6 +206,53 @@ function listPanel(){if(selected==='site_settings')return siteSettingsSummary();
  });
 
 }
+async function carouselPanel(){
+ await loadTable('home_carousel_slides');
+ const rows=[...(data.home_carousel_slides||[])].sort((a,b)=>a.sort_order-b.sort_order);
+ const card=(r,i)=>`<article class="admin-carousel-card">
+ <div class="admin-carousel-thumb"><img src="${e(r.image_url)}" alt="${e(r.image_alt||r.title)}" loading="lazy"></div>
+ <div class="admin-carousel-details">
+  <div class="admin-carousel-status">${r.published?'Published':'Draft'}${r.starts_at?' · Scheduled':''}</div>
+  <h3>${e(r.title)}</h3><p>${e(r.description||'')}</p>
+  <div class="admin-carousel-actions">
+   <button type="button" class="button secondary" data-slide-edit="${i}">Edit slide</button>
+   <button type="button" class="button secondary" data-slide-up="${i}" ${i===0?'disabled':''}>Move up</button>
+   <button type="button" class="button secondary" data-slide-down="${i}" ${i===rows.length-1?'disabled':''}>Move down</button>
+   <button type="button" class="button secondary" data-slide-toggle="${i}">${r.published?'Unpublish':'Publish'}</button>
+   <button type="button" class="button ghost" data-slide-delete="${i}">Delete</button>
+  </div></div></article>`;
+ $('#admin-main').innerHTML=`<section class="box admin-carousel-manager">
+ <div class="section-head"><div><h2>Homepage Carousel</h2>
+ <p class="muted">Control the homepage feature without editing site code. Only published slides within their scheduled dates appear to customers.</p></div>
+ <button type="button" class="button" id="new-carousel-slide">Add slide</button></div>
+ <p class="small muted">Use bakery-owned photos. A published slide needs a heading, image description, and photograph. Move Up/Down changes its display order.</p>
+ <div class="admin-carousel-list">${rows.map(card).join('')||'<p>No slides have been added. Upload your first bakery photograph to begin.</p>'}</div>
+ </section>
+ <dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit slide</h2><div id="editor-fields"></div>
+ <div class="actions"><button class="button" type="submit">Save changes</button><button type="button" class="button secondary" id="close-editor">Cancel</button></div></form></dialog>`;
+ $('#new-carousel-slide').onclick=()=>openEditor(null);
+ document.querySelectorAll('[data-slide-edit]').forEach(el=>el.onclick=()=>openEditor(rows[Number(el.dataset.slideEdit)]));
+ const orderUpdate=async(i,j)=>{
+  if(j<0||j>=rows.length)return;
+  const a=rows[i],b=rows[j];
+  try{await update('home_carousel_slides',a.id,{sort_order:b.sort_order});
+   await update('home_carousel_slides',b.id,{sort_order:a.sort_order});
+   await carouselPanel();}catch(err){ctx.showError(err);}
+ };
+ document.querySelectorAll('[data-slide-up]').forEach(el=>el.onclick=()=>orderUpdate(Number(el.dataset.slideUp),Number(el.dataset.slideUp)-1));
+ document.querySelectorAll('[data-slide-down]').forEach(el=>el.onclick=()=>orderUpdate(Number(el.dataset.slideDown),Number(el.dataset.slideDown)+1));
+ document.querySelectorAll('[data-slide-delete]').forEach(el=>el.onclick=async()=>{
+  const slide=rows[Number(el.dataset.slideDelete)];
+  if(!slide||!confirm('Delete this homepage carousel slide? The underlying photo will stay in Storage.'))return;
+  try{await remove('home_carousel_slides',slide.id);await carouselPanel();}catch(err){ctx.showError(err);}
+ });
+ document.querySelectorAll('[data-slide-toggle]').forEach(el=>el.onclick=async()=>{
+  const slide=rows[Number(el.dataset.slideToggle)];
+  if(!slide)return;
+  try{await update('home_carousel_slides',slide.id,{published:!slide.published});await carouselPanel();}
+  catch(err){ctx.showError(err);}
+ });
+}
 function siteSettingsSummary(){
  const row=data.site_settings?.[0]||{id:1};
  const subtitle=String(row.brand_subtitle||'');
@@ -184,6 +276,10 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
   <span>Enabled / Yes</span>
  </label></div>`;
  else if(selected==='customer_profiles'&&f.key==='username')raw=`<input id="${id}" value="${e(value)}" readonly aria-readonly="true"><small>Username changes are managed under Accounts & Roles.</small>`;
+ else if(f.type==='carousel_image')raw=`<input id="${id}" value="${e(value)}" readonly aria-readonly="true" placeholder="Upload a real bakery photograph">
+  ${value?'<div class="carousel-admin-preview"><img src="'+e(value)+'" alt="Current carousel photograph"></div>':''}
+  <input type="file" data-carousel-photo-for="${id}" accept="image/jpeg,image/png,image/webp" aria-label="Upload carousel photograph">
+  <small>Upload a JPG, PNG or WebP photograph (maximum 5 MB). The current image stays until you save a replacement.</small>`;
  else if(f.type==='textarea')raw=`<textarea id="${id}" rows="4">${e(value)}</textarea>`;
  else if(f.type==='select')raw=`<select id="${id}">${f.options.map(x=>`<option value="${e(x)}" ${value===x?'selected':''}>${e(pretty(x))}</option>`).join('')}</select>`;
  else if(f.type==='ref'){
@@ -215,9 +311,15 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
  else if(f.type==='number'||f.type==='money')raw=`<input id="${id}" type="number" step="${f.type==='money'?'0.01':'any'}" value="${value===''?'':(f.type==='money'?Number(value)/100:value)}">`;
  else raw=`<input id="${id}" type="${f.type==='date'?'date':'text'}" value="${e(value)}">`;
  return `<div class="field"><label for="${id}">${e(f.label)}</label>${raw}</div>`;}
-async function openEditor(record){const c=configs[selected];editing=record;
+async function openEditor(record){const c=configs[selected];
+ if(selected==='carousel_slides'&&!record){
+  record={sort_order:(data.home_carousel_slides||[]).reduce((m,r)=>Math.max(m,Number(r.sort_order)||0),0)+10,
+   primary_label:'Shop ready-to-sell',primary_href:'#ready',secondary_label:'Schedule a preorder',secondary_href:'#preorder',
+   published:false,_unsaved:true};
+ }
+ editing=record;
  const tables=[...new Set(c.fields.filter(f=>f.type==='ref').map(f=>f.table))];await Promise.all(tables.map(async t=>{refs[t]=await list(t,{limit:500}).catch(()=>[]);}));
- $('#editor-title').textContent=record?'Edit '+c.label:'Add '+c.label;
+ $('#editor-title').textContent=record&&!record._unsaved?'Edit '+c.label:'Add '+c.label;
  $('#editor-fields').innerHTML=c.fields.map(f=>fieldInput(f,record)).join('');
  const missingRequired=c.fields.filter(f=>f.type==='ref'&&f.key!=='subcategory_id'&&!(refs[f.table]||[]).length);
  if(missingRequired.length){
@@ -354,6 +456,7 @@ async function openEditor(record){const c=configs[selected];editing=record;
  const dialog=$('#editor');dialog.showModal();$('#close-editor').onclick=()=>dialog.close();
  $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);if(!el&&f.key==='subcategory_id')continue;let v=f.type==='bool'?el.checked:el.value;
  if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload(selected==='past_bakes'?'past-bakes':'product-photos',inp.files[0]);v=photo.url;} }
+ if(f.type==='carousel_image'){const inp=document.querySelector('[data-carousel-photo-for="field_'+f.key+'"]');if(inp?.files?.[0]){const uploaded=await upload('carousel-photos',inp.files[0]);v=uploaded.url;}if(!v)throw Error('Upload a real photograph before saving this slide.');}
  if(f.type==='money')v=v===''?null:Math.round(Number(v)*100);
  if(f.type==='number')v=v===''?null:Number(v);
  if(f.type==='csv'||f.type==='uuids')v=v.split(',').map(x=>x.trim()).filter(Boolean);
@@ -367,6 +470,12 @@ async function openEditor(record){const c=configs[selected];editing=record;
  if(f.key==='published'&&selected==='products'&&v===true&&$('#field_product_type')?.value==='food'&&!$('#field_ingredients')?.value?.trim())throw Error('Add the actual ingredient list before publishing this product.');
  body[f.key]=v;
 
+ }
+ if(selected==='carousel_slides'){
+  if(!body.title?.trim())throw Error('Enter a headline for this slide.');
+  if(!body.image_alt?.trim())throw Error('Describe the slide photograph for screen-reader users.');
+  if(body.starts_at&&body.ends_at&&new Date(body.ends_at)<=new Date(body.starts_at))throw Error('The ending date must follow the starting date.');
+  if(body.published&&!body.image_url)throw Error('Upload a photograph before publishing this slide.');
  }
  if(selected==='site_settings'&&body.pay_at_pickup_enabled&&
  (!body.pay_at_pickup_tax_reviewed||body.pay_at_pickup_tax_rate_bps===null))
@@ -390,7 +499,7 @@ async function openEditor(record){const c=configs[selected];editing=record;
    if(body.published && !String(body.ingredients||'').trim())throw Error('Enter a complete ingredient list before publishing.');
   }
  }
- const key=c.key||'id';if(c.single){await update(selected,1,body);}else if(record){if(Array.isArray(key))throw Error('Editing records with two-part keys requires deleting/recreating from SQL Editor.');await update(selected,record[key],body,key);}else await add(selected,body);
+ const key=c.key||'id';if(c.single){await update(selected,1,body);}else if(record&&!record._unsaved){if(Array.isArray(key))throw Error('Editing records with two-part keys requires deleting/recreating from SQL Editor.');await update(selected,record[key],body,key);}else await add(selected,body);
  dialog.close();await ctx.load();await renderPanel();}catch(x){ctx.showError(x);}};
 }
 async function reply(message){const text=prompt('Write your response. It will be saved to the secure account inbox. Email delivery is not enabled by this action:');if(!text)return;try{if(!message.customer_id)throw Error('Guest email replies require a configured email provider; do not mark as replied yet.');await add('messages',{customer_id:message.customer_id,customer_email:message.customer_email,order_id:message.order_id,kind:'reply',subject:'Re: '+message.subject,body:text,parent_id:message.id,is_staff_reply:true,status:'replied'});await update('messages',message.id,{status:'replied'});await renderPanel();}catch(x){ctx.showError(x);}}

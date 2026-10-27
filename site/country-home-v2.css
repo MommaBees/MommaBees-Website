@@ -463,3 +463,67 @@ body[data-page="admin"] #editor-fields .field[hidden],body[data-page="admin"] #e
  .footer .footer-nav-row>a{font-size:clamp(.65rem,2.3vw,.83rem)}
  .footer .footer-nav-row{gap:clamp(3px,.8vw,6px)}
 }
+
+/* MBB-ADMIN-030 v1.20: accessible homepage feature carousel. */
+.home-carousel{position:relative;margin:20px 0 clamp(26px,4vw,55px)}
+.home-carousel .hero{margin:0;display:grid;overflow:hidden}
+.home-carousel-slide[hidden]{display:none!important}
+.home-carousel .hero-art{overflow:hidden;filter:none}
+.home-carousel .hero-art img{width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+.home-carousel .hero:after{display:none}
+.home-carousel-controls{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.5vw,18px);padding:12px;background:#f4e6d3;border:1px solid #dbc3a8;border-radius:0 0 8px 8px}
+.home-carousel-controls>button{border:1px solid #b79577;background:#fffaf2;color:#432b1d;border-radius:5px;min-width:44px;min-height:42px;font-size:1.18rem;cursor:pointer}
+.home-carousel-controls .home-carousel-pause{font-size:.82rem;min-width:62px;padding:0 8px}
+.home-carousel-dots{display:flex;align-items:center;gap:10px}
+.home-carousel-dot{width:13px;height:13px;border-radius:50%;border:2px solid #8b5a38;background:transparent;cursor:pointer}
+.home-carousel-dot.is-active{background:#6d4029}
+.home-carousel button:focus-visible{outline:3px solid #5c4939;outline-offset:3px}
+.admin-workspace .admin-layout{display:grid;grid-template-columns:minmax(230px,295px) minmax(0,1fr);gap:24px}
+body[data-page="admin"] .admin-workspace .admin-side{display:block;align-self:start;position:sticky;top:135px;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 155px);padding:16px 11px;background:#f4e7d5}
+.admin-menu-search-label{display:block;font-size:.8rem;font-weight:700;margin:4px 6px 7px}
+#admin-menu-search{width:100%;padding:11px;border:1px solid #be9f81;border-radius:6px;background:#fffdf8;margin-bottom:13px;min-height:42px}
+.admin-nav-group{border-top:1px solid #d6bea2;padding:5px 0}
+.admin-nav-group summary{list-style:none;cursor:pointer;font-size:.91rem;font-weight:750;padding:12px 8px;color:#483020;display:flex;align-items:center;justify-content:space-between;gap:7px}
+.admin-nav-group summary::-webkit-details-marker{display:none}
+.admin-nav-group summary:before{content:"▸";font-size:.78rem;margin-right:4px}
+.admin-nav-group[open] summary:before{content:"▾"}
+.admin-nav-count{font-size:.7rem;font-weight:700;min-width:22px;text-align:center;border-radius:50px;background:#e4ceb4;padding:3px 5px}
+.admin-nav-items{display:grid;gap:3px;padding-bottom:7px}
+body[data-page="admin"] .admin-nav-link{display:block;white-space:normal;text-align:left;border:0;border-left:3px solid transparent;background:transparent;padding:10px 8px 10px 13px;border-radius:3px;width:100%;min-height:46px;color:#3d2a20}
+.admin-nav-link strong{display:block;font-size:.86rem}
+.admin-nav-link small{display:block;color:#6c5c50;font-weight:450;font-size:.72rem;line-height:1.4;margin-top:3px}
+body[data-page="admin"] .admin-nav-link.active{border-left-color:#8e593e;background:#fff8ee;color:#3c2417}
+body[data-page="admin"] .admin-nav-link:hover{background:#fff6e9}
+.admin-nav-group[hidden],.admin-nav-link[hidden]{display:none!important}
+.admin-content{min-width:0}
+.admin-content-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;border:1px solid #dfc7ae;border-radius:6px;padding:11px 14px;background:#fff8ed}
+.admin-content-path{font-size:.86rem;color:#6e5747}
+.admin-content-path strong{color:#42291b}
+.admin-content-toolbar label{font-size:.78rem;font-weight:700;margin-left:auto}
+#admin-jump{max-width:240px;width:100%;border:1px solid #bd9f80;background:#fff;border-radius:5px;padding:9px}
+.admin-carousel-list{display:grid;gap:14px}
+.admin-carousel-card{display:grid;grid-template-columns:minmax(145px,240px) minmax(0,1fr);gap:18px;padding:15px;border:1px solid #dac4aa;border-radius:6px;background:#fffaf3}
+.admin-carousel-thumb img{width:100%;height:165px;object-fit:cover;border-radius:4px;background:#efe1cf}
+.admin-carousel-details h3{font-size:1.3rem;margin:5px 0 9px}
+.admin-carousel-details p{font-size:.88rem;line-height:1.5;margin:0 0 12px}
+.admin-carousel-status{font-size:.76rem;color:#765638;font-weight:700}
+.admin-carousel-actions{display:flex;flex-wrap:wrap;gap:8px}
+.admin-carousel-actions .button{font-size:.79rem;padding:7px 10px;min-height:38px}
+.carousel-admin-preview img{max-width:100%;width:270px;max-height:150px;object-fit:cover;border:1px solid #d3bda5;border-radius:4px}
+@media(max-width:960px){
+ .admin-workspace .admin-layout{grid-template-columns:1fr}
+ body[data-page="admin"] .admin-workspace .admin-side{position:static;max-height:none;display:block;white-space:normal;overflow:visible}
+ .admin-content-toolbar{align-items:flex-start}
+}
+@media(max-width:650px){
+ .home-carousel .hero{grid-template-columns:1fr}
+ .home-carousel .hero-art{order:-1;height:230px;min-height:230px}
+ .home-carousel .hero-copy{padding:22px}
+ .home-carousel .hero h1{font-size:clamp(1.9rem,6.7vw,3rem)}
+ .home-carousel-controls{gap:9px}
+ .admin-carousel-card{grid-template-columns:1fr}
+ .admin-carousel-thumb img{height:185px}
+ .admin-content-toolbar label{margin-left:0}
+ #admin-jump{max-width:100%}
+}
+@media(prefers-reduced-motion:reduce){.home-carousel *{animation:none!important;transition:none!important}}

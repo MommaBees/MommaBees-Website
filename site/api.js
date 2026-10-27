@@ -54,7 +54,7 @@ export async function upload(bucket,file,options={}){
  if(bucket==='message-photos'&&!/^[0-9a-f-]{36}$/.test(String(options.messageId||'')))throw Error('A saved message is required before photo upload');
  const r=await fetch(url('/storage/v1/object/'+bucket+'/'+path),{method:'POST',headers:headers({'Content-Type':file.type,'x-upsert':'false'}),body:file});
  const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.message||'Upload failed');
- return {path,url:['product-photos','past-bakes','bakery-backgrounds'].includes(bucket)?url('/storage/v1/object/public/'+bucket+'/'+path):null};
+ return {path,url:['product-photos','past-bakes','bakery-backgrounds','carousel-photos'].includes(bucket)?url('/storage/v1/object/public/'+bucket+'/'+path):null};
 }
 export const getPublicImage = (bucket,path) => url('/storage/v1/object/public/'+bucket+'/'+path);
 export async function signedImage(bucket,path){

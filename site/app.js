@@ -6,8 +6,9 @@ import {qrMarkup,qrSvg,bindQrActions} from './qr-code.js';
 import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
 import {SAMPLE_MENU,samplesFor} from './sample-menu.js';
 import {accountNavigationMarkup,bindAccountNavigation} from './account-navigation.js';
+import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
-let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],settings:{},reviews:[]};
+let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
 let checkoutMode='pickup';
 let verifiedBackOfficeRole=null;
@@ -117,6 +118,7 @@ function layout(content){
    ?'<nav class="page-crumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span aria-current="page">'+e(crumbLabels[routeName])+'</span></nav>'
    :'';
  applyBakeryBackground(settings,config.supabaseUrl);
+ stopHomeCarousel();
  $('#app').innerHTML=`<div class="topbar">Faith · Family · Homemade Goodness</div><header class="header"><div class="shell nav">
  <a href="#home" class="brand">MommaBee Bakery&Farmstand</a>
  <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">☰</span></button><nav id="primary-navigation" aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a>${accountNavigationMarkup(Boolean(currentUser()))}${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div><div class="header-offerings" aria-label="Products and services"><div class="shell">${e(settings.brand_subtitle||HEADER_OFFERINGS)}</div></div></header>
@@ -136,6 +138,7 @@ function layout(content){
     <p class="small">Share the shop at your next gathering.</p></div>
   </div><div class="footer-bottom">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</div>
  </div></footer>`;
+ bindHomeCarousel();
  const toggle=$('#mobile-nav-toggle');
  const primary=$('#primary-navigation');
  if(primary){
@@ -175,14 +178,14 @@ function layout(content){
 }
 async function load(){
  if(!isConfigured())return;
- const tables=[['categories',{order:'sort_order.asc'}],['subcategories',{order:'sort_order.asc'}],['products',{}],['stock_batches',{}],['baking_days',{order:'date.asc',date:'gte.'+currentDate()}],['product_photos',{}],['announcements',{}],['past_bakes',{order:'sort_order.asc'}],['site_settings',{}]];
+ const tables=[['categories',{order:'sort_order.asc'}],['subcategories',{order:'sort_order.asc'}],['products',{}],['stock_batches',{}],['baking_days',{order:'date.asc',date:'gte.'+currentDate()}],['product_photos',{}],['announcements',{}],['past_bakes',{order:'sort_order.asc'}],['home_carousel_slides',{order:'sort_order.asc'}],['site_settings',{}]];
  const values=await Promise.all(tables.map(async ([t,q])=>list(t,q).catch(()=>[])));
- tables.forEach(([t],i)=>all[t==='stock_batches'?'batches':t==='baking_days'?'days':t==='product_photos'?'photos':t==='past_bakes'?'pastBakes':t==='site_settings'?'settings':t]=t==='site_settings'?values[i][0]||{}:values[i]);
+ tables.forEach(([t],i)=>all[t==='stock_batches'?'batches':t==='baking_days'?'days':t==='product_photos'?'photos':t==='past_bakes'?'pastBakes':t==='home_carousel_slides'?'carouselSlides':t==='site_settings'?'settings':t]=t==='site_settings'?values[i][0]||{}:values[i]);
 }
 function announcements(place='home'){
  return all.announcements.filter(x=>x.placement===place||x.placement==='all').map(a=>`<aside class="announcement"><strong>${e(a.title)}</strong><p>${e(a.body)}</p>${a.link_url&&/^https?:\/\//.test(a.link_url)?`<a href="${photo(a.link_url)}" rel="noopener">Details</a>`:''}</aside>`).join('');
 }
-function home(){const s=all.settings;layout(`${announcements()}<section class="hero"><div class="hero-copy"><div class="eyebrow">Rooted in Faith · Baked with Love</div><h1>${e(s.home_heading||'A Little Country. A Whole Lot of Homemade.')}</h1><p>${e(s.home_intro||'Explore handmade baked goods, ready to enjoy or preorder for a baking day.')}</p><div class="hero-actions"><a class="button" href="#ready">Shop ready-to-sell</a><a class="button secondary" href="#preorder">Schedule a preorder</a></div></div><div class="hero-art ${s.hero_url?'has-photo':'has-bakery-photo'}" style="background-image:url('${photo(s.hero_url||all.pastBakes.find(x=>x.published&&x.title?.includes('Carrot Cake'))?.image_url||'')}')" role="img" aria-label="An authentic photo of a dessert previously baked by MommaBee Bakery&Farmstand"></div></section>
+function home(){const s=all.settings;const active=eligibleHomeSlides(all.carouselSlides);const backup=!s.home_carousel_enabled&&s.hero_url?[{published:true,id:'legacy',sort_order:10,eyebrow:'Rooted in Faith · Baked with Love',title:s.home_heading||'A Little Country. A Whole Lot of Homemade.',description:s.home_intro||'',image_url:s.hero_url,image_alt:'An original bakery creation by MommaBee Bakery&Farmstand',primary_label:'Shop ready-to-sell',primary_href:'#ready',secondary_label:'Schedule a preorder',secondary_href:'#preorder'}]:[];const slides=active.length?active:backup;layout(`${announcements()}${homeCarouselMarkup(slides,e,photo)}
  <section class="bakery-home-note" aria-labelledby="kitchen-note-title">
   <div><h2 id="kitchen-note-title">Good baking is worth looking forward to.</h2>
    <p>At MommaBee Bakery&Farmstand, the baking calendar shapes the menu. Some treats are ready when they're listed; others are made for the next scheduled bake. Browse what's available, or send a note about something special.</p></div>
