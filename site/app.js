@@ -56,7 +56,7 @@ function demoStorePreview(mode='all',categoryName=null,hasRealProducts=false){
    const stored=staff?all.demoItems.find(item=>item.enabled&&item.name===d.name):null;
    const original=d.name==='Carrot Cake'?photoFor('Cakes','Carrot Cakes'):null;
    const visual=original||sandboxProductPhoto(d);
-   const photoCaption=original?'An earlier Mamma Bee’s bake — appearance may vary':'Illustrative image — not an actual bakery product';
+   const photoCaption=original?'An earlier Mommy Bee bake — appearance may vary':'Illustrative image — not an actual bakery product';
    return '<article class="card bakery-product-card example-menu-card">'+
     '<div class="card-media">'+image(visual.url,'product-photo',d.name+' example')+'</div>'+
     '<div class="card-content"><p class="eyebrow">'+e(d.category)+' / '+e(d.subcategory)+'</p>'+
@@ -78,7 +78,7 @@ function bindDemoStore(){
  });
 }
 
-const image=(src,cls='product-photo',alt='Bakery product photograph')=>src?`<img class="${cls}" src="${photo(src)}" alt="${e(alt)}" loading="lazy">`:(all.settings?.placeholder_missing_image===false?'':`<div class="photo-empty" aria-label="No product photo uploaded">Mamma Bee's Bakery</div>`);
+const image=(src,cls='product-photo',alt='Bakery product photograph')=>src?`<img class="${cls}" src="${photo(src)}" alt="${e(alt)}" loading="lazy">`:(all.settings?.placeholder_missing_image===false?'':`<div class="photo-empty" aria-label="No product photo uploaded">Mommy Bee Farmstand and Bakery</div>`);
 const productReady=(p)=>p.mode!=='preorder'&&all.batches.some(b=>b.product_id===p.id&&!b.disabled&&b.baked_on<=currentDate()&&b.quantity_available>0&&all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date<=b.best_before));
 const productPreorder=(p)=>p.mode!=='ready'&&all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date>=futureDate(p.lead_days)&&d.capacity_total>0);
 const available=(p)=>productReady(p)||productPreorder(p);
@@ -117,18 +117,18 @@ function layout(content){
    :'';
  applyBakeryBackground(settings,config.supabaseUrl);
  $('#app').innerHTML=`<div class="topbar">Faith · Family · Homemade Goodness</div><header class="header"><div class="shell nav">
- <a href="#home" class="brand">Mamma Bee's Bakery <span>${e(settings.brand_subtitle||'Rooted in Faith. Made with Love. Shared with Joy.')}</span></a>
+ <a href="#home" class="brand">Mommy Bee Farmstand and Bakery <span>${e(settings.brand_subtitle||'Rooted in Faith. Made with Love. Shared with Joy.')}</span></a>
  <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">☰</span></button><nav id="primary-navigation" aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a>${accountNavigationMarkup(Boolean(currentUser()))}${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
  <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${crumb}${content}</main><footer class="footer"><div class="shell">
   <div class="footer-inner">
-   <div class="footer-col"><div class="footer-brand-name">Mamma Bee's Bakery</div>
+   <div class="footer-col"><div class="footer-brand-name">Mommy Bee Farmstand and Bakery</div>
     <p class="footer-pledge">Rooted in Faith. Made with Love. Shared with Joy.</p>
     <p>Small-batch baking and sweet traditions, made with care.</p>
     <p class="small">Pickup and local delivery are offered on selected bakery dates.</p></div>
    <nav class="footer-col footer-navigation" aria-label="Footer navigation">
     <p class="footer-col-title">Come on in</p><a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a>
     <a href="#preorder">Preorder</a><a href="#gallery">Past Bakes</a>
-    <a href="#contact">Ask Mamma Bee</a><a href="#faq">Questions & Policies</a></nav>
+    <a href="#contact">Ask Mommy Bee</a><a href="#faq">Questions & Policies</a></nav>
    <div class="footer-col"><p class="footer-col-title">Take us along</p>
     <a class="footer-qr" href="#qr" aria-label="Open the downloadable bakery homepage QR code">
      ${qrSvg()}<span>Scan to visit our bakery</span></a>
@@ -181,14 +181,14 @@ async function load(){
 function announcements(place='home'){
  return all.announcements.filter(x=>x.placement===place||x.placement==='all').map(a=>`<aside class="announcement"><strong>${e(a.title)}</strong><p>${e(a.body)}</p>${a.link_url&&/^https?:\/\//.test(a.link_url)?`<a href="${photo(a.link_url)}" rel="noopener">Details</a>`:''}</aside>`).join('');
 }
-function home(){const s=all.settings;layout(`${announcements()}<section class="hero"><div class="hero-copy"><div class="eyebrow">Rooted in Faith · Baked with Love</div><h1>${e(s.home_heading||'A Little Country. A Whole Lot of Homemade.')}</h1><p>${e(s.home_intro||'Explore handmade baked goods, ready to enjoy or preorder for a baking day.')}</p><div class="hero-actions"><a class="button" href="#ready">Shop ready-to-sell</a><a class="button secondary" href="#preorder">Schedule a preorder</a></div></div><div class="hero-art ${s.hero_url?'has-photo':'has-bakery-photo'}" style="background-image:url('${photo(s.hero_url||all.pastBakes.find(x=>x.published&&x.title?.includes('Carrot Cake'))?.image_url||'')}')" role="img" aria-label="An authentic photo of a dessert previously baked by Mamma Bee's Bakery"></div></section>
+function home(){const s=all.settings;layout(`${announcements()}<section class="hero"><div class="hero-copy"><div class="eyebrow">Rooted in Faith · Baked with Love</div><h1>${e(s.home_heading||'A Little Country. A Whole Lot of Homemade.')}</h1><p>${e(s.home_intro||'Explore handmade baked goods, ready to enjoy or preorder for a baking day.')}</p><div class="hero-actions"><a class="button" href="#ready">Shop ready-to-sell</a><a class="button secondary" href="#preorder">Schedule a preorder</a></div></div><div class="hero-art ${s.hero_url?'has-photo':'has-bakery-photo'}" style="background-image:url('${photo(s.hero_url||all.pastBakes.find(x=>x.published&&x.title?.includes('Carrot Cake'))?.image_url||'')}')" role="img" aria-label="An authentic photo of a dessert previously baked by Mommy Bee Farmstand and Bakery"></div></section>
  <section class="bakery-home-note" aria-labelledby="kitchen-note-title">
   <div><h2 id="kitchen-note-title">Good baking is worth looking forward to.</h2>
-   <p>At Mamma Bee's, the baking calendar shapes the menu. Some treats are ready when they're listed; others are made for the next scheduled bake. Browse what's available, or send a note about something special.</p></div>
+   <p>At Mommy Bee Farmstand and Bakery, the baking calendar shapes the menu. Some treats are ready when they're listed; others are made for the next scheduled bake. Browse what's available, or send a note about something special.</p></div>
   <div class="bakery-home-note-actions"><a href="#ready"><strong>Ready for pickup</strong><span>See what's baked and available.</span></a>
    <a href="#preorder"><strong>Plan a sweet occasion</strong><span>Explore upcoming baking-day preorders.</span></a>
    <a href="#gallery"><strong>From the recipe box</strong><span>See photographs of our past bakes.</span></a>
-   <a href="#contact"><strong>Write to Mamma Bee</strong><span>Questions and special requests welcome.</span></a></div>
+   <a href="#contact"><strong>Write to Mommy Bee</strong><span>Questions and special requests welcome.</span></a></div>
  </section>
  <section class="section ${categories().length?'':'empty-category-section'}"><div class="section-head"><div><div class="eyebrow">Discover something delicious</div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div><div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url||stockPhotoFor(c.name).thumb)}<div class="card-content"><h3>${e(c.name)}</h3>${!c.photo_url?'<p class="stock-label">Illustrative category photograph</p>':''}<p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||(s.placeholder_empty_shop===false?'':'<div class="empty">No products are currently available. Please check back for the next baking day.</div>')}</div></section>
  <section class="section"><div class="section-head"><div><div class="eyebrow">Baked with love</div><h2>A Peek Into Our Kitchen</h2></div><a href="#gallery">Browse Past Bakes</a></div>
@@ -220,7 +220,7 @@ function shop(mode=null,categoryId=null,subcategoryId=null){
  layout(`<section class="section shop-page shop-page--${mode||'all'}" data-shop-view="${mode||'all'}">
  ${announcements('shop')}
  <div class="shop-hero">
-  <div class="shop-hero-copy"><div class="eyebrow">Mamma Bee's Bakery · ${e(title)}</div>
+  <div class="shop-hero-copy"><div class="eyebrow">Mommy Bee Farmstand and Bakery · ${e(title)}</div>
    <h1>${e(title)}</h1><h2>${e(heading)}</h2><p>${e(description)}</p>
    <p class="shop-result-count">${items.length?'<strong>'+items.length+'</strong> currently available to order': 'Example treats below · Check back for actual availability'}</p>
   </div>
@@ -279,7 +279,7 @@ function faq(){const s=all.settings;layout(`<section class="section"><div class=
 <h2>Food and allergens</h2><p>${e(s.food_notice||'Contact us about ingredients, allergens, dietary questions and storage before placing an order.')}</p><h2>Cancellation, refunds and other policies</h2><p>${e(s.terms||'The bakery owner has not published the final cancellation, refund, and fulfillment policies yet. Ordering stays disabled until configured.')}</p></div></section>`);}
 function gallery(){
  const photos=all.pastBakes.filter(x=>x.published&&x.image_url);
- layout('<section class="section"><div class="eyebrow">Made with care at Mamma Bee’s Bakery</div>'+
+ layout('<section class="section"><div class="eyebrow">Made with care at Mommy Bee Farmstand and Bakery</div>'+
   '<h1>Past Bakes Gallery</h1>'+
   '<p class="muted">A collection of desserts previously made by the bakery. These photographs showcase earlier creations and are <strong>not currently offered for sale</strong>. For current ordering options, visit the <a href="#shop">Shop</a>.</p>'+
   '<div class="grid past-bakes-gallery">'+
@@ -291,10 +291,10 @@ function gallery(){
   '</div></section>');
 }
 function qrPage(){
- layout('<section class="section qr-page"><div class="eyebrow">Country Bakery · Share Our Shop</div><h1>Scan to Visit Mamma Bee\'s Bakery</h1><p>Use this printable code on flyers, booth signs, business cards, and packaging. It leads directly to our homepage.</p>'+qrMarkup()+'</section>');
+ layout('<section class="section qr-page"><div class="eyebrow">Country Bakery · Share Our Shop</div><h1>Scan to Visit Mommy Bee Farmstand and Bakery</h1><p>Use this printable code on flyers, booth signs, business cards, and packaging. It leads directly to our homepage.</p>'+qrMarkup()+'</section>');
  bindQrActions();
 }
-async function render(){const [route,pid]=decodeURIComponent((location.hash||'#home').substring(1)).split('/');await refreshBackOfficeRole();all.demoItems=[];if(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true){all.demoItems=await list('demo_catalog_items',{order:'sort_order.asc',limit:100}).catch(()=>[]);}document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"Mamma Bee's Bakery";if(!isConfigured()){layout(`<section class="section"><h1>Welcome to Mamma Bee's Bakery</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in Mamma Bee’s Bakery.</p></section>`);return;}
+async function render(){const [route,pid]=decodeURIComponent((location.hash||'#home').substring(1)).split('/');await refreshBackOfficeRole();all.demoItems=[];if(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true){all.demoItems=await list('demo_catalog_items',{order:'sort_order.asc',limit:100}).catch(()=>[]);}document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"Mommy Bee Farmstand and Bakery";if(!isConfigured()){layout(`<section class="section"><h1>Welcome to Mommy Bee Farmstand and Bakery</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in Mommy Bee Farmstand and Bakery.</p></section>`);return;}
  try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='sandbox-store'){nav('#shop');return;}else if(route==='shop')shop();else if(route==='ready')shop('ready');else if(route==='preorder')shop('preorder');else if(route==='category')shop(null,pid);else if(route==='subcategory'){const parts=(location.hash||'').slice(1).split('/');shop(null,parts[1],parts[2]);}else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')await checkoutPage();else if(route==='success')success();else if(route==='sandbox-success'&&['owner','admin'].includes(verifiedBackOfficeRole))layout('<section class="section box"><h1>Stripe Sandbox Return</h1><p>This was a TEST transaction only. Open Admin → Sandbox Test Products to check the result after Stripe sends its webhook. No real customer order was created.</p><a class="button secondary" href="#shop">Back to Shop All</a></section>');else if(route==='track')track(pid);else if(route==='account')await account(pid);else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else if(route==='qr')qrPage();else home();}
  catch(ex){layout(`<section class="section"><h1>Something went wrong</h1><div class="notice error">${e(ex.message)}</div><a class="button secondary" href="#home">Return home</a></section>`);}if(route==='account'&&['profile','settings'].includes(pid)){
  const target=document.getElementById(pid==='profile'?'account-profile-section':'account-settings');
