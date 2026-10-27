@@ -1596,3 +1596,42 @@ test('nineteen individually named owner images replace the old blurred harvest c
  assert.doesNotMatch(sql,/cherry-tomatoes/);
  assert.doesNotMatch(sql,/insert into public\.products/);
 });
+
+import {showcaseEnabled,showcasePrice,showcaseOrigin,showcaseAvailability,showcaseFields,SHOWCASE_PRICE_UNITS} from '../site/product-showcase-details.js';
+
+test('Product Showcase master setting and per-item visibility do not affect real purchase records',()=>{
+ assert.equal(showcaseEnabled({}),true);
+ assert.equal(showcaseEnabled({product_showcase_enabled:true}),true);
+ assert.equal(showcaseEnabled({product_showcase_enabled:false}),false);
+ assert.equal(showcasePrice({price_cents:null}),null);
+ assert.equal(showcasePrice({price_cents:0}),null);
+ assert.equal(showcasePrice({price_cents:425,price_unit:'pound'}),'$4.25 / pound');
+ assert.equal(showcasePrice({price_cents:1299,price_unit:'dozen'}),'$12.99 / dozen');
+ assert.equal(showcasePrice({price_cents:100,price_unit:'undefined'}),'$1.00');
+ assert.equal(showcaseOrigin({department:'homestand'}),'Homegrown in Nixa, Missouri without chemical sprays.');
+ assert.equal(showcaseOrigin({department:'bakery'}),'Homemade in Nixa, Missouri.');
+ assert.equal(showcaseAvailability({department:'homestand'}),'Seasonal harvest. Please confirm current availability.');
+ assert.ok(SHOWCASE_PRICE_UNITS.includes('pound'));
+ assert.ok(showcaseFields({department:'bakery',ingredients:'Confirmed recipe',allergens:'Confirmed allergens'}).some(([k])=>k==='Allergens'));
+ assert.ok(!showcaseFields({department:'homestand',ingredients:'Unknown'}).some(([k])=>k==='Ingredients'));
+});
+test('Product Showcase visibility is enforced across Admin, site, detail and carousel',()=>{
+ const admin=read('site/admin.js'),site=read('site/app.js'),carousel=read('site/catalog-carousel.js');
+ const sql=read('supabase/migrations/20261027_product_showcase_control_v137.sql');
+ for(const text of ['id="showcase-master-enabled"','id="showcase-master-form"','product_showcase_enabled:enabled','await loadTable(\'site_settings\')'])
+  assert.ok(admin.includes(text),text);
+ for(const field of ['description','price_cents','price_unit','availability_note','ingredients','allergens','storage_notes','fulfillment_note'])
+  assert.ok(admin.includes('field(\''+field+'\''),'Missing admin field '+field);
+ assert.match(site,/showcaseEnabled\(all\.settings\)/);
+ assert.match(site,/showcaseEnabled\(s\)/);
+ assert.match(site,/showcasePrice\(item\)/);
+ assert.match(site,/showcaseFields\(item\)/);
+ assert.match(carousel,/showcaseEnabled\(settings\)/);
+ assert.match(sql,/product_showcase_enabled boolean not null default true/);
+ assert.match(sql,/price_cents integer/);
+ assert.match(sql,/check\(price_cents is null or price_cents > 0\)/);
+ assert.match(sql,/ss\.product_showcase_enabled/);
+ assert.match(sql,/c\.department=store_showcase_items\.department/);
+ assert.doesNotMatch(sql,/insert into public\.products/);
+ assert.doesNotMatch(sql,/USDA Certified Organic/i);
+});

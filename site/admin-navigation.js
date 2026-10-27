@@ -23,7 +23,7 @@ export const ADMIN_DESCRIPTIONS=Object.freeze({
  categories:'Organize major product families.',
  subcategories:'Manage named product groups within a family.',
  catalog_varieties:'Search and manage selectable product varieties, not inventory.',
- store_showcase_items:'Manage Bakery and Homestand showcase cards and their photos.',
+ store_showcase_items:'Product Showcase controls, photos, pricing and item information.',
  product_photos:'Maintain product gallery images.',
  recipes:'Recipe yields and preparation instructions.',
  recipe_ingredients:'Recipe ingredient quantities.',

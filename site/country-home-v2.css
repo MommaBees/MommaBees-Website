@@ -1258,3 +1258,14 @@ a.store-showcase-card .card-content{flex:1}
 .showcase-detail-related h2{margin-bottom:20px}
 @media(max-width:760px){.showcase-detail-grid{grid-template-columns:1fr}.showcase-detail-copy{padding-top:0}.showcase-detail-photo{max-height:480px}.showcase-detail-related .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
 @media(max-width:480px){.showcase-detail-related .grid{grid-template-columns:1fr}}
+
+/* MBB-CATALOG-049 — showroom details do not unlock checkout. */
+.showcase-master-switch{margin:0 0 22px;padding:16px;border:1px solid #d6bea3;border-radius:8px;background:#fffaf4}
+.showcase-master-switch .actions{margin-top:13px}
+.showcase-detail-description{font-size:clamp(1rem,1.24vw,1.14rem);line-height:1.68;margin-bottom:20px}
+.showcase-details-table{display:grid;border-top:1px solid #d9c7b4;margin-block:20px}
+.showcase-detail-info{display:grid;grid-template-columns:minmax(110px,.38fr) minmax(0,1fr);gap:14px;padding:13px 0;border-bottom:1px solid #e6d5c3}
+.showcase-detail-info span{white-space:pre-wrap;overflow-wrap:anywhere}
+.showcase-card-price{margin:10px 0 0;font-weight:750}
+.showcase-detail-actions{display:flex;flex-wrap:wrap;gap:10px}
+@media(max-width:520px){.showcase-detail-info{grid-template-columns:1fr;gap:4px}}
