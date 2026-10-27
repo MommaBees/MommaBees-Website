@@ -53,7 +53,7 @@ export function bindAccountNavigation({onSignOut,root=document}){
  const pointerEnter=event=>{if(event.pointerType!=='touch')queueOpen();};
  const pointerLeave=event=>{if(event.pointerType!=='touch')queueClose();};
  const toggle=()=>setOpen(panel.hidden);
- const openedByFocus=()=>{clearTimeout(closeTimer);setOpen(true);};
+ const onFocusIn=()=>{clearTimeout(closeTimer);};
  const onFocusOut=event=>{
   if(!menu.contains(event.relatedTarget))queueClose();
  };
@@ -80,7 +80,7 @@ export function bindAccountNavigation({onSignOut,root=document}){
  };
  menu.addEventListener('pointerenter',pointerEnter);
  menu.addEventListener('pointerleave',pointerLeave);
- menu.addEventListener('focusin',openedByFocus);
+ menu.addEventListener('focusin',onFocusIn);
  menu.addEventListener('focusout',onFocusOut);
  trigger.addEventListener('click',toggle);
  panel.querySelectorAll('a').forEach(link=>link.addEventListener('click',onLinkClick));
@@ -91,7 +91,7 @@ export function bindAccountNavigation({onSignOut,root=document}){
   stopTimers();
   menu.removeEventListener('pointerenter',pointerEnter);
   menu.removeEventListener('pointerleave',pointerLeave);
-  menu.removeEventListener('focusin',openedByFocus);
+  menu.removeEventListener('focusin',onFocusIn);
   menu.removeEventListener('focusout',onFocusOut);
   trigger.removeEventListener('click',toggle);
   panel.querySelectorAll('a').forEach(link=>link.removeEventListener('click',onLinkClick));
