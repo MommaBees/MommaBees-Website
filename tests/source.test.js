@@ -871,7 +871,7 @@ test('owner branding, originals and watercolor background are published without 
  assert.match(css,/data-site-background="chickens"/);
  assert.match(bg,/value:'chickens'/);
  const migration=read('supabase/migrations/20261027_brand_chicken_background.sql');
- assert.match(migration,/background_style\\s*=\\s*'chickens'/);
+ assert.match(migration,/background_style='chickens'/);
  for(const img of ['site/assets/branding/mommabee-shop-logo.webp','site/assets/branding/chicken-watercolor-background.webp']){
   const bytes=readFileSync(path.join(root,img));
   assert.ok(bytes.length>5000);
