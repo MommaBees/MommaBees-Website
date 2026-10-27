@@ -144,7 +144,7 @@ function home(){const s=all.settings;layout(`${announcements()}<div class="count
  <section class="section"><div class="section-head"><div><div class="eyebrow">Baked with love</div><h2>A Peek Into Our Kitchen</h2></div><a href="#gallery">Browse Past Bakes</a></div>
  <p class="muted">A few treats we have created before. These are examples of our baking and are not currently listed for sale.</p>
  <div class="grid home-gallery-preview">${all.pastBakes.filter(p=>p.published&&p.image_url).slice(0,3).map(p=>`<a class="card" href="#gallery">${image(p.image_url,'product-photo',p.title)}<div class="card-content"><strong>${e(p.title)}</strong><p class="small muted">Past creation</p></div></a>`).join('')}</div></section>
- <section class="section"><h2>Featured bakery treats</h2><div class="grid">${sellable().filter(p=>p.featured).slice(0,6).map(card).join('')||(s.placeholder_featured===false?'':'<div class="empty">Featured baked goods will appear here when available.</div>')}</div></section>`);}
+ <section class="section"><h2>Featured bakery treats</h2><div class="grid">${sellable().filter(p=>p.featured).slice(0,6).map(card).join('')||(s.placeholder_featured===false?'':'<div class="empty">Our baking list changes with the week. The treats below are examples while we prepare the next menu.</div>')}</div></section>${sellable().length===0?demoStorePreview('ready',null,false):''}`);bindDemoStore();}
 function shop(mode=null,categoryId=null,subcategoryId=null){
  let items=sellable();
  if(mode==='ready')items=items.filter(productReady);
@@ -172,7 +172,7 @@ function shop(mode=null,categoryId=null,subcategoryId=null){
  <div class="shop-hero">
   <div class="shop-hero-copy"><div class="eyebrow">Mamma Bee's Bakery · ${e(title)}</div>
    <h1>${e(title)}</h1><h2>${e(heading)}</h2><p>${e(description)}</p>
-   <p class="shop-result-count"><strong>${items.length}</strong> ${items.length===1?'real item':'real items'} currently available</p>
+   <p class="shop-result-count">${items.length?'<strong>'+items.length+'</strong> currently available to order': 'Example treats below · Check back for actual availability'}</p>
   </div>
   <div class="shop-hero-picture">${image(visual.url,'shop-hero-image',title+' illustrative stock photo')}
    <div class="photo-disclosure">Stock photo · Illustrative category photography</div></div>
