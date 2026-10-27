@@ -547,7 +547,7 @@ test('real shop routes contain staff-only test examples without customer test ac
  assert.doesNotMatch(app,/sandbox-nav-link|function sandboxStore\(/);
  assert.match(app,/aria-current="page"/);
  const home=app.slice(app.indexOf('function home(){'),app.indexOf('function shop('));
- assert.match(home,/stockPhotoFor\(c\.name\)/);
+ assert.doesNotMatch(home,/stockPhotoFor\(c\.name\)/);
  assert.match(home,/categories\(\)\.map/);
  assert.match(app,/\['owner','admin'\]\.includes\(verifiedBackOfficeRole\)/);
 });
