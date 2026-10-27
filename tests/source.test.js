@@ -1591,7 +1591,7 @@ test('nineteen individually named owner images replace the old blurred harvest c
  'pecan-dreams','salad-cucumbers','spineless-okra','tomatoes','yellow-summer-squash','zucchini'];
  for(const slug of slugs){
   assert.match(sql,new RegExp(slug));
-  assert.ok(existsSync(path.join(__dirname,'../site/assets/showcase',slug+'.webp')),slug+' image missing');
+  assert.ok(existsSync(path.join(path.dirname(fileURLToPath(import.meta.url)),'../site/assets/showcase',slug+'.webp')),slug+' image missing');
  }
  assert.doesNotMatch(sql,/cherry-tomatoes/);
  assert.doesNotMatch(sql,/insert into public\.products/);
