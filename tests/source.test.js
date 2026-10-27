@@ -604,3 +604,96 @@ test('sample descriptions cannot claim product availability or take payments fro
  assert.match(app,/demoStorePreview\(mode\|\|'all'/);
  assert.doesNotMatch(read('site/stock-photography.js'),/images\.unsplash\.com/);
 });
+
+test('username/email login UI offers one field without changing email-only registration',()=>{
+ const account=read('site/account.js'),api=read('site/api.js');
+ assert.match(account,/item\('identifier','Username or email address','username',true,'text'\)/);
+ assert.match(account,/login\.elements\.identifier\.value/);
+ assert.match(account,/item\('email','Email address','email',true,'email'\)/);
+ assert.match(api,/JSON\.stringify\(\{identifier:String\(identifier\|\|''\)\.trim\(\),password,captcha_token:captchaToken\}\)/);
+ const migration=read('supabase/migrations/20261026_username_or_email_signin.sql');
+ assert.match(migration,/lower\(cp\.username\) = lower\(p_username\)/);
+ assert.match(migration,/cp\.banned_at is null/);
+ assert.match(migration,/revoke all on function public\.bakery_login_user_id\(text\) from public, anon, authenticated/);
+ assert.match(migration,/grant execute on function public\.bakery_login_user_id\(text\) to service_role/);
+});
+test('username login resolves email only on server and preserves single Supabase CAPTCHA verification',async()=>{
+ const former=globalThis.fetch,calls=[],uuid='11111111-1111-4111-8111-111111111111';
+ const env={SUPABASE_URL:'https://ryqcfojzdncrshinlpue.supabase.co',
+  SUPABASE_SECRET_KEY:'sb_secret_test_only',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test_only'};
+ globalThis.fetch=async(url,options={})=>{
+  const u=String(url);calls.push({url:u,headers:options.headers||{},body:options.body});
+  if(u.includes('/rest/v1/rpc/bakery_login_user_id')){
+   assert.equal(options.headers.apikey,env.SUPABASE_SECRET_KEY);
+   assert.equal(JSON.parse(options.body).p_username,'mommabee');
+   return new Response(JSON.stringify(uuid),{status:200});
+  }
+  if(u.includes('/auth/v1/admin/users/')){
+   assert.ok(!options.headers.Authorization,'New secret key is never an Authorization bearer token');
+   assert.equal(options.headers.apikey,env.SUPABASE_SECRET_KEY);
+   return new Response(JSON.stringify({id:uuid,email:'owner-for-test@example.test'}),{status:200});
+  }
+  if(u.includes('/auth/v1/token?grant_type=password')){
+   assert.equal(options.headers.apikey,env.SUPABASE_PUBLISHABLE_KEY);
+   const data=JSON.parse(options.body);
+   assert.equal(data.email,'owner-for-test@example.test');
+   assert.equal(data.password,'test_password_not_real');
+   assert.deepEqual(data.gotrue_meta_security,{captcha_token:'one-time-test-token'});
+   return new Response(JSON.stringify({access_token:'mock-token',user:{id:uuid,email:data.email}}),{status:200});
+  }
+  throw Error('Unexpected request '+u);
+ };
+ try{
+  const req=new Request('https://mommabees-website.pages.dev/api/auth/login',{method:'POST',
+   headers:{'content-type':'application/json'},
+   body:JSON.stringify({identifier:'MommaBee',password:'test_password_not_real',captcha_token:'one-time-test-token'})});
+  const res=await protectedLogin({request:req,env});
+  assert.equal(res.status,200);
+  assert.equal((await res.json()).user.id,uuid);
+  assert.equal(calls.length,3);
+  assert.equal(calls.filter(c=>c.url.includes('/token?grant_type=password')).length,1);
+  assert.ok(calls.every(c=>!c.url.includes('siteverify')),'Do not redeem single-use CAPTCHA before Supabase');
+ }finally{globalThis.fetch=former;}
+});
+test('unknown username and incorrect password return identical non-enumerating failures',async()=>{
+ const old=globalThis.fetch,env={SUPABASE_URL:'https://ryqcfojzdncrshinlpue.supabase.co',
+  SUPABASE_SECRET_KEY:'sb_secret_test_only',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test_only'};
+ const uuid='11111111-1111-4111-8111-111111111111';
+ let usernameExists=false;
+ globalThis.fetch=async(url,options={})=>{
+  const u=String(url);
+  if(u.includes('/rest/v1/rpc/bakery_login_user_id'))
+   return new Response(JSON.stringify(usernameExists?uuid:null),{status:200});
+  if(u.includes('/auth/v1/admin/users/'))
+   return new Response(JSON.stringify({user:{id:uuid,email:'private@example.test'}}),{status:200});
+  if(u.includes('/auth/v1/token?grant_type=password')){
+   const auth=JSON.parse(options.body);
+   assert.equal(auth.gotrue_meta_security.captcha_token,'fake-captcha');
+   return new Response(JSON.stringify({error:'invalid_grant',msg:'Invalid login credentials'}),{status:400});
+  }
+  throw Error('Unexpected external request');
+ };
+ try{
+  const req=()=>new Request('https://mommabees-website.pages.dev/api/auth/login',{method:'POST',
+   body:JSON.stringify({identifier:'sample_user',password:'WrongNotRealPassword',captcha_token:'fake-captcha'})});
+  let a=await protectedLogin({request:req(),env});
+  usernameExists=true;
+  let b=await protectedLogin({request:req(),env});
+  assert.equal(a.status,400);assert.equal(b.status,400);
+  assert.deepEqual(await a.json(),await b.json());
+  assert.doesNotMatch(JSON.stringify(await (await protectedLogin({request:req(),env})).json()),/private@example/);
+ }finally{globalThis.fetch=old;}
+});
+test('username sign-in with no CAPTCHA is stopped before privileged username lookup',async()=>{
+ const previous=globalThis.fetch;
+ let calls=0;
+ globalThis.fetch=async()=>{calls++;throw Error('Should never call provider');};
+ try{
+  const req=new Request('https://mommabees-website.pages.dev/api/auth/login',{method:'POST',
+   body:JSON.stringify({identifier:'MommaBee',password:'test-password',captcha_token:''})});
+  const res=await protectedLogin({request:req,env:{}});
+  assert.equal(res.status,400);
+  assert.match((await res.json()).error,/Human verification/);
+  assert.equal(calls,0);
+ }finally{globalThis.fetch=previous;}
+});
