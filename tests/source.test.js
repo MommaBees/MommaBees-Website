@@ -1415,7 +1415,7 @@ test('Split Store homepage showcases respect independent visibility and availabl
 test('homepage departments use real sellable cards, mobile stacking and staff-only visibility controls',()=>{
  const app=read('site/app.js'),admin=read('site/admin.js'),css=read('site/country-home-v2.css');
  const migration=read('supabase/migrations/20261027_home_department_visibility_v130.sql');
- assert.match(app,/homepageStorefronts\(s,currentProducts,all\.categories,3\)/);
+ assert.match(app,/homepageStorefronts\(s,currentProducts,all\.categories,4\)/);
  assert.match(app,/const currentProducts=sellable\(\)/);
  assert.match(app,/home-departments-grid/);
  assert.match(app,/home-department--/);
