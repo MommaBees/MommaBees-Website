@@ -17,7 +17,7 @@ const billingFields=[
  ['billing_postal_code','Billing ZIP / postal code','postal-code',true]
 ];
 const item=(name,label,autocomplete,required=false,type='text',value='')=>
- '<label class="field">'+h(label)+(required?' *':'')+'<input name="'+h(name)+'" type="'+type+'" autocomplete="'+h(autocomplete||'off')+
+ '<label class="field">'+h(label)+'<input name="'+h(name)+'" type="'+type+'" autocomplete="'+h(autocomplete||'off')+
  '" maxlength="'+(name==='postal_code'||name==='billing_postal_code'?'15':'160')+'" value="'+h(value||'')+'"'+(required?' required':'')+'></label>';
 function profileFields(p={}, {editableUsername=true}={}){
  return '<div class="account-fields">'+item('first_name','First name','given-name',true,'text',p.first_name)+
@@ -73,7 +73,7 @@ async function authPage({layout,rerender,showError}){
   item('password','Password','current-password',true,'password')+'<div data-captcha></div>'+
   '<div class="actions"><button class="button" type="submit">Sign In Securely</button></div></form>'+
   '<form id="bakery-register" class="box" hidden><h2>Create Account</h2>'+
-  '<p class="small muted">Fields marked * are required. Your phone number is optional. Your address is stored privately.</p>'+
+  '<p class="small muted">Fields marked * Required are mandatory. Your phone number is optional. Your address is stored privately.</p>'+
   item('email','Email address','email',true,'email')+item('password','Password (at least 8 characters)','new-password',true,'password')+
   profileFields({billing_same:true})+'<div data-captcha></div><div class="actions"><button class="button" type="submit">Create Account</button></div>'+
   '<p class="small muted">Your permanent customer Account ID will be created automatically. No account ID is needed to sign in.</p></form></section>');

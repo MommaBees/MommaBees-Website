@@ -527,3 +527,20 @@ body[data-page="admin"] .admin-nav-link:hover{background:#fff6e9}
  #admin-jump{max-width:100%}
 }
 @media(prefers-reduced-motion:reduce){.home-carousel *{animation:none!important;transition:none!important}}
+
+/* MBB-ADMIN-032: carousel diagnostics and consistent required labels. */
+.required-indicator{display:inline-block;color:#67291f;font-size:.76rem;font-weight:750;margin-inline-start:.45em;white-space:nowrap;vertical-align:baseline}
+label.checkbox .required-indicator,label.allergen-confirm .required-indicator{white-space:normal;font-size:.73rem}
+.admin-carousel-readiness{background:#fff0d9;border:1px solid #dfc19d;border-left:4px solid #92643f;border-radius:6px;padding:13px 17px;line-height:1.6;margin:14px 0;color:#50331e}
+.admin-carousel-readiness strong{display:block;margin-bottom:5px}
+.admin-carousel-card.is-draft{border-style:dashed}
+.admin-slide-preview{margin:15px 0 20px;padding:15px;background:#fff9f0;border:1px solid #dbbfa3;border-radius:6px}
+.admin-slide-preview summary{cursor:pointer;font-weight:750;padding:6px}
+.admin-slide-preview>p{font-size:.84rem;line-height:1.55}
+.admin-slide-preview .home-carousel .hero{min-height:260px}
+.admin-slide-preview .home-carousel .hero-copy{padding:clamp(15px,2vw,28px)}
+.admin-slide-preview .home-carousel .hero h1{font-size:clamp(1.45rem,3vw,2.4rem)}
+@keyframes bakery-carousel-enter{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+.home-carousel-slide:not([hidden]){animation:bakery-carousel-enter .42s ease-out both}
+@media(prefers-reduced-motion:reduce){.home-carousel-slide:not([hidden]){animation:none!important}}
+@media(max-width:650px){.admin-slide-preview .hero{grid-template-columns:1fr}.admin-slide-preview .hero-art{order:-1;min-height:175px}}

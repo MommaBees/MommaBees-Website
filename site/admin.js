@@ -3,6 +3,8 @@ import {referenceKeyFor} from './reference-keys.js';
 import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from './product-types.js';
 import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
 import {adminGroupsForRole,ADMIN_DESCRIPTIONS} from './admin-navigation.js';
+import {adminFieldIsRequired} from './admin-required.js';
+import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
 import {pastBakeName} from './past-bakes.js';
 import {BUILTIN_PHOTO_PRESETS,photoByUrl} from './photo-library.js';
@@ -209,10 +211,14 @@ function listPanel(){if(selected==='site_settings')return siteSettingsSummary();
 async function carouselPanel(){
  await loadTable('home_carousel_slides');
  const rows=[...(data.home_carousel_slides||[])].sort((a,b)=>a.sort_order-b.sort_order);
- const card=(r,i)=>`<article class="admin-carousel-card">
+ const visible=rows.filter(x=>x.published && (!x.starts_at||Date.parse(x.starts_at)<=Date.now()) && (!x.ends_at||Date.parse(x.ends_at)>Date.now())).length;
+ const drafts=rows.filter(x=>!x.published).length;
+ const previewSlides=rows.map(x=>({...x,published:true})); // Admin-only view; never persists draft publication
+ const previewMarkup=previewSlides.length>1?homeCarouselMarkup(previewSlides,e,x=>e(x)):'';
+ const card=(r,i)=>`<article class="admin-carousel-card ${r.published?'':'is-draft'}">
  <div class="admin-carousel-thumb"><img src="${e(r.image_url)}" alt="${e(r.image_alt||r.title)}" loading="lazy"></div>
  <div class="admin-carousel-details">
-  <div class="admin-carousel-status">${r.published?'Published':'Draft'}${r.starts_at?' · Scheduled':''}</div>
+  <div class="admin-carousel-status">${r.published?'Published':'Draft — not shown publicly'}${r.starts_at?' · Scheduled':''}</div>
   <h3>${e(r.title)}</h3><p>${e(r.description||'')}</p>
   <div class="admin-carousel-actions">
    <button type="button" class="button secondary" data-slide-edit="${i}">Edit slide</button>
@@ -225,11 +231,17 @@ async function carouselPanel(){
  <div class="section-head"><div><h2>Homepage Carousel</h2>
  <p class="muted">Control the homepage feature without editing site code. Only published slides within their scheduled dates appear to customers.</p></div>
  <button type="button" class="button" id="new-carousel-slide">Add slide</button></div>
- <p class="small muted">Use bakery-owned photos. A published slide needs a heading, image description, and photograph. Move Up/Down changes its display order.</p>
+ <div class="admin-carousel-readiness" role="status"><strong>${visible} published and currently visible · ${drafts} draft${drafts===1?'':'s'}.</strong>
+ ${visible<2?'Automatic rotation requires at least two currently visible published slides. Draft or expired slides cannot rotate on the public homepage.':'The homepage rotates eligible slides every 6.5 seconds. Reduced-motion and pause controls are respected.'}
+ </div>
+ <p class="small muted">Only publish approved bakery content. You can preview an unpublished slide below without making it public.</p>
+ ${previewMarkup?'<details id="admin-slide-preview" class="admin-slide-preview"><summary>Private preview — includes drafts</summary><p>The preview includes draft slides for testing and does not change their public visibility.</p>'+previewMarkup+'</details>':''}
  <div class="admin-carousel-list">${rows.map(card).join('')||'<p>No slides have been added. Upload your first bakery photograph to begin.</p>'}</div>
  </section>
  <dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit slide</h2><div id="editor-fields"></div>
  <div class="actions"><button class="button" type="submit">Save changes</button><button type="button" class="button secondary" id="close-editor">Cancel</button></div></form></dialog>`;
+ const previewDetails=$('#admin-slide-preview');
+ if(previewDetails)previewDetails.addEventListener('toggle',()=>{if(previewDetails.open)bindHomeCarousel();else stopHomeCarousel();});
  $('#new-carousel-slide').onclick=()=>openEditor(null);
  document.querySelectorAll('[data-slide-edit]').forEach(el=>el.onclick=()=>openEditor(rows[Number(el.dataset.slideEdit)]));
  const orderUpdate=async(i,j)=>{
@@ -269,6 +281,7 @@ function siteSettingsSummary(){
  $('#edit-site-settings').onclick=()=>openEditor(row);
 }
 function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.length)return '';const val=r?.[f.key], id='field_'+f.key;let raw='';const value=val??'';
+ const mandatory=adminFieldIsRequired(selected,f.key),req=mandatory?' required':'';
  if(f.type==='bool')return `<div class="field admin-boolean-field">
  <span class="admin-field-label" id="${id}_label">${e(f.label)}</span>
  <label class="admin-boolean-toggle" for="${id}">
@@ -280,8 +293,8 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
   ${value?'<div class="carousel-admin-preview"><img src="'+e(value)+'" alt="Current carousel photograph"></div>':''}
   <input type="file" data-carousel-photo-for="${id}" accept="image/jpeg,image/png,image/webp" aria-label="Upload carousel photograph">
   <small>Upload a JPG, PNG or WebP photograph (maximum 5 MB). The current image stays until you save a replacement.</small>`;
- else if(f.type==='textarea')raw=`<textarea id="${id}" rows="4">${e(value)}</textarea>`;
- else if(f.type==='select')raw=`<select id="${id}">${f.options.map(x=>`<option value="${e(x)}" ${value===x?'selected':''}>${e(pretty(x))}</option>`).join('')}</select>`;
+ else if(f.type==='textarea')raw=`<textarea id="${id}" rows="4"${req}>${e(value)}</textarea>`;
+ else if(f.type==='select')raw=`<select id="${id}"${req}>${f.options.map(x=>`<option value="${e(x)}" ${value===x?'selected':''}>${e(pretty(x))}</option>`).join('')}</select>`;
  else if(f.type==='ref'){
   const rowKey=referenceKeyFor(f.table);
   const options=(refs[f.table]||[]).flatMap(x=>{
@@ -295,10 +308,10 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
   const emptyMessage=f.table==='products'?'No products have been created. Add a real product in Catalog → Products first.'
    :f.table==='baking_days'?'No baking dates are available. Add a date in Baking & Fulfillment Calendar first.'
    :'No '+f.table.replaceAll('_',' ')+' records are available. Create the related record first.';
-  raw=`<select id="${id}" ${none?'disabled':''} ${f.key==='subcategory_id'?'':'required'}>
+  raw=`<select id="${id}" ${none?'disabled':''}${req}>
    <option value="">${none?'No entries available':'Choose…'}</option>${options}</select>${none?'<p class="admin-reference-note" role="status">'+e(emptyMessage)+'</p>':''}`;
  }
- else if(f.type==='csv'||f.type==='uuids')raw=`<input id="${id}" value="${e(Array.isArray(value)?value.join(', '):value)}">`;
+ else if(f.type==='csv'||f.type==='uuids')raw=`<input id="${id}" value="${e(Array.isArray(value)?value.join(', '):value)}"${req}>`;
  else if(f.type==='image')raw=`<input id="${id}" value="${e(value)}" placeholder="Select a real photograph or upload your own" readonly>
  <label>Choose from verified, real photographs<select data-photo-library-for="${id}">
  <option value="">Keep current picture / choose below</option>
@@ -307,10 +320,10 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
  <input type="file" data-image-for="${id}" accept="image/jpeg,image/png,image/webp">
  <small id="${id}_license">All reference photographs must be labeled as examples; bakery-owned gallery photos are from prior bakes. Upload your own photograph to replace a reference.</small>
  <div class="preset-preview" id="${id}_preview"></div>`;
- else if(f.type==='datetime'){const v=value?centralInputFromIso(value):'';raw=`<input id="${id}" type="datetime-local" value="${v}"><small class="muted">Central Time (Nixa, Missouri); daylight saving time is handled automatically.</small>`;}
- else if(f.type==='number'||f.type==='money')raw=`<input id="${id}" type="number" step="${f.type==='money'?'0.01':'any'}" value="${value===''?'':(f.type==='money'?Number(value)/100:value)}">`;
- else raw=`<input id="${id}" type="${f.type==='date'?'date':'text'}" value="${e(value)}">`;
- return `<div class="field"><label for="${id}">${e(f.label)}</label>${raw}</div>`;}
+ else if(f.type==='datetime'){const v=value?centralInputFromIso(value):'';raw=`<input id="${id}" type="datetime-local" value="${v}"${req}><small class="muted">Central Time (Nixa, Missouri); daylight saving time is handled automatically.</small>`;}
+ else if(f.type==='number'||f.type==='money')raw=`<input id="${id}" type="number" step="${f.type==='money'?'0.01':'any'}" value="${value===''?'':(f.type==='money'?Number(value)/100:value)}"${req}>`;
+ else raw=`<input id="${id}" type="${f.type==='date'?'date':'text'}" value="${e(value)}"${req}>`;
+ return `<div class="field"><label for="${id}" ${mandatory&&['image','carousel_image'].includes(f.type)?'data-required-label="true"':''}>${e(f.label)}</label>${raw}</div>`;}
 async function openEditor(record){const c=configs[selected];
  if(selected==='home_carousel_slides'&&!record){
   record={sort_order:(data.home_carousel_slides||[]).reduce((m,r)=>Math.max(m,Number(r.sort_order)||0),0)+10,
@@ -406,6 +419,11 @@ async function openEditor(record){const c=configs[selected];
     (record?.allergen_reviewed?' checked':'')+'> I checked the actual recipe and packaging. The selected allergens accurately represent this product.</label>'+
     '<p class="small muted">A product cannot be published until ingredients and the allergen review are completed. These controls do not certify that food is allergen-free.</p></fieldset>');
   const choices=[...document.querySelectorAll('.major-allergen')],verified=$('#allergen-reviewed');
+  const productPublication=$('#field_published');
+  const syncReview=()=>{if(verified)verified.required=productPublication?.checked===true&&$('#field_product_type')?.value==='food';};
+  productPublication?.addEventListener('change',syncReview);
+  $('#field_product_type')?.addEventListener('change',syncReview);
+  syncReview();
   let manuallyChanged=Boolean(record);
   const suggest=()=>{
     const groups=suggestMajorAllergens({name:$('#field_name')?.value,ingredients:$('#field_ingredients')?.value});
@@ -439,6 +457,7 @@ async function openEditor(record){const c=configs[selected];
    const isFood=typeSelect.value==='food';
    if(panel)panel.hidden=!isFood;
    if(ingredients)ingredients.hidden=!isFood;
+   const ingredientControl=$('#field_ingredients');if(ingredientControl)ingredientControl.required=isFood&&publication?.checked===true;
    if(publication){
     if(!isFood)publication.checked=false;
     publication.disabled=!isFood;
@@ -448,6 +467,7 @@ async function openEditor(record){const c=configs[selected];
     :nonfoodHoldMessage(typeSelect.value)||
       'Food products require a complete ingredient list and confirmed major-allergen review before publication.';
   };
+  publication?.addEventListener('change',()=>updateTypeControls(false));
   category?.addEventListener('change',()=>updateTypeControls(true));
   typeSelect?.addEventListener('change',()=>updateTypeControls());
   updateTypeControls(!record);

@@ -27,6 +27,8 @@ import {SAMPLE_MENU,samplesFor} from '../site/sample-menu.js';
 import {accountNavigationMarkup,ACCOUNT_MENU_OPEN_MS,ACCOUNT_MENU_CLOSE_MS} from '../site/account-navigation.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
 import {referenceKeyFor} from '../site/reference-keys.js';
+import {ADMIN_REQUIRED,adminFieldIsRequired} from '../site/admin-required.js';
+import {syncRequiredMarkers,bindRequiredMarkers} from '../site/required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup} from '../site/home-carousel.js';
 import {ADMIN_GROUPS,adminGroupsForRole} from '../site/admin-navigation.js';
 
@@ -1094,4 +1096,32 @@ test('carousel Admin navigation/editor CRUD use the actual canonical Supabase ta
  assert.match(nav,/\['home_carousel_slides','website_background','site_settings'\]/);
  assert.match(migration,/create table if not exists public\.home_carousel_slides/);
  assert.match(app,/\['home_carousel_slides',\{order:'sort_order\.asc'\}\]/);
+});
+
+test('carousel drafts remain private and Admin explains activation of slideshow',()=>{
+ const admin=read('site/admin.js'),app=read('site/app.js');
+ assert.match(admin,/Automatic rotation requires at least two currently visible published slides/);
+ assert.match(admin,/Private preview — includes drafts/);
+ assert.match(admin,/previewSlides=rows\.map\(x=>\(\{\.\.\.x,published:true\}\)\)/);
+ assert.match(admin,/previewDetails\.open\)bindHomeCarousel\(\)/);
+ assert.match(app,/eligibleHomeSlides\(all\.carouselSlides\)/);
+});
+test('all website forms mark mandatory fields with * Required',()=>{
+ const admin=read('site/admin.js'),app=read('site/app.js'),account=read('site/account.js'),checkout=read('site/checkout-form.js'),css=read('site/country-home-v2.css');
+ assert.ok(Object.keys(ADMIN_REQUIRED).length>14);
+ assert.equal(adminFieldIsRequired('home_carousel_slides','title'),true);
+ assert.equal(adminFieldIsRequired('home_carousel_slides','image_url'),true);
+ assert.equal(adminFieldIsRequired('home_carousel_slides','description'),false);
+ assert.equal(adminFieldIsRequired('products','price_cents'),true);
+ assert.equal(adminFieldIsRequired('baking_days','cutoff_at'),true);
+ assert.equal(adminFieldIsRequired('baking_days','notes'),false);
+ assert.match(admin,/mandatory=adminFieldIsRequired\(selected,f\.key\)/);
+ assert.match(admin,/data-required-label="true"/);
+ assert.match(admin,/verified\.required=productPublication\?\.checked===true/);
+ assert.match(app,/bindRequiredMarkers\(\)/);
+ assert.doesNotMatch(account,/required\?' \*'/);
+ assert.match(checkout,/email\.required=!text\|\|!payRadio\.checked/);
+ assert.match(css,/\.required-indicator/);
+ assert.equal(typeof syncRequiredMarkers,'function');
+ assert.equal(typeof bindRequiredMarkers,'function');
 });
