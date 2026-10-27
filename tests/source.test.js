@@ -26,7 +26,7 @@ import {STOCK_PHOTOGRAPHY,stockPhotoFor,sandboxProductPhoto,demoMatchesView} fro
 import {SAMPLE_MENU,samplesFor} from '../site/sample-menu.js';
 import {accountNavigationMarkup,ACCOUNT_MENU_OPEN_MS,ACCOUNT_MENU_CLOSE_MS} from '../site/account-navigation.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
-import {HOME_URL,qrSvg,qrMarkup} from '../site/qr-code.js';
+import {HOME_URL,QR_PNG_PATH,qrSvg,qrMarkup} from '../site/qr-code.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
 const required=['site/account.js','site/message-center.js','functions/_lib/turnstile.js','functions/api/auth/login.js','functions/api/auth/register.js','supabase/migrations/20261026_customer_profiles_message_photos.sql','README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
@@ -793,4 +793,25 @@ test('dropdown links address real, accessible customer profile and settings sect
  assert.match(css,/#primary-navigation \.account-dropdown-panel\[hidden\]/);
  assert.match(css,/@media\(max-width:760px\)/);
  assert.match(css,/scroll-margin-top:/);
+});
+
+test('homepage QR PNG is a real downloadable first-party image, not a canvas conversion',()=>{
+ const qrCode=read('site/qr-code.js');
+ const markup=qrMarkup();
+ assert.equal(QR_PNG_PATH,'/assets/MammaBeesBakery-Homepage-QR.png');
+ assert.match(markup,/href="\/assets\/MammaBeesBakery-Homepage-QR\.png"/);
+ assert.match(markup,/download="MammaBeesBakery-Homepage-QR\.png"/);
+ assert.match(markup,/data-qr-download="png"/);
+ assert.match(qrCode,/button\[data-qr-download="svg"\]/);
+ assert.match(qrCode,/a\[data-qr-download="png"\]/);
+ assert.doesNotMatch(qrCode,/new Image\(|\.drawImage\(|\.toBlob\(|\.toDataURL\(/);
+ assert.doesNotMatch(qrCode,/Download unavailable: '\+err\.message/);
+ const filename='site'+QR_PNG_PATH;
+ assert.ok(existsSync(path.join(root,filename)),filename+' must be committed');
+ const data=readFileSync(path.join(root,filename));
+ assert.ok(data.length>900);
+ assert.deepEqual([...data.subarray(0,8)],[137,80,78,71,13,10,26,10]);
+ assert.equal(data.toString('ascii',12,16),'IHDR');
+ assert.equal(data.readUInt32BE(16),900);
+ assert.equal(data.readUInt32BE(20),900);
 });
