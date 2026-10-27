@@ -2,7 +2,7 @@ import {config,isConfigured,currentUser,currentSession,signIn,signUp,signOut,lis
 import {isBackOfficeRole,backOfficeNavigation} from './role-navigation.js';
 import {photoFor,photoByUrl,photoStatusLabel} from './photo-library.js';
 import {applyBakeryBackground} from './background.js';
-import {qrMarkup,bindQrActions} from './qr-code.js';
+import {qrMarkup,qrSvg,bindQrActions} from './qr-code.js';
 import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -108,8 +108,14 @@ function layout(content){
  applyBakeryBackground(settings,config.supabaseUrl);
  $('#app').innerHTML=`<div class="topbar">Faith · Family · Homemade Goodness</div><header class="header"><div class="shell nav">
  <a href="#home" class="brand">Mamma Bee's Bakery <span>${e(settings.brand_subtitle||'Rooted in Faith. Made with Love. Shared with Joy.')}</span></a>
- <nav aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a><a href="#account">${currentUser()?'My Account':'Sign In'}</a>${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
- <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${content}</main><footer class="footer"><div class="shell"><strong>Mamma Bee's Bakery</strong><p>Rooted in Faith. Made with Love. Shared with Joy. · Country baking and sweet traditions</p><p><a href="#faq">FAQ & policies</a> · <a href="#contact">Contact</a> · <a href="#qr">Bakery QR Code</a></p><p class="tiny">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</p></div></footer>`;
+ <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">☰</span></button><nav id="primary-navigation" aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a><a href="#account">${currentUser()?'My Account':'Sign In'}</a>${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
+ <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${content}</main><footer class="footer"><div class="shell"><strong>Mamma Bee's Bakery</strong><p>Rooted in Faith. Made with Love. Shared with Joy. · Country baking and sweet traditions</p><p><a href="#faq">FAQ & policies</a> · <a href="#contact">Contact</a> · <a href="#qr">Bakery QR Code</a></p><p class="tiny">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</p><a class="footer-qr" href="#qr" aria-label="Open downloadable bakery QR code">${qrSvg()}<span>Scan for our homepage</span></a></div></footer>`;
+ const toggle=$('#mobile-nav-toggle');
+ const primary=$('#primary-navigation');
+ if(toggle&&primary){
+  toggle.onclick=()=>{const opened=primary.classList.toggle('mobile-open');toggle.setAttribute('aria-expanded',String(opened));};
+  primary.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{primary.classList.remove('mobile-open');toggle.setAttribute('aria-expanded','false');}));
+ }
  document.querySelectorAll('#app img').forEach(img=>{
   img.addEventListener('error',()=>{
    const placeholder=document.createElement('div');
