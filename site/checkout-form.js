@@ -40,7 +40,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   '<div class="field"><label>Last name<input name="last_name" maxlength="60" autocomplete="family-name" required></label></div>'+
   '<div class="field"><label>Street address<input name="street" maxlength="160" autocomplete="street-address" required></label></div>'+
   '<div class="field"><label>City<input name="city" maxlength="80" autocomplete="address-level2" required></label></div>'+
-  '<div class="field"><label>State<input name="state" maxlength="30" autocomplete="address-level1" value="MO" required></label></div>'+
+  '<div class="field"><label>State<input name="state" maxlength="30" autocomplete="address-level1" placeholder="State" required></label></div>'+
   '<div class="field"><label>ZIP code<input name="zip" maxlength="10" pattern="[0-9]{5}(-[0-9]{4})?" inputmode="numeric" autocomplete="postal-code" required></label></div>'+
   '<div class="field"><label>Preferred contact method<select name="contact_channel" id="contact-channel">'+
    '<option value="email">Email</option><option value="text">Phone (text messages only)</option></select></label></div>'+
