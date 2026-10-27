@@ -4,6 +4,7 @@ import {photoFor,photoByUrl,photoStatusLabel} from './photo-library.js';
 import {applyBakeryBackground} from './background.js';
 import {qrMarkup,qrSvg,bindQrActions} from './qr-code.js';
 import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
+import {SAMPLE_MENU,samplesFor} from './sample-menu.js';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
 let checkoutMode='pickup';
@@ -38,34 +39,36 @@ async function startSandboxCheckout(id){
  if(!/^https:\/\/checkout\.stripe\.com\//.test(json.checkout_url||''))throw Error('Invalid checkout redirect');
  location.assign(json.checkout_url);
 }
-function demoStorePreview(mode='all',categoryName=null){
- if(!['owner','admin'].includes(verifiedBackOfficeRole)||all.settings.demo_store_enabled!==true)return '';
- const previews={
- 'Chocolate Chip Cookies':{cat:'Cookies',sub:'Chocolate Chip',blurb:'A classic dozen of chocolate chip cookies, warm and comforting.'},
- 'Cinnamon Rolls':{cat:'Pastries',sub:'Cinnamon Rolls',blurb:'Tender swirls with a sweet cinnamon filling and creamy icing.'},
- 'Apple Pie':{cat:'Pies',sub:'Apple Pies',blurb:'A golden pie with traditional apple filling and a buttery crust.'},
- 'Carrot Cake':{cat:'Cakes',sub:'Carrot Cakes',blurb:'Spiced carrot cake with a generous swirl of icing.'},
- 'Classic Cheesecake':{cat:'Cheesecakes',sub:'Classic Cheesecakes',blurb:'Rich, smooth cheesecake made for special celebrations.'},
- 'Brownie Box':{cat:'Bars & Brownies',sub:'Brownies',blurb:'Six fudgy brownies, sliced and ready to share.'}
- };
- const products=all.demoItems.filter(x=>x.enabled===true&&demoMatchesView(x,mode)&&(!categoryName||x.category===categoryName));
+function demoStorePreview(mode='all',categoryName=null,hasRealProducts=false){
+ const staff=['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true;
+ const showPublicSamples=all.settings.placeholder_empty_shop!==false&&!hasRealProducts;
+ if(!staff&&!showPublicSamples)return '';
+ const selected=samplesFor(mode,categoryName);
+ const products=staff?selected.filter(x=>all.demoItems.some(y=>y.enabled&&y.name===x.name)):showPublicSamples?selected:[];
  if(!products.length)return '';
- return '<section class="section demo-store"><div class="section-head"><div>'+
-  '<div class="eyebrow">Owner/Admin Only · Stripe TEST mode</div><h2>Test Products in This Shop View</h2>'+
-  '<p class="muted">Examples for testing the regular shop. Only Owner/Admin can see or check out these test items.</p>'+
-  '</div></div><div class="grid">'+products.map(x=>{
-  const d=previews[x.name]||{cat:x.category,sub:'',blurb:x.description};
-  const preset=sandboxProductPhoto(x);
-  return '<article class="card bakery-product-card"><div class="card-media">'+
-   image(preset?.url,'product-photo',x.name)+
-   (preset?'<div class="photo-disclosure">Stock photo for layout testing · Not a photograph of a bakery product</div>':'')+'</div>'+
-   '<div class="card-content"><span class="badge">SANDBOX</span>'+
-   '<p class="eyebrow">'+e(d.cat)+(d.sub?' / '+e(d.sub):'')+'</p>'+
-   '<h3>'+e(x.name)+'</h3><p class="small">'+e(d.blurb)+'</p>'+
-   '<p class="price">'+money(x.price_cents)+' <small>/ '+e(x.unit)+'</small></p>'+
-   '<button type="button" class="button secondary" data-demo-checkout="'+e(x.id)+'">Test Checkout</button>'+
-   '</div></article>';
- }).join('')+'</div><p class="small muted">Sample photos are reference images or earlier bakes, not photographs of purchasable products. Test payments run in MommaBeesBakery sandbox only.</p></section>';
+ return '<section class="section demo-store bakery-menu-inspiration">'+
+  '<div class="section-head"><div><div class="eyebrow">Something sweet to look forward to</div>'+
+  '<h2>A Few Favorites for the Baking List</h2><p class="muted">'+
+  'A peek at the kinds of treats you might see when the next baking dates are announced. These are examples, not products currently for sale.'+
+  '</p></div></div>'+
+  '<div class="grid bakery-menu-grid">'+products.map(d=>{
+   const stored=staff?all.demoItems.find(item=>item.enabled&&item.name===d.name):null;
+   const original=d.name==='Carrot Cake'?photoFor('Cakes','Carrot Cakes'):null;
+   const visual=original||sandboxProductPhoto(d);
+   const photoCaption=original?'An earlier Mamma Bee’s bake — appearance may vary':'Illustrative image — not an actual bakery product';
+   return '<article class="card bakery-product-card example-menu-card">'+
+    '<div class="card-media">'+image(visual.url,'product-photo',d.name+' example')+'</div>'+
+    '<div class="card-content"><p class="eyebrow">'+e(d.category)+' / '+e(d.subcategory)+'</p>'+
+    '<h3>'+e(d.name)+'</h3><p class="small example-description">'+e(d.description)+'</p>'+
+    '<p class="example-photo-note">'+e(photoCaption)+'</p>'+
+    (staff&&stored?'<p class="example-test-price">'+money(stored.price_cents)+' <small>/ '+e(stored.unit)+'</small></p>'+
+    '<span class="example-test-label">TEST MODE · NOT REAL INVENTORY</span>'+
+    '<button type="button" class="button secondary" data-demo-checkout="'+e(stored.id)+'">Try Test Checkout</button>':
+    '<p class="example-availability">Menu example · Not available to order</p>')+
+    '</div></article>';
+  }).join('')+'</div>'+
+  '<p class="handwritten-menu-note">Baking days are special around here. Check the calendar when the next batch is announced.</p>'+
+  '</section>';
 }
 function bindDemoStore(){
  document.querySelectorAll('[data-demo-checkout]').forEach(button=>button.onclick=async()=>{
@@ -136,7 +139,7 @@ async function load(){
 function announcements(place='home'){
  return all.announcements.filter(x=>x.placement===place||x.placement==='all').map(a=>`<aside class="announcement"><strong>${e(a.title)}</strong><p>${e(a.body)}</p>${a.link_url&&/^https?:\/\//.test(a.link_url)?`<a href="${photo(a.link_url)}" rel="noopener">Details</a>`:''}</aside>`).join('');
 }
-function home(){const s=all.settings;layout(`${announcements()}<div class="country-welcome-band" aria-label="Bakery values"><span>✦ Country Kitchen Traditions</span><span>Made with Love</span><span>✦ Gather Around Something Sweet</span></div><section class="hero"><div class="hero-copy"><div class="eyebrow">Rooted in Faith · Baked with Love</div><h1>${e(s.home_heading||'A Little Country. A Whole Lot of Homemade.')}</h1><p>${e(s.home_intro||'Explore handmade baked goods, ready to enjoy or preorder for a baking day.')}</p><div class="hero-actions"><a class="button" href="#ready">Shop ready-to-sell</a><a class="button secondary" href="#preorder">Schedule a preorder</a></div></div><div class="hero-art ${s.hero_url?'has-photo':'has-bakery-photo'}" style="background-image:url('${photo(s.hero_url||all.pastBakes.find(x=>x.published&&x.title?.includes('Carrot Cake'))?.image_url||'')}')" role="img" aria-label="An authentic photo of a dessert previously baked by Mamma Bee's Bakery"></div></section>
+function home(){const s=all.settings;layout(`${announcements()}<div class="country-welcome-band" aria-label="Bakery values"><span>From Nixa, with care</span><span>Rooted in Faith</span><span>Something sweet for your table</span></div><section class="hero"><div class="hero-copy"><div class="eyebrow">Rooted in Faith · Baked with Love</div><h1>${e(s.home_heading||'A Little Country. A Whole Lot of Homemade.')}</h1><p>${e(s.home_intro||'Explore handmade baked goods, ready to enjoy or preorder for a baking day.')}</p><div class="hero-actions"><a class="button" href="#ready">Shop ready-to-sell</a><a class="button secondary" href="#preorder">Schedule a preorder</a></div></div><div class="hero-art ${s.hero_url?'has-photo':'has-bakery-photo'}" style="background-image:url('${photo(s.hero_url||all.pastBakes.find(x=>x.published&&x.title?.includes('Carrot Cake'))?.image_url||'')}')" role="img" aria-label="An authentic photo of a dessert previously baked by Mamma Bee's Bakery"></div></section>
  <section class="section"><div class="section-head"><div><div class="eyebrow">Discover something delicious</div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div><div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url||stockPhotoFor(c.name).thumb)}<div class="card-content"><h3>${e(c.name)}</h3>${!c.photo_url?'<p class="stock-label">Stock photo · Category illustration</p>':''}<p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||(s.placeholder_empty_shop===false?'':'<div class="empty">No products are currently available. Please check back for the next baking day.</div>')}</div></section>
  <section class="section"><div class="section-head"><div><div class="eyebrow">Baked with love</div><h2>A Peek Into Our Kitchen</h2></div><a href="#gallery">Browse Past Bakes</a></div>
  <p class="muted">A few treats we have created before. These are examples of our baking and are not currently listed for sale.</p>
@@ -187,11 +190,11 @@ function shop(mode=null,categoryId=null,subcategoryId=null){
  all.subcategories.filter(x=>x.category_id===categoryId&&x.active&&sellable().some(p=>p.subcategory_id===x.id))
  .map(x=>'<a class="tab '+(subcategoryId===x.id?'active':'')+'" href="#subcategory/'+e(categoryId)+'/'+e(x.id)+'">'+e(x.name)+'</a>').join('')+'</nav>':''}
  <div class="grid product-results">${items.map(card).join('')||
- (all.settings.placeholder_empty_shop===false?'':'<div class="empty shop-empty">'+e(empty)+
+ ((samplesFor(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null).length>0&&all.settings.placeholder_empty_shop!==false)?'':all.settings.placeholder_empty_shop===false?'':'<div class="empty shop-empty">'+e(empty)+
  '<div class="actions" style="justify-content:center;margin-top:18px">'+(mode==='ready'?'<a class="button secondary" href="#preorder">Explore Preorders</a>':
  mode==='preorder'?'<a class="button secondary" href="#ready">Browse Ready to Sell</a>':
  '<a class="button secondary" href="#contact">Ask About a Special Order</a>')+'</div></div>')}</div>
- ${demoStorePreview(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null)}
+ ${demoStorePreview(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null,items.length>0)}
  </section>`);bindDemoStore();
 }
 function detail(id){const p=all.products.find(x=>x.id===id);if(!p||!p.published||!available(p)){layout('<div class="empty">Product not available. <a href="#shop">Return to shop</a>.</div>');return;}
