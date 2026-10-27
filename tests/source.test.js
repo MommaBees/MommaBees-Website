@@ -497,7 +497,7 @@ test('website background settings, image storage and owner-only editor are conne
  assert.match(editor,/Only Owner\/Admin accounts/);
  assert.match(editor,/upload\('bakery-backgrounds'/);
  assert.match(editor,/Save Background/);
- assert.match(editor,/Restore Rustic Barn Doors/);
+ assert.match(editor,/Restore Watercolor Chickens/);
  assert.match(app,/applyBakeryBackground\(settings,config\.supabaseUrl\)/);
  assert.match(api,/'bakery-backgrounds'/);
  assert.match(css,/prairie_doors/);
@@ -871,7 +871,7 @@ test('owner branding, originals and watercolor background are published without 
  assert.match(css,/data-site-background="chickens"/);
  assert.match(bg,/value:'chickens'/);
  const migration=read('supabase/migrations/20261027_brand_chicken_background.sql');
- assert.match(migration,/background_style = 'chickens'/);
+ assert.match(migration,/background_style\\s*=\\s*'chickens'/);
  for(const img of ['site/assets/branding/mommabee-shop-logo.webp','site/assets/branding/chicken-watercolor-background.webp']){
   const bytes=readFileSync(path.join(root,img));
   assert.ok(bytes.length>5000);
