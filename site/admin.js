@@ -56,7 +56,7 @@ function authShell(){
   `<option value="${e(id)}" ${id===selected?'selected':''}>${e(labelFor(id))}</option>`).join('');
  ctx.layout(`<section class="section admin-workspace">
   <div class="eyebrow">MommaBee Bakery&Farmstand · Staff workspace</div>
-  <h1>Bakery Admin Center</h1><p class="muted">Orders, inventory, customers, marketing and website management in one workspace.</p>
+  <h1>Bakery Admin Center</h1>
   <div class="admin-layout">
     <aside class="admin-side" aria-label="Admin management sections">
       <label class="admin-menu-search-label" for="admin-menu-search">Find a module</label>
@@ -232,7 +232,7 @@ async function carouselPanel(){
   </div></div></article>`;
  $('#admin-main').innerHTML=`<section class="box admin-carousel-manager">
  <div class="section-head"><div><h2>Homepage Carousel</h2>
- <p class="muted">Control the homepage feature without editing site code. Only published slides within their scheduled dates appear to customers.</p></div>
+ <p class="muted">Manage slides and their publication dates.</p></div>
  <button type="button" class="button" id="new-carousel-slide">Add slide</button></div>
  <div class="admin-carousel-readiness" role="status"><strong>${visible} published and currently visible · ${drafts} draft${drafts===1?'':'s'}.</strong>
  ${visible<2?'Automatic rotation requires at least two currently visible published slides. Draft or expired slides cannot rotate on the public homepage.':'The homepage rotates eligible slides every ${interval} seconds. Reduced-motion and pause controls are respected.'}
@@ -243,7 +243,7 @@ async function carouselPanel(){
     <input type="number" id="carousel-interval-seconds" name="interval" min="3" max="60" step="0.5" value="${e(interval)}" required aria-describedby="carousel-interval-help">
     <button class="button secondary" type="submit">Save interval</button>
   </div>
-  <p class="small muted" id="carousel-interval-help">Choose 3–60 seconds. Default: 6.5 seconds. Applies to the public homepage and private preview after refresh. A timer cannot rotate a single published slide.</p>
+  <p class="small muted" id="carousel-interval-help">3–60 seconds (default 6.5). Rotation requires two published slides.</p>
   <p id="carousel-interval-save-status" role="status" aria-live="polite"></p>
  </form>
  <form id="carousel-size-form" class="admin-carousel-interval admin-carousel-size" aria-label="Carousel size settings">
@@ -254,11 +254,11 @@ async function carouselPanel(){
    </select>
    <button class="button secondary" type="submit">Save size</button>
   </div>
-  <p class="small muted" id="carousel-size-help">Sets the same responsive height for every slide on desktop and mobile. Medium keeps the current size. Try a size in the private preview, then select Save size to publish the layout choice.</p>
+  <p class="small muted" id="carousel-size-help">Scales text and photos together. Medium is the default.</p>
   <p id="carousel-size-save-status" role="status" aria-live="polite"></p>
  </form>
- <p class="small muted">Only publish approved bakery content. You can preview an unpublished slide below without making it public.</p>
- ${previewMarkup?'<details id="admin-slide-preview" class="admin-slide-preview"><summary>Private preview — includes drafts</summary><p>The preview includes draft slides for testing and does not change their public visibility.</p>'+previewMarkup+'</details>':''}
+ 
+ ${previewMarkup?'<details id="admin-slide-preview" class="admin-slide-preview"><summary>Private preview — includes drafts</summary><p>Draft slides stay private.</p>'+previewMarkup+'</details>':''}
  <div class="admin-carousel-list">${rows.map(card).join('')||'<p>No slides have been added. Upload your first bakery photograph to begin.</p>'}</div>
  </section>
  <dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit slide</h2><div id="editor-fields"></div>
@@ -346,12 +346,12 @@ function siteSettingsSummary(){
  const subtitle=String(row.brand_subtitle||'');
  $('#admin-main').innerHTML=`<section class="box admin-site-settings-summary">
  <div class="section-head">
-  <div><h2>Website Appearance &amp; Settings</h2><p class="muted">Manage the public site’s appearance and operating preferences.</p></div>
+  <div><h2>Website Appearance &amp; Settings</h2><p class="muted"></p></div>
   <button type="button" class="button" id="edit-site-settings">Edit settings</button>
  </div>
  <div class="admin-settings-detail"><h3>Header products &amp; services line</h3>
   <p class="admin-settings-copy">${e(subtitle)||'No header description configured.'}</p></div>
- <p class="muted small">To change the header text, checkout settings, and site preferences, select Edit settings. Background images are managed separately in Website Background.</p>
+ 
  <dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit settings</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>
  </section>`;
  $('#edit-site-settings').onclick=()=>openEditor(row);

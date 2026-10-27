@@ -21,8 +21,8 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
      settings.pay_at_pickup_tax_reviewed===true&&Number.isInteger(settings.pay_at_pickup_tax_rate_bps);
  const anyAvailable=stripeAvailable||payAtPickup;
  const subtotal=cart.reduce((n,i)=>n+i.price_cents*i.quantity,0);
- layout('<section class="section"><div class="eyebrow">Almost ready · Your bakery order</div><h1>Choose Your Pickup Day</h1>'+
-  '<p>Find an available baking day, choose pickup or eligible local delivery, and review your order before paying. Guest checkout is welcome.</p>'+
+ layout('<section class="section"><h1>Choose Your Pickup Day</h1>'+
+  ''+
   '<form id="checkout-form" class="cols"><div class="box"><h2>Pickup / delivery schedule</h2>'+
   '<div class="field"><label for="method">Fulfillment method</label><select name="method" id="method">'+
    (pickupEnabled?'<option value="pickup">Local pickup</option>':'')+
@@ -35,7 +35,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   '<div class="field"><label for="window">Available pickup/delivery time</label>'+
     '<select name="window" id="window" required><option value="">Choose a date first</option></select></div>'+
   '<div id="delivery-fields" hidden><p class="small">Delivery is only offered for eligible locations and scheduled dates.</p></div>'+
-  '<h2>Customer information</h2><p class="small">Guest checkout is welcome. All customers must provide full contact and address information.</p>'+
+  '<h2>Customer information</h2><p class="small">Full contact and address details are required.</p>'+
   '<div class="field"><label>First name<input name="first_name" maxlength="60" autocomplete="given-name" required></label></div>'+
   '<div class="field"><label>Last name<input name="last_name" maxlength="60" autocomplete="family-name" required></label></div>'+
   '<div class="field"><label>Street address<input name="street" maxlength="160" autocomplete="street-address" required></label></div>'+

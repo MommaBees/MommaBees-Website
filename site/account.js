@@ -65,8 +65,8 @@ function captchaToken(form){
  return token;
 }
 async function authPage({layout,rerender,showError}){
- layout('<section class="section bakery-account-entry" style="max-width:850px;margin:24px auto"><div class="eyebrow">Welcome to the bakery</div><h1>Come on in.</h1><p class="bakery-account-welcome">Sign in to follow your orders, send Momma Bee a private message, or keep your details ready for the next bake.</p>'+
-  '<p>Sign in using the username you chose at registration or your email address. Your password is the same either way. Guest checkout remains available.</p>'+
+ layout('<section class="section bakery-account-entry" style="max-width:850px;margin:24px auto"><h1>Bakery Account</h1>'+
+  '<p>Sign in with your username or email. Guest checkout is available.</p>'+
   '<div class="actions"><button type="button" class="button" data-auth-tab="login">Sign In</button>'+
   '<button type="button" class="button secondary" data-auth-tab="register">Create Account</button></div>'+
   '<form id="bakery-login" class="box"><h2>Sign In</h2>'+item('identifier','Username or email address','username',true,'text')+
@@ -76,7 +76,7 @@ async function authPage({layout,rerender,showError}){
   '<p class="small muted">Fields marked * Required are mandatory. Your phone number is optional. Your address is stored privately.</p>'+
   item('email','Email address','email',true,'email')+item('password','Password (at least 8 characters)','new-password',true,'password')+
   profileFields({billing_same:true})+'<div data-captcha></div><div class="actions"><button class="button" type="submit">Create Account</button></div>'+
-  '<p class="small muted">Your permanent customer Account ID will be created automatically. No account ID is needed to sign in.</p></form></section>');
+  '</form></section>');
  const login=document.getElementById('bakery-login'),register=document.getElementById('bakery-register');
  billingToggle(register);
  const select=async kind=>{
@@ -104,7 +104,7 @@ async function authPage({layout,rerender,showError}){
 export async function account({layout,rerender,showError,section=null}){
  if(!currentUser())return authPage({layout,rerender,showError});
  const user=currentUser();
- layout('<section class="section"><h1>My Bakery Account</h1><p class="muted">Welcome back. Here you can follow orders, update your contact details and write to Momma Bee.</p><p>Signed in as '+h(user.email)+'</p>'+
+ layout('<section class="section"><h1>My Bakery Account</h1><p>Signed in as '+h(user.email)+'</p>'+
   '<button class="button secondary" id="signout">Sign Out</button><div class="cols">'+
   '<section class="box"><h2>Customer Account ID</h2><div id="my-account-code">Loading…</div>'+
   '<div id="account-profile-section"><h2>Profile & Addresses</h2><div id="my-profile">Loading…</div></div></section>'+ 
@@ -120,12 +120,12 @@ export async function account({layout,rerender,showError,section=null}){
    list('notifications',{customer_id:'eq.'+user.id,order:'created_at.desc',limit:'40'}),
    list('customer_profiles',{id:'eq.'+user.id})]);
   const profile=profiles[0]||{};
-  document.getElementById('my-account-code').innerHTML='<p><strong>Username:</strong> '+h(profile.username||'Not set')+'</p><p><strong>Account ID:</strong> '+h(profile.account_code||'Pending setup')+'</p><p class="small muted">Your username is the one chosen when you signed up. Your permanent Account ID is a separate reference, not your password.</p>';
+  document.getElementById('my-account-code').innerHTML='<p><strong>Username:</strong> '+h(profile.username||'Not set')+'</p><p><strong>Account ID:</strong> '+h(profile.account_code||'Pending setup')+'</p>';
   document.getElementById('my-orders').innerHTML=orders.map(o=>'<p>'+h(o.id.slice(0,8))+' · '+h(o.status)+' · '+fmt(o.fulfillment_date)+' · '+money(o.total_cents)+'</p>').join('')||'<p>No orders yet.</p>';
   document.getElementById('my-notices').innerHTML=notes.map(n=>'<p><strong>'+h(n.title)+'</strong>: '+h(n.body)+'</p>').join('')||'<p>No notifications.</p>';
   document.getElementById('optin').checked=Boolean(profile.marketing_opt_in);
   document.getElementById('save-optin').onclick=async()=>{try{await update('customer_profiles',user.id,{marketing_opt_in:document.getElementById('optin').checked});}catch(e){showError(e);}};
-  document.getElementById('my-profile').innerHTML='<p class="small muted">Your personal information is private. Select Edit Profile to review or update your contact and address information.</p><button class="button secondary" type="button" id="edit-profile">Edit Profile</button><div id="profile-editor" hidden><form id="profile-form">'+profileFields(profile,{editableUsername:false})+'<div class="actions"><button class="button" type="submit">Save Changes</button><button class="button secondary" type="button" id="cancel-profile">Cancel</button></div></form></div>';
+  document.getElementById('my-profile').innerHTML='<button class="button secondary" type="button" id="edit-profile">Edit Profile</button><div id="profile-editor" hidden><form id="profile-form">'+profileFields(profile,{editableUsername:false})+'<div class="actions"><button class="button" type="submit">Save Changes</button><button class="button secondary" type="button" id="cancel-profile">Cancel</button></div></form></div>';
   const form=document.getElementById('profile-form');billingToggle(form);
   const editor=document.getElementById('profile-editor');
   document.getElementById('edit-profile').onclick=()=>{editor.hidden=false;document.getElementById('edit-profile').hidden=true;};

@@ -736,8 +736,8 @@ test('whole-site rustic design covers actual storefront and member and staff pag
 test('new home, footer, cart and contact provide personality without inventing bakery fulfillment',()=>{
  const app=read('site/app.js'),auth=read('site/account.js'),checkout=read('site/checkout-form.js');
  assert.doesNotMatch(app,/A little note from our kitchen/);
- assert.match(app,/Good baking is worth looking forward to/);
- assert.match(app,/Some treats are ready when they/);
+ assert.doesNotMatch(app,/Good baking is worth looking forward to/);
+ assert.doesNotMatch(app,/Some treats are ready when they/);
  assert.match(app,/class="footer-inner"/);
  assert.doesNotMatch(app,/Rooted in Faith\. Made with Love\. Shared with Joy\./);
  assert.match(app,/header-offerings/);
@@ -745,11 +745,11 @@ test('new home, footer, cart and contact provide personality without inventing b
  assert.match(app,/aria-label="Breadcrumb"/);
  assert.match(app,/setAttribute\('aria-current','page'\)/);
  assert.match(app,/Past Bakes Gallery/);
- assert.match(app,/Your bakery basket/);
- assert.match(app,/We'd love to hear from you/);
- assert.match(auth,/Welcome to the bakery/);
+ assert.match(app,/Your Cart/);
+ assert.match(app,/Contact Momma Bee/);
+ assert.match(auth,/Bakery Account/);
  assert.match(auth,/login\.elements\.identifier\.value/);
- assert.match(checkout,/Guest checkout is welcome/);
+ assert.match(checkout,/Full contact and address details are required/);
  assert.match(checkout,/Choose Your Pickup Day/);
  assert.doesNotMatch(app,/Missouri Prairie Roots|From Our Country Kitchen to Your Table/);
  assert.doesNotMatch(app,/From Nixa, with care|Something sweet for your table|<div class="country-welcome-band"/);
@@ -1207,4 +1207,39 @@ test('carousel size presets use one shared frame and whitelist Admin-controlled 
  assert.match(css,/grid-template-rows:var\(--carousel-photo-height\) minmax\(0,1fr\)/);
  assert.match(sql,/home_carousel_size text not null default 'medium'/);
  assert.match(sql,/check \(home_carousel_size in \('extra-small','small','medium','large'\)\)/);
+});
+
+
+test('responsive carousel size presets scale typography, margins, actions and mobile text',()=>{
+ const css=read('site/country-home-v2.css');
+ const segment=css.slice(css.indexOf('/* MBB-UI-036 v1.26'));
+ assert.ok(segment.length>3000);
+ for(const size of ['extra-small','small','medium','large']){
+  assert.ok(segment.includes('.home-carousel--'+size+'{'));
+ }
+ for(const field of ['--carousel-headline-size','--carousel-body-size','--carousel-eyebrow-size','--carousel-copy-padding','--carousel-cta-font','--carousel-cta-height'])
+  assert.ok(segment.includes(field),'Missing '+field);
+ assert.ok(segment.includes('font-size:var(--carousel-headline-size)'));
+ assert.ok(segment.includes('font-size:var(--carousel-body-size)'));
+ assert.ok(segment.includes('padding:var(--carousel-copy-padding)'));
+ assert.ok(segment.includes('scrollbar-gutter:auto'));
+ assert.ok(segment.includes('overflow-y:auto'));
+ assert.ok(segment.includes('@media(max-width:850px)'));
+ assert.ok(segment.includes('@media(max-width:450px)'));
+});
+
+test('redundant text removed without losing customer-facing commerce and safety details',()=>{
+ const app=read('site/app.js'),account=read('site/account.js'),checkout=read('site/checkout-form.js'),admin=read('site/admin.js');
+ for(const phrase of ['Faith · Family · Homemade Goodness','Good baking is worth looking forward to','Share the shop at your next gathering','A Peek Into Our Kitchen']){
+  assert.ok(!app.includes(phrase),'redundant copy should not remain: '+phrase);
+ }
+ assert.doesNotMatch(app,/class="bakery-home-note"/);
+ for(const phrase of ['Past creations — not currently for sale','Product availability is verified before payment','Cottage-food eligibility and food safety','food_notice','Final availability and pricing','Questions & Bakery Policies']){
+  assert.ok(app.includes(phrase),'critical storefront information missing: '+phrase);
+ }
+ assert.match(account,/Guest checkout is available/);
+ assert.match(checkout,/Full contact and address details are required/);
+ assert.match(checkout,/Pay at pickup does not charge a card now/);
+ assert.match(admin,/A product cannot be published until ingredients and the allergen review are completed/);
+ assert.match(admin,/No products have been created/);
 });
