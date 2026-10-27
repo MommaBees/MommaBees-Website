@@ -829,7 +829,7 @@ test('public storefront copy, metadata and background controls omit regional loc
  const settings=read('site/background-admin.js');
  assert.match(settings,/Restore Watercolor Chickens/);
  const metadata=read('site/index.html');
- assert.match(metadata,/MommaBee Bakery&Farmstand \| Rooted in Faith/);
+ assert.match(metadata,/MommaBee Bakery&Farmstand \| Baking, Gifts &amp; More/);
  assert.doesNotMatch(metadata,/Handmade in|homemade baking in/);
  const checkout=read('site/checkout-form.js');
  assert.match(checkout,/autocomplete="address-level1" placeholder="State" required/);
