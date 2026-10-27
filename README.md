@@ -1,8 +1,8 @@
-# Mamma Bee's Bakery — GitHub-Ready Website Repository
+# Momma Bee Farmstand and Bakery — GitHub-Ready Website Repository
 
 **Version:** 0.2.0 — account and messaging functionality added; not a completed or certified production release  
 **Requirements baseline:** `docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md` (Owner-approved Version 1)  
-**Project:** Mamma Bee's Bakery  
+**Project:** Momma Bee Farmstand and Bakery  
 **Prepared:** 2026-10-26  
 **Repository:** MommaBees/MommaBees-Website (main)  
 **Google Drive location:** Not established  
@@ -72,7 +72,7 @@ This design is intended to use free tiers where possible: **Cloudflare Pages + F
 3. Open https://github.com/new and create a new empty repository, for example `mamma-bees-bakery`. You choose Public or Private; **Private is fine**.
 4. Open that GitHub repository. Choose **uploading an existing file** (or **Add file → Upload files**).
 5. Drag the **contents of the extracted `mamma-bees-bakery-website` folder**, keeping the `site/`, `functions/`, `supabase/`, `docs/`, `tests/`, `.github/` and `tools/` paths. Do not upload just the ZIP into GitHub and expect GitHub to run it as a website.
-6. Enter commit message `Add Mamma Bee's Bakery starter website` and choose **Commit changes**.
+6. Enter commit message `Add Momma Bee Farmstand and Bakery starter website` and choose **Commit changes**.
 7. Confirm you can see `README.md`, `site/index.html`, `functions/api/checkout.js`, and `supabase/schema.sql` in the repository.
 8. **Stop here if all you want to do today is upload to GitHub.** Your files are safely stored; nothing is deployed or charged.
 
@@ -82,7 +82,7 @@ GitHub's upload UI might not show hidden `.github/` and `.gitignore` files when 
 
 ### A. Create a separate Supabase project
 
-1. Sign in at https://supabase.com/ and create a **new Mamma Bee's Bakery project**. Do not reuse the Supabase database for another business.
+1. Sign in at https://supabase.com/ and create a **new Momma Bee Farmstand and Bakery project**. Do not reuse the Supabase database for another business.
 2. In Supabase open **SQL Editor → New query**. Paste `supabase/schema.sql` and run it **only against the new, empty bakery project**. This creates the initial tables, authorization rules, storage buckets, and checkout functions.
 3. In your Supabase project's **Connect** dialog (or **Settings → API Keys**), copy the project URL and **publishable** `sb_publishable_...` key.
 4. In GitHub edit `site/config.js`, replacing `https://YOUR_PROJECT.supabase.co` and `PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY` with the two values above. This key is intended for public browsers. **Never enter a secret/service_role key here.**

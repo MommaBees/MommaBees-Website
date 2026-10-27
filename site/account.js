@@ -65,7 +65,7 @@ function captchaToken(form){
  return token;
 }
 async function authPage({layout,rerender,showError}){
- layout('<section class="section bakery-account-entry" style="max-width:850px;margin:24px auto"><div class="eyebrow">Welcome to the bakery</div><h1>Come on in.</h1><p class="bakery-account-welcome">Sign in to follow your orders, send Mamma Bee a private message, or keep your details ready for the next bake.</p>'+
+ layout('<section class="section bakery-account-entry" style="max-width:850px;margin:24px auto"><div class="eyebrow">Welcome to the bakery</div><h1>Come on in.</h1><p class="bakery-account-welcome">Sign in to follow your orders, send Momma Bee a private message, or keep your details ready for the next bake.</p>'+
   '<p>Sign in using the username you chose at registration or your email address. Your password is the same either way. Guest checkout remains available.</p>'+
   '<div class="actions"><button type="button" class="button" data-auth-tab="login">Sign In</button>'+
   '<button type="button" class="button secondary" data-auth-tab="register">Create Account</button></div>'+
@@ -104,7 +104,7 @@ async function authPage({layout,rerender,showError}){
 export async function account({layout,rerender,showError,section=null}){
  if(!currentUser())return authPage({layout,rerender,showError});
  const user=currentUser();
- layout('<section class="section"><div class="eyebrow">A place for your bakery favorites</div><h1>My Bakery Account</h1><p class="muted">Welcome back. Here you can follow orders, update your contact details and write to Mamma Bee.</p><p>Signed in as '+h(user.email)+'</p>'+
+ layout('<section class="section"><div class="eyebrow">A place for your bakery favorites</div><h1>My Bakery Account</h1><p class="muted">Welcome back. Here you can follow orders, update your contact details and write to Momma Bee.</p><p>Signed in as '+h(user.email)+'</p>'+
   '<button class="button secondary" id="signout">Sign Out</button><div class="cols">'+
   '<section class="box"><h2>Customer Account ID</h2><div id="my-account-code">Loading…</div>'+
   '<div id="account-profile-section"><h2>Profile & Addresses</h2><div id="my-profile">Loading…</div></div></section>'+ 

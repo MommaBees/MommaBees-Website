@@ -34,7 +34,7 @@ export async function showBackgroundEditor(ctx){
   (/^#[0-9a-f]{6}$/i.test(initial.background_solid_color||'')?e(initial.background_solid_color):'#f8efdf')+'"></div>'+
   '<h3>Preview before publishing</h3>'+
   '<div id="bg-preview" class="site-background-preview" role="img" aria-label="Preview of the selected rustic country background">'+
-  '<div class="preview-card">Mamma Bee’s Bakery<div class="small">Rooted in Faith. Made with Love. Shared with Joy.</div></div></div>'+
+  '<div class="preview-card">Momma Bee Farmstand and Bakery<div class="small">Rooted in Faith. Made with Love. Shared with Joy.</div></div></div>'+
   '<p id="bg-preview-status" class="small muted" aria-live="polite"></p>'+
   '<div class="site-background-tools">'+
   '<button type="submit" class="button" id="bg-save">Save Background</button>'+

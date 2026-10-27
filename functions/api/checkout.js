@@ -45,7 +45,7 @@ export async function onRequestPost({request,env}){
   const params={mode:'payment','client_reference_id':orderId,'customer_email':user?.email||limited(body.email,254),
     'line_items[0][price_data][currency]':'usd',
     'line_items[0][price_data][unit_amount]':reserved.amount_cents,
-    'line_items[0][price_data][product_data][name]':"Mamma Bee's Bakery order "+orderId.slice(0,8),
+    'line_items[0][price_data][product_data][name]':"Momma Bee Farmstand and Bakery order "+orderId.slice(0,8),
     'line_items[0][quantity]':'1',
     'automatic_tax[enabled]':'true',
     'billing_address_collection':'required',

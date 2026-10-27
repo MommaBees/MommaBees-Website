@@ -1,4 +1,4 @@
-// Mamma Bee's Bakery — local, optimized concept photos (generated specifically for shop layout).
+// Momma Bee Farmstand and Bakery — local, optimized concept photos (generated specifically for shop layout).
 // All files belong to this repo under /site/assets/demo; no external stock-photo dependency.
 // These are *illustrations*, not photographs of actual offered/inventory items.
 const ASSET_ROOT='/assets/demo/';

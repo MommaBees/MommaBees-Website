@@ -798,7 +798,7 @@ test('dropdown links address real, accessible customer profile and settings sect
 test('homepage QR PNG is a real downloadable first-party image, not a canvas conversion',()=>{
  const qrCode=read('site/qr-code.js');
  const markup=qrMarkup();
- assert.equal(QR_PNG_PATH,'/assets/MammaBeesBakery-Homepage-QR.png');
+ assert.equal(QR_PNG_PATH,'/assets/MommaBeeFarmstandAndBakery-Homepage-QR.png');
  assert.match(markup,/href="\/assets\/MammaBeesBakery-Homepage-QR\.png"/);
  assert.match(markup,/download="MammaBeesBakery-Homepage-QR\.png"/);
  assert.match(markup,/data-qr-download="png"/);
@@ -825,7 +825,7 @@ test('public storefront copy, metadata and background controls omit regional loc
  const settings=read('site/background-admin.js');
  assert.match(settings,/Restore Rustic Barn Doors/);
  const metadata=read('site/index.html');
- assert.match(metadata,/Mamma Bee's Bakery \| Rooted in Faith/);
+ assert.match(metadata,/Momma Bee Farmstand and Bakery \| Rooted in Faith/);
  assert.doesNotMatch(metadata,/Handmade in|homemade baking in/);
  const checkout=read('site/checkout-form.js');
  assert.match(checkout,/autocomplete="address-level1" placeholder="State" required/);
@@ -833,4 +833,22 @@ test('public storefront copy, metadata and background controls omit regional loc
  const migration=read('supabase/migrations/20261026_remove_public_location_terms.sql');
  assert.match(migration,/COTTAGE-FOOD SALES ELIGIBILITY/);
  assert.match(migration,/food-sale and location restrictions/);
+});
+
+test('approved full business name is consistent on every customer-facing screen',()=>{
+ const brand='Momma Bee Farmstand and Bakery';
+ const files=['site/app.js','site/index.html','site/account.js','site/admin.js',
+   'site/qr-code.js','site/background-admin.js','site/photo-library.js',
+   'site/message-center.js','functions/api/checkout.js'];
+ for(const filename of files){
+  const content=read(filename);
+  assert.doesNotMatch(content,/Mommy Bee|Mamma Bee/i,filename+' contains an outdated brand spelling');
+ }
+ assert.match(read('site/app.js'),/Momma Bee Farmstand and Bakery/);
+ assert.match(read('site/index.html'),/Momma Bee Farmstand and Bakery/);
+ assert.match(read('site/qr-code.js'),/MommaBeeFarmstandAndBakery-Homepage-QR/);
+ const png=readFileSync(path.join(root,'site/assets/MommaBeeFarmstandAndBakery-Homepage-QR.png'));
+ assert.ok(png.length>900);
+ assert.equal(png.toString('ascii',12,16),'IHDR');
+ assert.ok(brand.length>12);
 });
