@@ -21,8 +21,8 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
      settings.pay_at_pickup_tax_reviewed===true&&Number.isInteger(settings.pay_at_pickup_tax_rate_bps);
  const anyAvailable=stripeAvailable||payAtPickup;
  const subtotal=cart.reduce((n,i)=>n+i.price_cents*i.quantity,0);
- layout('<section class="section"><h1>Choose Your Pickup Day</h1>'+
-  '<p>Select a bakery pickup date from the list or choose a highlighted day in the calendar. Available fair days will be listed here too.</p>'+
+ layout('<section class="section"><div class="eyebrow">Almost ready · Your bakery order</div><h1>Choose Your Pickup Day</h1>'+
+  '<p>Find an available baking day, choose pickup or eligible local delivery, and review your order before paying. Guest checkout is welcome.</p>'+
   '<form id="checkout-form" class="cols"><div class="box"><h2>Pickup / delivery schedule</h2>'+
   '<div class="field"><label for="method">Fulfillment method</label><select name="method" id="method">'+
    (pickupEnabled?'<option value="pickup">Local pickup</option>':'')+
