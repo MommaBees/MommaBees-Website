@@ -30,3 +30,6 @@ Verify DB schema, default and allowed range, repository unit tests, Cloudflare m
 | 2026-10-27 | 1.23 | Sitewide setting for carousel timing, configurable by Owner/Admin |
 
 **Footer:** MommaBee Bakery&Farmstand · MBB-ADMIN-033 · v1.23 · GitHub main
+
+## Navigation-state correction
+Public hash navigation previously reused startup data when the Owner returned from Admin after publishing a slide. Reentering Home now refreshes published slide and interval data from Supabase, avoiding the need for a hard browser reload after carousel changes. This does not publish drafts or bypass RLS.

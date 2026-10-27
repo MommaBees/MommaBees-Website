@@ -1147,3 +1147,13 @@ test('carousel interval setting is bounded and passed from persisted site settin
  assert.match(sql,/home_carousel_interval_seconds numeric\(4,1\) not null default 6\.5/);
  assert.match(sql,/between 3 and 60/);
 });
+
+test('returning to home from Admin fetches current carousel and timing instead of a stale SPA snapshot',()=>{
+ const app=read('site/app.js');
+ assert.match(app,/if\(route==='home'\|\|!route\)\{/);
+ assert.match(app,/list\('home_carousel_slides',\{order:'sort_order\.asc',limit:500\}\)/);
+ assert.match(app,/list\('site_settings',\{limit:1\}\)/);
+ assert.match(app,/all\.carouselSlides=freshSlides/);
+ assert.match(app,/all\.settings=rows\[0\]\|\|\{\}/);
+ assert.match(app,/bindHomeCarousel\(settings\.home_carousel_interval_seconds\)/);
+});
