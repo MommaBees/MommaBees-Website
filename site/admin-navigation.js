@@ -5,7 +5,7 @@ export const ADMIN_GROUPS=Object.freeze([
  ['Products & Inventory',['products','categories','subcategories','product_photos','recipes','recipe_ingredients','ingredients','past_bakes']],
  ['Customers & Communication',['messages','reviews','notifications','customer_profiles']],
  ['Marketing & Promotions',['announcements','announcement_recipients','promotions','promotion_recipients']],
- ['Website & Design',['carousel_slides','website_background','site_settings']],
+ ['Website & Design',['home_carousel_slides','website_background','site_settings']],
  ['Finance & Administration',['reports','expenses','demo_checkout_tests','demo_catalog_items','users']]
 ]);
 export function adminGroupsForRole(role){
@@ -35,7 +35,7 @@ export const ADMIN_DESCRIPTIONS=Object.freeze({
  announcement_recipients:'Target private announcement recipients.',
  promotions:'Discount campaigns and eligibility.',
  promotion_recipients:'Private promotional audiences.',
- carousel_slides:'Homepage featured slides, photographs and buttons.',
+ home_carousel_slides:'Homepage featured slides, photographs and buttons.',
  website_background:'Site background artwork and display treatment.',
  site_settings:'Header, homepage information and checkout settings.',
  reports:'Sales and expense reporting.',

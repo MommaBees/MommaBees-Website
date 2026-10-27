@@ -1047,7 +1047,7 @@ test('managed carousel keeps the original hero, accepts owner slides and is acce
  assert.match(app,/eligibleHomeSlides\(all\.carouselSlides\)/);
  assert.match(app,/bindHomeCarousel\(\)/);
  assert.match(app,/stopHomeCarousel\(\)/);
- assert.match(admin,/carousel_slides:\{label:'Homepage Carousel'/);
+ assert.match(admin,/home_carousel_slides:\{label:'Homepage Carousel'/);
  assert.match(admin,/upload\('carousel-photos'/);
  assert.match(admin,/data-slide-up/);assert.match(admin,/data-slide-down/);
  assert.match(admin,/data-slide-delete/);
@@ -1063,7 +1063,7 @@ test('Admin Center organizes all panels into navigable role-aware groups',()=>{
  const owner=adminGroupsForRole('owner'),moderator=adminGroupsForRole('moderator');
  assert.deepEqual(owner,ADMIN_GROUPS);
  assert.ok(owner.length>=6);
- assert.ok(owner.some(([name,ids])=>name==='Website & Design'&&ids.includes('carousel_slides')));
+ assert.ok(owner.some(([name,ids])=>name==='Website & Design'&&ids.includes('home_carousel_slides')));
  assert.deepEqual(moderator,[['Customer Moderation',['messages','reviews']]]);
  assert.deepEqual(adminGroupsForRole('customer'),[]);
  const moduleIds=owner.flatMap(([,ids])=>ids);
@@ -1073,4 +1073,25 @@ test('Admin Center organizes all panels into navigable role-aware groups',()=>{
  assert.match(admin,/admin-nav-group/);
  assert.match(admin,/visibleGroups\.some/);
  assert.match(css,/admin-content-toolbar/);
+});
+test('carousel Admin navigation/editor CRUD use the actual canonical Supabase table',()=>{
+ const admin=read('site/admin.js');
+ const nav=read('site/admin-navigation.js');
+ const app=read('site/app.js');
+ const migration=read('supabase/migrations/20261027_home_carousel_admin_v120.sql');
+ assert.doesNotMatch(admin,/\bcarousel_slides\b/,'Do not use nonexistent public.carousel_slides in Admin requests');
+ assert.doesNotMatch(nav,/\bcarousel_slides\b/,'Admin route identifier must match canonical database table');
+ assert.match(admin,/home_carousel_slides:\{label:'Homepage Carousel'/);
+ assert.match(admin,/selected==='home_carousel_slides'\)return carouselPanel\(\)/);
+ assert.match(admin,/if\(selected==='home_carousel_slides'&&!record\)/);
+ assert.match(admin,/if\(selected==='home_carousel_slides'\)\{/);
+ assert.match(admin,/await loadTable\('home_carousel_slides'\)/);
+ assert.match(admin,/await update\('home_carousel_slides',a\.id/);
+ assert.match(admin,/await update\('home_carousel_slides',slide\.id/);
+ assert.match(admin,/await remove\('home_carousel_slides',slide\.id\)/);
+ assert.match(admin,/await add\(selected,body\)/,'New slide insertion must use the canonical selected panel');
+ assert.match(admin,/await update\(selected,record\[key\],body,key\)/,'Existing slide editing must use the canonical selected panel');
+ assert.match(nav,/\['home_carousel_slides','website_background','site_settings'\]/);
+ assert.match(migration,/create table if not exists public\.home_carousel_slides/);
+ assert.match(app,/\['home_carousel_slides',\{order:'sort_order\.asc'\}\]/);
 });
