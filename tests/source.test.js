@@ -20,6 +20,8 @@ import {onRequestPost as moderateRequest} from '../functions/api/admin/moderate.
 import {isBackOfficeRole,backOfficeNavigation} from '../site/role-navigation.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from '../site/allergens.js';
 import {PAST_BAKE_IMAGE_NAMES,pastBakeName} from '../site/past-bakes.js';
+import {BUILTIN_PHOTO_PRESETS,photoFor} from '../site/photo-library.js';
+import {TEST_PRICES} from '../functions/_lib/demo-prices.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
 const required=['site/account.js','site/message-center.js','functions/_lib/turnstile.js','functions/api/auth/login.js','functions/api/auth/register.js','supabase/migrations/20261026_customer_profiles_message_photos.sql','README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
@@ -407,4 +409,52 @@ test('available pickup dates respect cart product lead times and ready-stock lim
  assert.match(checkout,/batch\.best_before>=date/);
  assert.match(checkout,/batch\.quantity_available>=item\.quantity/);
  assert.match(checkout,/new Date\(d\.cutoff_at\)>new Date\(\)/);
+});
+
+test('verified real photograph fallback is visibly labeled rather than passed off as an actual product',()=>{
+ const photos=BUILTIN_PHOTO_PRESETS;
+ assert.ok(photos.length>=13);
+ assert.ok(photos.every(x=>x.url.startsWith('https://') && x.source.startsWith('https://')));
+ assert.ok(photos.every(x=>x.license && x.credit && x.type));
+ assert.ok(photos.some(x=>x.type==='bakery_original'));
+ assert.ok(photos.some(x=>x.license==='CC0 1.0'));
+ assert.equal(photoFor('Pies','Apple Pies').sub,'Apple Pies');
+ const store=read('site/app.js'),admin=read('site/admin.js');
+ assert.match(store,/photoStatusLabel/);
+ assert.match(store,/photo-disclosure/);
+ assert.match(admin,/BUILTIN_PHOTO_PRESETS/);
+ assert.match(admin,/data-photo-library-for/);
+});
+test('sandbox checkout uses exactly the six created Stripe prices, never live prices',()=>{
+ const names=Object.keys(TEST_PRICES);
+ assert.equal(names.length,6);
+ for(const p of Object.values(TEST_PRICES)){
+  assert.match(p.stripeProduct,/^prod_/);
+  assert.match(p.stripePrice,/^price_/);
+  assert.ok(p.amount>=50);
+ }
+ const source=read('functions/api/admin/demo-checkout.js');
+ assert.match(source,/catalog\.stripePrice/);
+ assert.match(source,/catalog\.amount!==item\.price_cents/);
+ assert.match(source,/checkout\.livemode!==false/);
+ assert.match(source,/sk_test_/);
+ assert.doesNotMatch(source,/sk_live_/);
+});
+test('subcategory migration enforces same-parent consistency and preserves blank categories hidden',()=>{
+ const sql=read('supabase/migrations/20261026_category_subcategory_image_presets.sql');
+ const store=read('site/app.js'),admin=read('site/admin.js');
+ assert.match(sql,/create table if not exists public\.subcategories/);
+ assert.match(sql,/create table if not exists public\.photo_presets/);
+ assert.match(sql,/product_subcategory_consistency/);
+ assert.match(sql,/s\.category_id=new\.category_id/);
+ assert.match(store,/subcategory-tabs/);
+ assert.match(store,/sellable\(\)\.some\(p=>p\.subcategory_id===x\.id\)/);
+ assert.match(admin,/selected==='products' && refs\.subcategories/);
+ assert.match(admin,/if\(!el&&f\.key==='subcategory_id'\)continue/);
+});
+test('terms do not treat an off-schedule inquiry as an accepted order',()=>{
+ const store=read('site/app.js');
+ assert.match(store,/Special-date requests are not confirmed orders/);
+ assert.match(store,/A special-order request is an inquiry only/);
+ assert.match(store,/both be located in Missouri/);
 });
