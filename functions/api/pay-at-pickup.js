@@ -24,6 +24,8 @@ export async function onRequestPost({request,env}){
   if(!first||!last||!address.street||!address.city||!address.state||
      !/^\d{5}(?:-\d{4})?$/.test(address.zip))
    return response({error:'Enter first name, last name, street address, city, state and ZIP'},400);
+  if(channel==='text' && data.address?.text_contact_consent!==true)
+   return response({error:'Consent to order-related text messages is required'},400);
   if(channel==='text'&&!/^\+?[0-9() .-]{10,22}$/.test(phone))
    return response({error:'Enter a text-capable contact phone'},400);
   if(channel==='email'&&!/^[^ @]+@[^ @]+\.[^ @]+$/.test(email))
