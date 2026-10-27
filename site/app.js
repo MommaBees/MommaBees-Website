@@ -102,7 +102,7 @@ const card=p=>{
   '<p class="price">'+money(p.price_cents)+' <small>/ '+e(p.unit)+'</small></p>'+
   '<a class="button secondary" href="#product/'+encodeURIComponent(p.id)+'">View details</a></div></article>';
 };
-const categories=()=>all.categories.filter(c=>c.active&&sellable().some(p=>p.category_id===c.id));
+const categories=()=>all.categories.filter(c=>c.active&&(sellable().some(p=>p.category_id===c.id)||(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true&&all.demoItems.some(x=>x.enabled&&x.category===c.name))));
 function layout(content){
  const settings=all.settings||{};
  applyBakeryBackground(settings,config.supabaseUrl);
@@ -163,7 +163,7 @@ function shop(mode=null,categoryId=null,subcategoryId=null){
  <div class="shop-hero">
   <div class="shop-hero-copy"><div class="eyebrow">Mamma Bee's Bakery · ${e(title)}</div>
    <h1>${e(title)}</h1><h2>${e(heading)}</h2><p>${e(description)}</p>
-   <p class="shop-result-count"><strong>${items.length}</strong> ${items.length===1?'item':'items'} currently available</p>
+   <p class="shop-result-count"><strong>${items.length}</strong> ${items.length===1?'real item':'real items'} currently available</p>
   </div>
   <div class="shop-hero-picture">${image(visual.url,'shop-hero-image',title+' illustrative stock photo')}
    <div class="photo-disclosure">Stock photo · Illustrative category photography</div></div>
@@ -185,7 +185,8 @@ function shop(mode=null,categoryId=null,subcategoryId=null){
  '<div class="actions" style="justify-content:center;margin-top:18px">'+(mode==='ready'?'<a class="button secondary" href="#preorder">Explore Preorders</a>':
  mode==='preorder'?'<a class="button secondary" href="#ready">Browse Ready to Sell</a>':
  '<a class="button secondary" href="#contact">Ask About a Special Order</a>')+'</div></div>')}</div>
- </section>`);
+ ${demoStorePreview(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null)}
+ </section>`);bindDemoStore();
 }
 function sandboxStore(mode='all'){
  if(!['owner','admin'].includes(verifiedBackOfficeRole)||all.settings.demo_store_enabled!==true){
