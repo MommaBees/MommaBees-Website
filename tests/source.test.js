@@ -22,6 +22,7 @@ import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from '../
 import {PAST_BAKE_IMAGE_NAMES,pastBakeName} from '../site/past-bakes.js';
 import {BUILTIN_PHOTO_PRESETS,photoFor} from '../site/photo-library.js';
 import {TEST_PRICES} from '../functions/_lib/demo-prices.js';
+import {STOCK_PHOTOGRAPHY,stockPhotoFor,sandboxProductPhoto,demoMatchesView} from '../site/stock-photography.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
@@ -286,7 +287,8 @@ test('demo catalog and placeholders are isolated from real sales',()=>{
  assert.match(migration,/create table if not exists public.demo_checkout_tests/);
  assert.match(migration,/revoke all on public.demo_catalog_items from anon,authenticated/);
  assert.match(migration,/role in \('owner','admin'\)/);
- assert.match(site,/demoStorePreview\(\)/);
+ assert.match(site,/demoStorePreview\(valid\)/);
+ assert.match(site,/function sandboxStore\(mode='all'\)/);
  assert.match(site,/(SANDBOX|TEST ONLY)/);
  assert.match(site,/placeholder_empty_shop===false/);
  assert.match(site,/placeholder_empty_gallery===false/);
@@ -496,4 +498,47 @@ test('website background settings, image storage and owner-only editor are conne
  assert.match(api,/'bakery-backgrounds'/);
  assert.match(css,/prairie_doors/);
  assert.doesNotMatch(app,/From Our Country Kitchen to Your Table|From Our Country Kitchen<br>/);
+});
+
+test('six staff sandbox products have fixed stock photos and truly separate view filters',()=>{
+ const names=['Chocolate Chip Cookies','Cinnamon Rolls','Apple Pie','Carrot Cake','Classic Cheesecake','Brownie Box'];
+ assert.equal(Object.keys(STOCK_PHOTOGRAPHY).length,7);
+ assert.equal(new Set(names.map(name=>sandboxProductPhoto({name,category:'Test'}).id)).size,6);
+ for(const name of names){
+  const picture=sandboxProductPhoto({name});
+  assert.match(picture.url,/^https:\/\/images\.unsplash\.com\/photo-/);
+  assert.equal(picture.license,'Unsplash License');
+  assert.equal(picture.disclosure,'Stock photo — example only');
+ }
+ assert.equal(names.filter(name=>demoMatchesView({name},'all')).length,6);
+ assert.equal(names.filter(name=>demoMatchesView({name},'ready')).length,3);
+ assert.equal(names.filter(name=>demoMatchesView({name},'preorder')).length,4);
+ assert.equal(stockPhotoFor('Bars & Brownies').category,'brownies');
+ assert.equal(stockPhotoFor('Pies').category,'pies');
+});
+test('the public shop is not contaminated with private sandbox products',()=>{
+ const app=read('site/app.js');
+ const start=app.indexOf('function shop(mode=null,categoryId=null,subcategoryId=null)');
+ const end=app.indexOf('function sandboxStore(',start);
+ const shop=app.slice(start,end);
+ assert.ok(start>0&&end>start);
+ assert.doesNotMatch(shop,/demoStorePreview/);
+ assert.match(shop,/filter\(productReady\)/);
+ assert.match(shop,/filter\(productPreorder\)/);
+ assert.match(shop,/shop-page--/);
+ assert.match(shop,/Shop All/);
+ assert.match(shop,/Ready to Sell/);
+ assert.match(shop,/Preorder/);
+ assert.match(app,/if\(route==='sandbox-store'\)sandboxStore/);
+ assert.match(app,/aria-current="page"/);
+ const home=app.slice(app.indexOf('function home(){'),app.indexOf('function shop('));
+ assert.match(home,/stockPhotoFor\(c\.name\)/);
+ assert.match(home,/categories\(\)\.map/);
+});
+test('missing stock images are replaced with an accessible fallback instead of broken-image icons',()=>{
+ const app=read('site/app.js'),styles=read('site/styles.css');
+ assert.match(app,/img\.addEventListener\('error'/);
+ assert.match(app,/graceful-image-fallback/);
+ assert.match(styles,/\.shop-hero/);
+ assert.match(styles,/\.sandbox-store-page/);
 });
