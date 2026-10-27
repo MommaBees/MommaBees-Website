@@ -1333,8 +1333,8 @@ test('store routes have department tabs only in split mode, and Admin holds cata
  const sql=read('supabase/migrations/20261027_split_store_taxonomy_v128.sql');
  assert.match(site,/split_store_enabled===true/);
  assert.match(site,/shopVisibleDepartments\(all\.settings,requestedDepartment,category\)/);
- assert.match(site,/#shop\/bakery/);
- assert.match(site,/#shop\/homestand/);
+ assert.match(site,/navigationDepartments\.map\(d=>/);
+ assert.match(site,/departmentLabel\(d\)/);
  assert.match(site,/#ready\$\{departmentSuffix\}/);
  assert.match(site,/categoryChoices=categories\(department\)/);
  assert.doesNotMatch(site,/split\?'':demoStorePreview/);
