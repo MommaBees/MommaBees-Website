@@ -1,6 +1,7 @@
 import {db,response,origin} from '../../_lib/db.js';
 import {requireBakeryManager,asUuid} from '../../_lib/bakery-admin.js';
 import {createStripeSession} from '../../_lib/stripe.js';
+import {TEST_PRICES} from '../../_lib/demo-prices.js';
 const denied=()=>response({error:'Sandbox-only checkout is unavailable until a Stripe TEST secret key is installed. Live payments remain disabled.'},503);
 export async function onRequestGet({request,env}){
  try{
@@ -21,6 +22,9 @@ export async function onRequestPost({request,env}){
   const items=await db(env,'/rest/v1/demo_catalog_items?select=id,name,price_cents,enabled&id=eq.'+id);
   const item=items[0];
   if(!item||item.enabled!==true)return response({error:'Demo item is unavailable'},404);
+  const catalog=TEST_PRICES[item.name];
+  if(!catalog||catalog.amount!==item.price_cents)
+   return response({error:'Demo price differs from the configured Stripe sandbox price. Contact Owner to synchronize the test catalog.'},409);
   const testId=crypto.randomUUID(), amount=item.price_cents;
   await db(env,'/rest/v1/demo_checkout_tests',{method:'POST',
    body:{id:testId,actor_id:auth.user.id,item_id:item.id,item_name:item.name,amount_cents:amount,status:'created'}});
@@ -29,9 +33,7 @@ export async function onRequestPost({request,env}){
    const checkout=await createStripeSession(env,{
     mode:'payment',
     'payment_method_types[0]':'card',
-    'line_items[0][price_data][currency]':'usd',
-    'line_items[0][price_data][unit_amount]':String(amount),
-    'line_items[0][price_data][product_data][name]':'TEST ONLY — '+item.name,
+    'line_items[0][price]':catalog.stripePrice,
     'line_items[0][quantity]':'1',
     'metadata[demo_checkout_test_id]':testId,
     'metadata[environment]':'MommaBeesBakery-sandbox',
