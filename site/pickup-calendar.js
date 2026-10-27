@@ -1,6 +1,6 @@
 import {escapeHtml as e} from './api.js';
 // Uses calendar dates, never local milliseconds as date identifiers.
-const todayISO=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const todayISO=()=>{const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const f=k=>p.find(x=>x.type===k)?.value;return f('year')+'-'+f('month')+'-'+f('day');};
 const monthText=(y,m)=>new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(new Date(Date.UTC(y,m,1)));
 const plusDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
 export function mountPickupCalendar({days,selectId='date',feeEnabled=false,feeCents=0}){
