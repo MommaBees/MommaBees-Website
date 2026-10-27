@@ -123,7 +123,7 @@ function layout(content){
   <div class="footer-inner">
    <div class="footer-col"><div class="footer-brand-name">Mamma Bee's Bakery</div>
     <p class="footer-pledge">Rooted in Faith. Made with Love. Shared with Joy.</p>
-    <p>Small-batch baking and sweet traditions in Nixa, Missouri.</p>
+    <p>Small-batch baking and sweet traditions, made with care.</p>
     <p class="small">Pickup and local delivery are offered on selected bakery dates.</p></div>
    <nav class="footer-col footer-navigation" aria-label="Footer navigation">
     <p class="footer-col-title">Come on in</p><a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a>
@@ -274,8 +274,8 @@ function faq(){const s=all.settings;layout(`<section class="section"><div class=
 <p>Choosing a date outside the published baking schedule, sending a message, or requesting a quote does not reserve that date or create a promise that the bakery will bake or deliver. A special-order request is an inquiry only. The bakery must review its capacity, product eligibility, ingredients, preparation requirements, and pickup arrangements, and explicitly accept the order. Any additional convenience fee is a proposed fee only and will be disclosed before the customer accepts a final quote. We do not charge an off-schedule fee without that acceptance.</p>
 <h2>Product photographs and availability</h2>
 <p>Images identified as representative photographs or pictures of previous bakes show examples only; they may not depict the specific item currently for sale. Only specifically published products with available capacity and approved fulfillment dates can be ordered. Final availability and pricing are determined during checkout and bakery confirmation.</p>
-<h2>Missouri customers and food safety</h2>
-<p>For products sold under Missouri's cottage-food rules, online purchasers and the bakery must both be located in Missouri. Products requiring refrigeration or other special handling may not qualify for sale as cottage foods. All food must satisfy the bakery's applicable operating and labeling requirements before being offered.</p>
+<h2>Cottage-food eligibility and food safety</h2>
+<p>Online cottage-food sales must meet the location, product, and fulfillment restrictions required by applicable law. Products requiring refrigeration or other special handling may not qualify for cottage-food sales. All food must satisfy the bakery's applicable operating and labeling requirements before being offered.</p>
 <h2>Food and allergens</h2><p>${e(s.food_notice||'Contact us about ingredients, allergens, dietary questions and storage before placing an order.')}</p><h2>Cancellation, refunds and other policies</h2><p>${e(s.terms||'The bakery owner has not published the final cancellation, refund, and fulfillment policies yet. Ordering stays disabled until configured.')}</p></div></section>`);}
 function gallery(){
  const photos=all.pastBakes.filter(x=>x.published&&x.image_url);
