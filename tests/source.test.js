@@ -1466,7 +1466,7 @@ test('owner catalog showcases render in split home and department Shop All witho
  assert.match(app,/\.map\(showcaseCard\)/);
  const component=app.slice(app.indexOf('const showcaseCard=item=>'),app.indexOf('const categories='));
  assert.doesNotMatch(component,/price_cents|Add to Cart|not for sale|Not available/i);
- assert.match(admin,/store_showcase_items:\{label:'Store Showcase Items'/);
+ assert.match(admin,/store_showcase_items:\{label:'Product Showcase'/);
  assert.match(css,/\.showcase-illustration--homestand/);
  assert.match(sql,/create table if not exists public\.store_showcase_items/);
  assert.match(sql,/create policy "owner admin manage store showcase items"/);
@@ -1572,8 +1572,8 @@ test('owner photo gallery items have individual navigable pages but never fake c
  assert.match(app,/function showcaseDetail\(item\)/);
  assert.match(app,/all\.showcaseItems\.find\(x=>x\.active!==false&&x\.slug===id\)/);
  assert.match(app,/showcaseDetail\(item\)/);
- assert.match(app,/Homegrown without chemical sprays/);
- assert.match(app,/Homemade at MommaBee Bakery&Farmstand/);
+ assert.match(read('site/product-showcase-details.js'),/Homegrown in Nixa, Missouri without chemical sprays/);
+ assert.match(read('site/product-showcase-details.js'),/Homemade in Nixa, Missouri/);
  const showcase=app.slice(app.indexOf('function showcaseDetail(item)'),app.indexOf('function detail(id)'));
  assert.doesNotMatch(showcase,/Add to Cart|price_cents|\$0\.00|certified organic/i);
  assert.match(css,/\.showcase-detail-grid/);
