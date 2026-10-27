@@ -1143,7 +1143,7 @@ test('carousel interval setting is bounded and passed from persisted site settin
  assert.match(admin,/id="carousel-interval-seconds"/);
  assert.match(admin,/home_carousel_interval_seconds:seconds/);
  assert.match(admin,/previewDetails\.open\)bindHomeCarousel\(interval\)/);
- assert.match(admin,/A timer cannot rotate a single published slide/);
+ assert.match(admin,/Rotation requires two published slides/);
  assert.match(sql,/home_carousel_interval_seconds numeric\(4,1\) not null default 6\.5/);
  assert.match(sql,/between 3 and 60/);
 });
