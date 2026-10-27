@@ -554,3 +554,91 @@ label.checkbox .required-indicator,label.allergen-confirm .required-indicator{wh
 .admin-carousel-interval p{margin:10px 0 0;line-height:1.6}
 #carousel-interval-save-status:not(:empty){color:#51371e;font-weight:700;margin-top:12px}
 @media(max-width:450px){.admin-carousel-interval-controls>*{flex:1 1 100%}.admin-carousel-interval input[type="number"]{width:100%}}
+
+
+/* MBB-UI-034 v1.24 — uniform carousel dimensions across every slide.
+   Only the carousel is affected; all other bakery heroes retain their sizing. */
+.home-carousel .home-carousel-slides{
+ height:clamp(440px,34vw,570px);
+}
+.home-carousel .home-carousel-slide.hero{
+ display:grid;
+ width:100%;
+ height:100%;
+ min-height:0;
+ max-height:100%;
+ margin:0;
+ grid-template-columns:minmax(0,1fr) minmax(0,.92fr);
+ grid-template-rows:minmax(0,1fr);
+ align-items:stretch;
+}
+.home-carousel .home-carousel-slide .hero-copy{
+ min-width:0;
+ min-height:0;
+ max-height:100%;
+ overflow-x:hidden;
+ overflow-y:auto;
+ overscroll-behavior:contain;
+}
+.home-carousel .home-carousel-slide .hero-art{
+ width:100%;
+ height:100%;
+ min-width:0;
+ min-height:0;
+ max-height:none;
+ align-self:stretch;
+}
+.home-carousel .home-carousel-slide .hero-art img{
+ display:block;
+ width:100%;
+ height:100%;
+ object-fit:cover;
+ object-position:center;
+}
+/* A smaller but still uniform preview inside the Admin Center. */
+.admin-slide-preview .home-carousel .home-carousel-slides{
+ height:clamp(360px,31vw,440px);
+}
+.admin-slide-preview .home-carousel .home-carousel-slide.hero{
+ min-height:0;
+ height:100%;
+}
+@media(max-width:850px){
+ .home-carousel .home-carousel-slides{
+  height:clamp(600px,110vw,730px);
+ }
+ .home-carousel .home-carousel-slide.hero{
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:clamp(210px,34vw,280px) minmax(0,1fr);
+ }
+ .home-carousel .home-carousel-slide .hero-art{
+  grid-column:1;
+  grid-row:1;
+  order:0;
+  width:100%;
+  height:100%;
+  min-height:0;
+  max-height:none;
+ }
+ .home-carousel .home-carousel-slide .hero-copy{
+  grid-column:1;
+  grid-row:2;
+  min-height:0;
+  max-height:none;
+ }
+ .admin-slide-preview .home-carousel .home-carousel-slides{
+  height:clamp(560px,102vw,660px);
+ }
+ .admin-slide-preview .home-carousel .home-carousel-slide .hero-art{
+  height:100%;
+  min-height:0;
+ }
+}
+@media(max-width:530px){
+ .home-carousel .home-carousel-slide .hero-copy{
+  padding:22px 20px;
+ }
+ .home-carousel .home-carousel-slide .hero-art{
+  min-height:0;
+ }
+}

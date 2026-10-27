@@ -1157,3 +1157,24 @@ test('returning to home from Admin fetches current carousel and timing instead o
  assert.match(app,/all\.settings=rows\[0\]\|\|\{\}/);
  assert.match(app,/bindHomeCarousel\(settings\.home_carousel_interval_seconds\)/);
 });
+
+
+test('homepage carousel keeps an equal slide size while changing slides on desktop and mobile',()=>{
+ const css=read('site/country-home-v2.css');
+ const markup=read('site/home-carousel.js');
+ const section=css.slice(css.indexOf('/* MBB-UI-034 v1.24'));
+ assert.ok(section.length>900,'Carousel sizing styles are present');
+ assert.match(section,/\.home-carousel \.home-carousel-slides\s*\{\s*height:clamp\(440px,34vw,570px\)/);
+ assert.match(section,/\.home-carousel \.home-carousel-slide\.hero\s*\{/);
+ assert.match(section,/height:100%;\s*min-height:0;\s*max-height:100%;/);
+ assert.match(section,/grid-template-rows:minmax\(0,1fr\)/);
+ assert.match(section,/overflow-y:auto/);
+ assert.match(section,/\.home-carousel \.home-carousel-slide \.hero-art img\s*\{/);
+ assert.match(section,/object-fit:cover/);
+ assert.match(section,/@media\(max-width:850px\)/);
+ assert.match(section,/height:clamp\(600px,110vw,730px\)/);
+ assert.match(section,/grid-template-rows:clamp\(210px,34vw,280px\) minmax\(0,1fr\)/);
+ assert.match(section,/\.admin-slide-preview \.home-carousel \.home-carousel-slides/);
+ assert.match(markup,/home-carousel-slide/);
+ assert.match(markup,/slide\.hidden=i!==index/);
+});
