@@ -1269,3 +1269,8 @@ a.store-showcase-card .card-content{flex:1}
 .showcase-card-price{margin:10px 0 0;font-weight:750}
 .showcase-detail-actions{display:flex;flex-wrap:wrap;gap:10px}
 @media(max-width:520px){.showcase-detail-info{grid-template-columns:1fr;gap:4px}}
+
+/* MBB-CATALOG-050: concise Product Showcase cards and calendar fields. */
+.shop-empty{grid-column:1/-1;margin:0;padding:12px 0;color:inherit;font-size:1rem}
+.showcase-detail-info>span{line-height:1.5}
+#field_availability_date{min-height:44px}

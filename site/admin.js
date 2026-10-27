@@ -4,6 +4,7 @@ import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from './product
 import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
 import {adminGroupsForRole,ADMIN_DESCRIPTIONS} from './admin-navigation.js';
 import {adminFieldIsRequired} from './admin-required.js';
+import {formatShowcaseDate} from './showcase-date.js';
 import {STORE_DEPARTMENTS,departmentForCategory,departmentLabel,taxonomyPaths,searchTaxonomyPaths} from './store-departments.js';
 import {WEBSITE_SIZE_OPTIONS,normalizeWebsiteSize,applyWebsiteSize} from './website-size.js';
 import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from './home-carousel.js';
@@ -61,9 +62,10 @@ const configs={
   field('name','Display name'),
   field('slug','Identifier'),
   field('description','Item description','textarea'),
-  field('price_cents','Showcase price in dollars (optional)','money'),
-  field('price_unit','Price per (optional)','select',{options:['','each','dozen','box','tray','bag','bunch','basket','pint','quart','pound','loaf','slice']}),
-  field('availability_note','Current or seasonal availability','textarea'),
+  field('price_cents','Price in dollars','money'),
+  field('price_unit','Price per','select',{options:['','each','dozen','box','tray','bag','bunch','basket','pint','quart','pound','loaf','slice']}),
+  field('price_kind','Price type','select',{options:['market_average','owner']}),
+  field('availability_date','Availability date','date'),
   field('ingredients','Confirmed ingredients (Bakery)','textarea'),
   field('allergens','Confirmed allergens (Bakery)','textarea'),
   field('storage_notes','Storage and handling instructions','textarea'),
@@ -98,7 +100,7 @@ const configs={
 // Administrative groups are centralized in admin-navigation.js.
 const titleFor=(table,row)=>row?.name||row?.title||row?.email||row?.description||row?.date||row?.product_name||row?.full_name||row?.subject||String(row?.id||row?.product_id||'').slice(0,8);
 const short=(value)=>{if(value===null||value===undefined)return '—';if(typeof value==='boolean')return value?'Yes':'No';if(typeof value==='object')return JSON.stringify(value).slice(0,90);return String(value).slice(0,105);};
-const formatCell=(key,val)=>key.endsWith('_cents')?money(val):key==='created_at'?fmt(val):short(val);
+const formatCell=(key,val)=>key==='availability_date'?formatShowcaseDate(val)||'—':key.endsWith('_cents')?money(val):key==='created_at'?fmt(val):short(val);
 function authShell(){
  const visibleGroups=adminGroupsForRole(ctx.role);
  const labelFor=id=>id==='website_size'?'Website Size':id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id);
@@ -158,7 +160,7 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  authShell();await renderPanel();}
 async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_size')return websiteSizePanel();if(selected==='store_display')return storeDisplayPanel();if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);if(selected==='store_showcase_items')await loadTable('site_settings');listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
-function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='store_showcase_items'?['department','name','price_cents','price_unit','active']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='store_showcase_items'?`<form id="showcase-master-form" class="showcase-master-switch" aria-label="Product Showcase visibility">
+function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='store_showcase_items'?['department','name','price_cents','price_unit','availability_date','active']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='store_showcase_items'?`<form id="showcase-master-form" class="showcase-master-switch" aria-label="Product Showcase visibility">
  <label class="admin-store-switch" for="showcase-master-enabled">
   <input type="checkbox" id="showcase-master-enabled" ${data.site_settings?.[0]?.product_showcase_enabled!==false?'checked':''}>
   <span><strong>Enable Product Showcase</strong><small>Show or hide all showcases on the homepage, store pages, details, and carousel. Individual products have their own Show on Website control.</small></span>
@@ -697,6 +699,15 @@ async function openEditor(record){const c=configs[selected];
  const tables=[...new Set(c.fields.filter(f=>f.type==='ref').map(f=>f.table))];await Promise.all(tables.map(async t=>{refs[t]=await list(t,{limit:500}).catch(()=>[]);}));
  $('#editor-title').textContent=record&&!record._unsaved?'Edit '+c.label:'Add '+c.label;
  $('#editor-fields').innerHTML=c.fields.map(f=>fieldInput(f,record)).join('');
+ if(selected==='store_showcase_items'){
+  const date=$('#field_availability_date'),price=$('#field_price_cents'),kind=$('#field_price_kind');
+  if(date&&(!record||record._unsaved)){
+   date.required=true;
+   const dateLabel=$('label[for="field_availability_date"]');
+   if(dateLabel)dateLabel.textContent='Availability date * Required';
+  }
+  if(price&&kind)price.addEventListener('input',()=>{if(price.value!=='')kind.value='owner';});
+ }
  const missingRequired=c.fields.filter(f=>f.type==='ref'&&!['subcategory_id','variety_id'].includes(f.key)&&!(refs[f.table]||[]).length);
  if(missingRequired.length){
   const warning=document.createElement('p');
@@ -948,10 +959,13 @@ async function openEditor(record){const c=configs[selected];
  }
  if(f.key==='code'&&!v)v=null;
  if(selected==='store_showcase_items'&&f.key==='price_unit'&&!v)v=null;
+ if(f.type==='date'&&v==='')v=null;
  if(f.key==='published'&&selected==='products'&&v===true&&$('#field_product_type')?.value==='food'&&!$('#field_ingredients')?.value?.trim())throw Error('Add the actual ingredient list before publishing this product.');
  body[f.key]=v;
 
  }
+ if(selected==='store_showcase_items'&&(!record||record._unsaved)&&!body.availability_date)
+  throw Error('Select an availability date for this item.');
  if(selected==='home_carousel_slides'){
   if(!body.title?.trim())throw Error('Enter a headline for this slide.');
   if(!body.image_alt?.trim())throw Error('Describe the slide photograph for screen-reader users.');

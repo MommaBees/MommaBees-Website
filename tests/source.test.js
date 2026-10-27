@@ -300,12 +300,12 @@ test('demo catalog and placeholders are isolated from real sales',()=>{
  assert.match(migration,/create table if not exists public.demo_checkout_tests/);
  assert.match(migration,/revoke all on public.demo_catalog_items from anon,authenticated/);
  assert.match(migration,/role in \('owner','admin'\)/);
- assert.match(site,/demoStorePreview\(mode\|\|'all'/);
+ assert.match(site,/const showPublicSamples=false/);
  assert.doesNotMatch(site,/function sandboxStore\(/);
  assert.match(site,/(TEST MODE|SANDBOX|TEST ONLY)/);
- assert.match(site,/placeholder_empty_shop===false/);
- assert.match(site,/placeholder_empty_gallery===false/);
- assert.match(site,/placeholder_featured===false/);
+ assert.doesNotMatch(site,/photo-disclosure">Illustrative photograph · Actual baked goods may differ/);
+ assert.doesNotMatch(site,/Gallery photographs will appear here when available/);
+ assert.doesNotMatch(site,/Our baking list changes with the week/);
  assert.match(site,/placeholder_missing_image===false/);
  assert.match(admin,/demo_catalog_items:\{label:'Sandbox Test Products'/);
  assert.match(admin,/past_bakes:\{label:'Past Bakes Gallery'/);
@@ -613,7 +613,7 @@ test('sample descriptions cannot claim product availability or take payments fro
  assert.match(preview,/TEST MODE · NOT REAL INVENTORY/);
  assert.match(preview,/hasRealProducts/);
  assert.match(preview,/samplesFor\(mode,categoryName\)/);
- assert.match(app,/demoStorePreview\(mode\|\|'all'/);
+ assert.match(app,/const showPublicSamples=false/);
  assert.doesNotMatch(read('site/stock-photography.js'),/images\.unsplash\.com/);
 });
 
@@ -1241,7 +1241,7 @@ test('redundant text removed without losing customer-facing commerce and safety 
   assert.ok(!app.includes(phrase),'redundant copy should not remain: '+phrase);
  }
  assert.doesNotMatch(app,/class="bakery-home-note"/);
- for(const phrase of ['Past creations — not currently for sale','Product availability is verified before payment','Cottage-food eligibility and food safety','food_notice','Final availability and pricing','Questions & Bakery Policies']){
+ for(const phrase of ['h1>Past Bakes Gallery','Product availability is verified before payment','Cottage-food eligibility and food safety','food_notice','Final availability and pricing','Questions & Bakery Policies']){
   assert.ok(app.includes(phrase),'critical storefront information missing: '+phrase);
  }
  assert.match(account,/Guest checkout is available/);
@@ -1634,4 +1634,37 @@ test('Product Showcase visibility is enforced across Admin, site, detail and car
  assert.match(sql,/c\.department=store_showcase_items\.department/);
  assert.doesNotMatch(sql,/insert into public\.products/);
  assert.doesNotMatch(sql,/USDA Certified Organic/i);
+});
+
+
+import {formatShowcaseDate} from '../site/showcase-date.js';
+test('Product Showcase uses selected calendar dates with Aug. 23, 2026 format',()=>{
+ assert.equal(formatShowcaseDate('2026-08-23'),'Aug. 23, 2026');
+ assert.equal(formatShowcaseDate('2027-01-05'),'Jan. 5, 2027');
+ assert.equal(formatShowcaseDate('2027-05-10'),'May 10, 2027');
+ assert.equal(formatShowcaseDate('2028-02-29'),'Feb. 29, 2028');
+ for(const invalid of ['','2026-02-29','2026-00-01','2026-13-01','2026-04-31','August 23, 2026',null])
+  assert.equal(formatShowcaseDate(invalid),null);
+ const helper=read('site/product-showcase-details.js');
+ const app=read('site/app.js'),admin=read('site/admin.js');
+ assert.match(helper,/formatShowcaseDate\(item\?\.availability_date\)/);
+ assert.match(app,/showcaseFields\(item\)/);
+ assert.match(admin,/field\('availability_date','Availability date','date'\)/);
+ assert.match(admin,/date\.required=true/);
+ assert.match(admin,/formatShowcaseDate\(val\)/);
+ assert.match(admin,/v==='\'\)v=null/);
+ assert.doesNotMatch(helper,/Seasonal harvest\. Please confirm current availability/);
+});
+test('Average showcase price is explicit and stays separate from owner price',()=>{
+ const helper=read('site/product-showcase-details.js');
+ const admin=read('site/admin.js');
+ const migration=read('supabase/migrations/20261027_showcase_average_prices_date_v138.sql');
+ assert.match(helper,/market_average'\?'Avg\. '/);
+ assert.match(admin,/field\('price_kind','Price type','select'/);
+ assert.match(admin,/price\.addEventListener\('input'/);
+ assert.match(migration,/price_kind text not null default 'owner'/);
+ assert.match(migration,/price_cents is null/);
+ assert.match(migration,/add column if not exists availability_date date/);
+ assert.match(migration,/update public\.store_showcase_items set availability_note=null/);
+ assert.doesNotMatch(migration,/update public\.products/);
 });

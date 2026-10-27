@@ -51,7 +51,7 @@ async function startSandboxCheckout(id){
 }
 function demoStorePreview(mode='all',categoryName=null,hasRealProducts=false){
  const staff=['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true;
- const showPublicSamples=all.settings.placeholder_empty_shop!==false&&!hasRealProducts;
+ const showPublicSamples=false; // Public storefront uses only actual catalog photographs and listings.
  if(!staff&&!showPublicSamples)return '';
  const selected=samplesFor(mode,categoryName);
  const products=staff?selected.filter(x=>all.demoItems.some(y=>y.enabled&&y.name===x.name)):showPublicSamples?selected:[];
@@ -142,7 +142,7 @@ function layout(content){
   <div class="footer-inner">
    <div class="footer-col"><div class="footer-brand-name">MommaBee Bakery&Farmstand</div>
     <p class="footer-location">Located in Nixa, Missouri — Farmstand &amp; Made to Order</p>
-    <p class="footer-availability">Offerings vary by baking date and availability. Please contact us for current selections and custom orders.</p></div>
+    </div>
    <nav class="footer-col footer-navigation" aria-label="Footer navigation">
     <div class="footer-nav-row"><a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a><a href="#preorder">Preorder</a></div>
     <div class="footer-nav-row"><a href="#gallery">Past Bakes</a><a href="#contact">Ask Momma Bee</a><a href="#faq">Questions & Policies</a></div>
@@ -233,14 +233,13 @@ function home(){
   '</div></section>':'';
  const combinedCategories=`<section class="section ${categories().length?'':'empty-category-section'}">
   <div class="section-head"><div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div>
-  <div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${image(c.photo_url||stockPhotoFor(c.name).thumb)}<div class="card-content"><h3>${e(c.name)}</h3>${!c.photo_url?'<p class="stock-label">Illustrative category photograph</p>':''}<p class="muted">Browse our ${e(c.name.toLowerCase())}</p></div></a>`).join('')||(s.placeholder_empty_shop===false?'':'<div class="empty">No products are currently available. Please check back for the next baking day.</div>')}</div>
+  <div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${c.photo_url?image(c.photo_url):''}<div class="card-content"><h3>${e(c.name)}</h3></div></a>`).join('')}</div>
  </section>`;
  const gallery=`<section class="section"><div class="section-head"><div><h2>Past Bakes</h2></div><a href="#gallery">Browse Past Bakes</a></div>
-  <p class="muted">Past creations — not currently for sale.</p>
-  <div class="grid home-gallery-preview">${all.pastBakes.filter(p=>p.published&&p.image_url).slice(0,3).map(p=>`<a class="card" href="#gallery">${image(p.image_url,'product-photo',p.title)}<div class="card-content"><strong>${e(p.title)}</strong><p class="small muted">Past creation</p></div></a>`).join('')}</div></section>`;
- const combinedFeatured=`<section class="section ${currentProducts.some(p=>p.featured)?'':'no-featured-products'}">
-  <h2>Featured treats</h2><div class="grid">${currentProducts.filter(p=>p.featured).slice(0,6).map(card).join('')||(s.placeholder_featured===false?'':'<div class="empty">Our baking list changes with the week. The treats below are examples while we prepare the next menu.</div>')}</div>
- </section>${currentProducts.length===0?demoStorePreview('ready',null,false):''}`;
+  
+  <div class="grid home-gallery-preview">${all.pastBakes.filter(p=>p.published&&p.image_url).slice(0,3).map(p=>`<a class="card" href="#gallery">${image(p.image_url,'product-photo',p.title)}<div class="card-content"><strong>${e(p.title)}</strong></div></a>`).join('')}</div></section>`;
+ const featured=currentProducts.filter(p=>p.featured).slice(0,6);
+ const combinedFeatured=featured.length?'<section class="section"><h2>Featured treats</h2><div class="grid">'+featured.map(card).join('')+'</div></section>':'';
  layout(announcements()+homeCarouselMarkup(slides,e,photo,s.home_carousel_size)+
    (split?departmentPanels:combinedCategories)+gallery+(split?'':combinedFeatured));
  if(!split)bindDemoStore();
@@ -259,17 +258,9 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
   mode==='ready'?'Ready to Sell':mode==='preorder'?'Preorder':'Shop All';
  const heading=mode==='ready'?'Ready for scheduled pickup':
   mode==='preorder'?'Made for an upcoming baking day':'Explore all currently available treats';
- const description=department==='homestand'
-  ?mode==='ready'?'In stock for scheduled pickup while supplies last.':mode==='preorder'?'Order ahead for an available fulfillment date.':'Homestand goods available to order.'
-  :mode==='ready'?'Baked and available for scheduled pickup while supplies last.'
-   :mode==='preorder'?'Made for scheduled baking dates. Select an available date at checkout.'
-   :'Ready-to-sell items and preorders for scheduled baking days.';
- const empty=department==='homestand'?'No Homestand items are available for this selection.':mode==='ready'
-  ?'No ready-to-sell items are currently stocked. Check Preorder or return after the next bake.'
-  :mode==='preorder'
-  ?'No preorders are available for a scheduled baking date right now. Check Ready to Sell or ask about a special order.'
-  :'No items are currently available for ordering. Check back for the next baking day.';
- const visual=stockPhotoFor(mode==='ready'?'Cookies':mode==='preorder'?'Cakes':'Pies');
+ const description=mode==='ready'?'Ready for pickup.':mode==='preorder'?'Order for an available date.':'';
+ const empty='No items listed.';
+
  const isShopAll=(!mode&&!categoryId&&!subcategoryId)||department==='homestand';
  const pageTitle=department?departmentLabel(department)+(categoryId?'':mode==='ready'?' · Ready to Sell':mode==='preorder'?' · Preorder':' · Shop All'):title;
  const departmentSuffix=department?'/'+department:'';
@@ -278,12 +269,10 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
  layout(`<section class="section shop-page shop-page--${mode||'all'}" data-shop-view="${mode||'all'}">
  ${announcements('shop')}
  <div class="shop-hero">
-  <div class="shop-hero-copy"><h1>${e(categoryId?title:pageTitle)}</h1><p>${e(description)}</p>
-   <p class="shop-result-count">${items.length?'<strong>'+items.length+'</strong> currently available to order': 'No items currently available'}</p>
+  <div class="shop-hero-copy"><h1>${e(categoryId?title:pageTitle)}</h1>${description?'<p>'+e(description)+'</p>':''}
+   ${items.length?'<p class="shop-result-count"><strong>'+items.length+'</strong> items available</p>':''}
   </div>
-  <div class="shop-hero-picture ${isShopAll?'shop-hero-picture--brand':''}">${isShopAll?
-   '<img class="shop-hero-image shop-hero-brand-image" src="/assets/branding/mommabee-shop-logo.webp" alt="MommaBee Bakery&Farmstand — Bread, Cookies, Candy & More" decoding="async" fetchpriority="high">':
-   image(visual.url,'shop-hero-image',title+' illustrative stock photo')}${isShopAll?'':'<div class="photo-disclosure">Illustrative photograph · Actual baked goods may differ</div>'}</div>
+  <div class="shop-hero-picture shop-hero-picture--brand"><img class="shop-hero-image shop-hero-brand-image" src="/assets/branding/mommabee-shop-logo.webp" alt="MommaBee Bakery&Farmstand" decoding="async" fetchpriority="high"></div>
  </div>
  ${split?'<nav class="tabs shop-department-tabs" aria-label="Store departments">'+
   '<a class="tab '+(department==='bakery'?'active':'')+'" href="#shop/bakery" '+(department==='bakery'?'aria-current="page"':'')+'>Bakery</a>'+
@@ -303,11 +292,8 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
  .map(x=>'<a class="tab '+(subcategoryId===x.id?'active':'')+'" href="#subcategory/'+e(categoryId)+'/'+e(x.id)+'">'+e(x.name)+'</a>').join('')+'</nav>':''}
  <div class="grid product-results">${items.map(card).join('')+
  showcase.filter(item=>!items.some(p=>p.variety_id&&p.variety_id===item.variety_id)).map(showcaseCard).join('')||
- ((!split&&samplesFor(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null).length>0&&all.settings.placeholder_empty_shop!==false)?'':all.settings.placeholder_empty_shop===false?'':'<div class="empty shop-empty">'+e(empty)+
- '<div class="actions" style="justify-content:center;margin-top:18px">'+(mode==='ready'?'<a class="button secondary" href="#preorder'+departmentSuffix+'">Explore Preorders</a>':
- mode==='preorder'?'<a class="button secondary" href="#ready'+departmentSuffix+'">Browse Ready to Sell</a>':
- '<a class="button secondary" href="#contact">Ask About a Special Order</a>')+'</div></div>')}</div>
- ${split?'':demoStorePreview(mode||'all',categoryId?all.categories.find(c=>c.id===categoryId)?.name:null,items.length>0)}
+ '<p class="shop-empty">'+e(empty)+'</p>')}</div>
+ 
  </section>`);bindDemoStore();
 }
 /** An Owner-supplied catalog item's own page; the existing purchasable product route remains separate. */
@@ -333,7 +319,6 @@ function showcaseDetail(item){
    '<p class="showcase-detail-provenance">'+e(provenance)+'</p>'+
    (description?'<p class="showcase-detail-description">'+e(description)+'</p>':'')+
    '<div class="showcase-details-table">'+
-      (showcasePrice(item)?'':'<div class="showcase-detail-info"><strong>Price</strong><span>Ask for current pricing</span></div>')+
       info.map(([label,value])=>'<div class="showcase-detail-info"><strong>'+e(label)+'</strong><span>'+e(value)+'</span></div>').join('')+
    '</div>'+
    '<div class="actions showcase-detail-actions"><a class="button" href="#contact">Ask about this item</a>'+
@@ -384,13 +369,13 @@ function gallery(){
  const photos=all.pastBakes.filter(x=>x.published&&x.image_url);
  layout('<section class="section"><div class="eyebrow"></div>'+
   '<h1>Past Bakes Gallery</h1>'+
-  '<p class="muted">A collection of desserts previously made by the bakery. These photographs showcase earlier creations and are <strong>not currently offered for sale</strong>. For current ordering options, visit the <a href="#shop">Shop</a>.</p>'+
+
   '<div class="grid past-bakes-gallery">'+
   (photos.map(p=>'<article class="card">'+image(p.image_url,'product-photo',p.title)+
     '<div class="card-content"><h3>'+e(p.title)+'</h3>'+
     (p.description?'<p class="small">'+e(p.description)+'</p>':'')+
-    '<p class="small muted">Past creation · Not for sale</p></div></article>').join('')||
-    (all.settings.placeholder_empty_gallery===false?'':'<div class="empty">Gallery photographs will appear here when available.</div>'))+
+    '</div></article>').join('')||
+    '')+
   '</div></section>');
 }
 function qrPage(){
