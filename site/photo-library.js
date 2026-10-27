@@ -51,6 +51,16 @@ export const BUILTIN_PHOTO_PRESETS=Object.freeze([
     "type": "licensed_reference"
   },
   {
+    "name": "Brownie squares — real photograph",
+    "cat": "Bars & Brownies",
+    "sub": "Brownies",
+    "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Brownie_Dessert.jpg?width=1000",
+    "source": "https://commons.wikimedia.org/wiki/File:Brownie_Dessert.jpg",
+    "credit": "Miansari66",
+    "license": "CC0 1.0",
+    "type": "licensed_reference"
+  },
+  {
     "name": "Carrot cake — Mamma Bee's past baking",
     "cat": "Cakes",
     "sub": "Carrot Cakes",
@@ -131,6 +141,7 @@ export const photoFor = (category,subcategory,itemName='') => {
  if(category==='Pies')return BUILTIN_PHOTO_PRESETS.find(x=>x.cat==='Pies');
  if(category==='Cheesecakes')return BUILTIN_PHOTO_PRESETS.find(x=>x.cat==='Cheesecakes');
  if(category==='Pastries')return BUILTIN_PHOTO_PRESETS.find(x=>x.cat==='Pastries');
+ if(category==='Bars & Brownies')return BUILTIN_PHOTO_PRESETS.find(x=>x.cat==='Bars & Brownies');
  return null;
 };
 export const photoStatusLabel=source=>{
