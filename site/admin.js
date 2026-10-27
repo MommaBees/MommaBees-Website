@@ -48,8 +48,42 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  authShell();await renderPanel();}
 async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
-function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p></div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
+function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
 
+
+ if(selected==='baking_days'){
+  const button=$('#create-fair');
+  if(button)button.onclick=async()=>{
+   const start=prompt('First fair date (YYYY-MM-DD):');
+   if(start===null)return;
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(start)){ctx.showError('Enter the first date as YYYY-MM-DD');return;}
+   const label=prompt('Fair or event name:','Mamma Bee’s Bake Fair');
+   if(label===null||!label.trim())return;
+   const cap=Number(prompt('Maximum preorder items per day:','30'));
+   if(!Number.isInteger(cap)||cap<1||cap>1000){ctx.showError('Choose a capacity between 1 and 1000');return;}
+   const pickupWindow=prompt('Pickup/fair hours (example 10:00–18:00):','10:00–18:00');
+   if(pickupWindow===null||!pickupWindow.trim())return;
+   const dates=Array.from({length:4},(_,i)=>{
+     const d=new Date(start+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+i);
+     return d.toISOString().slice(0,10);
+   });
+   if(!confirm('Create four consecutive fair dates '+dates[0]+' to '+dates[3]+
+      ', each with Pay at Pickup allowed? The global option still controls whether customers can use it.'))return;
+   let completed=0;
+   try{
+    for(const day of dates){
+     const cutoff=new Date(day+'T23:59:00-05:00').toISOString();
+     await add('baking_days',{date:day,cutoff_at:cutoff,capacity_total:cap,pickup_enabled:true,
+      delivery_enabled:false,pickup_windows:[pickupWindow.trim()],delivery_windows:[],
+      day_type:'fair',event_label:label.trim(),pay_at_pickup_available:true,
+      enabled:true,notes:'Four-day bake fair — verify cutoff, time zone and staff schedule'});
+     completed++;
+    }
+    alert('Four fair dates created. Review each calendar record and adjust cutoff before inviting customers.');
+    await renderPanel();
+   }catch(ex){ctx.showError('Created '+completed+' fair dates. Review existing dates before retrying. '+ex.message);}
+  };
+ }
  if(selected==='past_bakes'){
   const uploadButton=$('#past-bakes-bulk');
   uploadButton.onclick=async()=>{
@@ -80,6 +114,24 @@ function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key
  document.querySelectorAll('[data-deliver]').forEach(b=>b.onclick=async()=>{const p=rows[Number(b.dataset.deliver)];if(!confirm('Send this ACTIVE promotion as an in-app notification to eligible, opted-in customer accounts?'))return;try{const count=await rpc('deliver_promotion',{p_promo_id:p.id});alert('Delivered to '+count+' eligible account(s). No marketing emails or text messages were sent.');}catch(x){ctx.showError(x);}});
  document.querySelectorAll('[data-reply]').forEach(b=>b.onclick=()=>reply(rows[Number(b.dataset.reply)]));
  document.querySelectorAll('[data-reviewpics]').forEach(b=>b.onclick=()=>reviewPhotos(rows[Number(b.dataset.reviewpics)]));
+
+ document.querySelectorAll('[data-cancel-pickup]').forEach(b=>b.onclick=async()=>{
+  const order=rows[Number(b.dataset.cancelPickup)];
+  const reason=prompt('Reason for cancelling this UNPAID pickup order (stock will be restored):');
+  if(reason===null)return;
+  if(reason.trim().length<6){ctx.showError('Provide a cancellation reason of at least six characters');return;}
+  if(!confirm('Cancel order '+order.id+'? This returns reserved stock and cannot be undone.'))return;
+  try{
+   const token=JSON.parse(sessionStorage.getItem('mb_session')||'{}').access_token;
+   const r=await fetch('/api/admin/cancel-pickup',{method:'POST',
+    headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+    body:JSON.stringify({order_id:order.id,reason:reason.trim(),confirm_cancel:true})});
+   const data=await r.json();
+   if(!r.ok)throw Error(data.error||'Cancellation failed');
+   await renderPanel();
+  }catch(ex){ctx.showError(ex);}
+ });
+
  document.querySelectorAll('[data-collect-pickup]').forEach(b=>b.onclick=async()=>{
   const order=rows[Number(b.dataset.collectPickup)];
   const collectedVia=prompt('Payment received at pickup? Enter cash or external_card (only after money was collected):','cash');
@@ -163,6 +215,9 @@ async function openEditor(record){const c=configs[selected];editing=record;
  body[f.key]=v;
 
  }
+ if(selected==='site_settings'&&body.pay_at_pickup_enabled&&
+ (!body.pay_at_pickup_tax_reviewed||body.pay_at_pickup_tax_rate_bps===null))
+ throw Error('Before enabling Pay at Pickup, confirm the applicable tax treatment and enter the reviewed rate. Do not guess the rate.');
  if(selected==='products'){
   const groups=MAJOR_ALLERGENS.filter(name=>[...document.querySelectorAll('.major-allergen')].some(input=>input.value===name&&input.checked));
   const reviewed=$('#allergen-reviewed')?.checked===true;
