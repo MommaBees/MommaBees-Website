@@ -8,6 +8,8 @@ import {createHmac} from 'node:crypto';
 import {verifyStripeSignature} from '../functions/_lib/stripe.js';
 import {onRequestPost as checkout} from '../functions/api/checkout.js';
 import {onRequestPost as demoCheckout,onRequestGet as demoHistory} from '../functions/api/admin/demo-checkout.js';
+import {onRequestPost as payAtPickup} from '../functions/api/pay-at-pickup.js';
+import {onRequestPost as collectPickup} from '../functions/api/admin/collect-pickup.js';
 import {onRequestPost as contact} from '../functions/api/contact.js';
 import {onRequestPost as orderStatus} from '../functions/api/order-status.js';
 import {onRequestPost as protectedLogin} from '../functions/api/auth/login.js';
@@ -306,4 +308,60 @@ test('sandbox checkout denies anonymous access and never uses live Stripe creden
  const webhook=read('functions/api/stripe-webhook.js');
  assert.match(webhook,/event\.livemode!==false\|\|session\.livemode!==false/);
  assert.match(webhook,/metadata\?\.demo_checkout_test_id/);
+});
+
+
+test('pickup reservations are protected by CAPTCHA and admin collection requires authorization',async()=>{
+ const req=new Request('https://mommabees-website.pages.dev/api/pay-at-pickup',{
+  method:'POST',headers:{'content-type':'application/json'},
+  body:JSON.stringify({items:[],first_name:'Test',last_name:'Guest'})
+ });
+ const anonymous=await payAtPickup({request:req,env:{SITE_URL:'https://mommabees-website.pages.dev',TURNSTILE_SECRET_KEY:'test_dummy_only'}});
+ assert.equal(anonymous.status,400);
+ const collect=new Request('https://mommabees-website.pages.dev/api/admin/collect-pickup',{
+  method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})});
+ assert.equal((await collectPickup({request:collect,env:{}})).status,401);
+});
+
+test('pay-at-pickup is isolated from Stripe and disallows unapproved dates',()=>{
+ const migration=read('supabase/migrations/20261026_pickup_fair_pay_at_pickup.sql');
+ const api=read('functions/api/pay-at-pickup.js');
+ const collect=read('functions/api/admin/collect-pickup.js');
+ assert.match(migration,/pay_at_pickup_enabled boolean not null default false/);
+ assert.match(migration,/pay_at_pickup_available boolean not null default false/);
+ assert.match(migration,/special_date_convenience_fee_cents integer not null default 0/);
+ assert.match(migration,/p_date<v_today/);
+ assert.match(migration,/d.cutoff_at<=now/);
+ assert.match(migration,/not d.pay_at_pickup_available/);
+ assert.match(migration,/p_contact_channel='text'/);
+ assert.match(migration,/reservation_expires_at/);
+ assert.match(migration,/payment_status','awaiting_pickup'/);
+ assert.match(migration,/confirm_pickup_payment/);
+ assert.match(api,/verifyTurnstile/);
+ assert.doesNotMatch(api,/createStripeSession|checkout\.session/);
+ assert.match(collect,/requireBakeryManager/);
+});
+
+test('checkout supports accessible highlighted calendar, unavailable-day inquiry and text-only guest contact',()=>{
+ const calendar=read('site/pickup-calendar.js');
+ const form=read('site/checkout-form.js');
+ const app=read('site/app.js');
+ const admin=read('site/admin.js');
+ assert.match(calendar,/data-pickup-day/);
+ assert.match(calendar,/dialog\.showModal/);
+ assert.match(calendar,/calendar-available/);
+ assert.match(calendar,/mb_requested_special_date/);
+ assert.match(form,/select name="date" id="date"/);
+ assert.match(form,/First name<input/);
+ assert.match(form,/Last name<input/);
+ assert.match(form,/Street address<input/);
+ assert.match(form,/ZIP code<input/);
+ assert.match(form,/Phone \(text messages only\)/);
+ assert.match(form,/contact-channel/);
+ assert.match(form,/pay-at-pickup/);
+ assert.match(form,/\/api\/pay-at-pickup/);
+ assert.match(app,/mb_requested_special_date/);
+ assert.match(admin,/pay_at_pickup_enabled/);
+ assert.match(admin,/pay_at_pickup_available/);
+ assert.match(admin,/Record Pickup Payment/);
 });
