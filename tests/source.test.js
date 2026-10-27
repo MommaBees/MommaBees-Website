@@ -271,7 +271,7 @@ test('Past Bakes Gallery cannot create a sale product by importing an image',()=
  const app=read('site/app.js'),admin=read('site/admin.js'),migration=read('supabase/migrations/20261026_past_bakes_and_allergens.sql');
  assert.match(app,/all\.pastBakes\.filter\(x=>x\.published&&x\.image_url\)/);
  assert.match(app,/Past Bakes Gallery/);
- assert.match(app,/Past creation · Not for sale/);
+ assert.doesNotMatch(app,/Past creation · Not for sale/);
  assert.match(admin,/upload\('past-bakes',file\)/);
  assert.match(admin,/add\('past_bakes'/);
  assert.match(admin,/selected==='products'/);
@@ -437,7 +437,7 @@ test('verified real photograph fallback is visibly labeled rather than passed of
  assert.equal(photoFor('Pies','Apple Pies').sub,'Apple Pies');
  const store=read('site/app.js'),admin=read('site/admin.js');
  assert.match(store,/photoStatusLabel/);
- assert.match(store,/photo-disclosure/);
+ assert.match(store,/shop-hero-brand-image/);
  assert.match(admin,/BUILTIN_PHOTO_PRESETS/);
  assert.match(admin,/data-photo-library-for/);
 });
@@ -536,7 +536,7 @@ test('real shop routes contain staff-only test examples without customer test ac
  const end=app.indexOf('function detail(id){',start);
  const shop=app.slice(start,end);
  assert.ok(start>0&&end>start);
- assert.match(shop,/demoStorePreview\(mode\|\|'all'/);
+ assert.doesNotMatch(shop,/demoStorePreview/);
  assert.match(shop,/filter\(productReady\)/);
  assert.match(shop,/filter\(productPreorder\)/);
  assert.match(shop,/shop-page--/);
@@ -874,7 +874,7 @@ test('approved full business name is consistent on every customer-facing screen'
 test('owner branding, originals and watercolor background are published without changing checkout',()=>{
  const app=read('site/app.js'),css=read('site/country-home-v2.css');
  const metadata=read('site/index.html'),bg=read('site/background.js');
- assert.match(app,/isShopAll\?'/);
+ assert.match(app,/shop-hero-picture--brand/);
  assert.match(app,/\/assets\/branding\/mommabee-shop-logo\.webp/);
  assert.match(app,/Located in Nixa, Missouri/);
  assert.match(app,/Decorated Cakes, Cake Pops, & Cookies/);
@@ -1337,7 +1337,7 @@ test('store routes have department tabs only in split mode, and Admin holds cata
  assert.match(site,/#shop\/homestand/);
  assert.match(site,/#ready\$\{departmentSuffix\}/);
  assert.match(site,/categoryChoices=categories\(department\)/);
- assert.match(site,/split\?'':demoStorePreview/);
+ assert.doesNotMatch(site,/split\?'':demoStorePreview/);
  assert.match(admin,/selected==='store_display'\)return storeDisplayPanel\(\)/);
  assert.match(admin,/update\('site_settings',1,next\)/);
  assert.match(admin,/id="product-taxonomy-search"/);
@@ -1610,7 +1610,8 @@ test('Product Showcase master setting and per-item visibility do not affect real
  assert.equal(showcasePrice({price_cents:100,price_unit:'undefined'}),'$1.00');
  assert.equal(showcaseOrigin({department:'homestand'}),'Homegrown in Nixa, Missouri without chemical sprays.');
  assert.equal(showcaseOrigin({department:'bakery'}),'Homemade in Nixa, Missouri.');
- assert.equal(showcaseAvailability({department:'homestand'}),'Seasonal harvest. Please confirm current availability.');
+ assert.equal(showcaseAvailability({department:'homestand'}),null);
+ assert.equal(showcaseAvailability({availability_date:'2026-08-23'}),'Aug. 23, 2026');
  assert.ok(SHOWCASE_PRICE_UNITS.includes('pound'));
  assert.ok(showcaseFields({department:'bakery',ingredients:'Confirmed recipe',allergens:'Confirmed allergens'}).some(([k])=>k==='Allergens'));
  assert.ok(!showcaseFields({department:'homestand',ingredients:'Unknown'}).some(([k])=>k==='Ingredients'));
@@ -1620,7 +1621,7 @@ test('Product Showcase visibility is enforced across Admin, site, detail and car
  const sql=read('supabase/migrations/20261027_product_showcase_control_v137.sql');
  for(const text of ['id="showcase-master-enabled"','id="showcase-master-form"','product_showcase_enabled:enabled','await loadTable(\'site_settings\')'])
   assert.ok(admin.includes(text),text);
- for(const field of ['description','price_cents','price_unit','availability_note','ingredients','allergens','storage_notes','fulfillment_note'])
+ for(const field of ['description','price_cents','price_unit','availability_date','price_kind','ingredients','allergens','storage_notes','fulfillment_note'])
   assert.ok(admin.includes('field(\''+field+'\''),'Missing admin field '+field);
  assert.match(site,/showcaseEnabled\(all\.settings\)/);
  assert.match(site,/showcaseEnabled\(s\)/);
