@@ -44,14 +44,14 @@ export function bindAccountNavigation({onSignOut,root=document}){
   clearTimeout(closeTimer);clearTimeout(openTimer);
   openTimer=setTimeout(()=>setOpen(true),ACCOUNT_MENU_OPEN_MS);
  };
- const queueClose=()=>{
+ const queueClose=(pointerLeft=false)=>{
   clearTimeout(openTimer);clearTimeout(closeTimer);
   closeTimer=setTimeout(()=>{
-   if(!menu.contains(document.activeElement))setOpen(false);
+   if(pointerLeft||!menu.contains(document.activeElement))setOpen(false);
   },ACCOUNT_MENU_CLOSE_MS);
  };
  const pointerEnter=event=>{if(event.pointerType!=='touch')queueOpen();};
- const pointerLeave=event=>{if(event.pointerType!=='touch')queueClose();};
+ const pointerLeave=event=>{if(event.pointerType!=='touch')queueClose(true);};
  const toggle=()=>setOpen(panel.hidden);
  const onFocusIn=()=>{clearTimeout(closeTimer);};
  const onFocusOut=event=>{
@@ -75,7 +75,7 @@ export function bindAccountNavigation({onSignOut,root=document}){
   catch(error){
    signingOut=false;signOutButton.disabled=false;
    signOutButton.textContent='Sign Out';
-   throw error;
+   return;
   }
  };
  menu.addEventListener('pointerenter',pointerEnter);
