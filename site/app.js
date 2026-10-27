@@ -1,4 +1,4 @@
-import {config,isConfigured,currentUser,currentSession,signIn,signUp,signOut,list,add,update,upload,signedImage,request,money,escapeHtml as e,safePhoto as photo,currentDate,futureDate,fmt} from './api.js';
+import {config,isConfigured,currentUser,currentSession,signIn,signUp,signOut,list,add,update,upload,signedImage,request,setIdleGate,money,escapeHtml as e,safePhoto as photo,currentDate,futureDate,fmt} from './api.js';
 import {isBackOfficeRole,backOfficeNavigation} from './role-navigation.js';
 import {photoFor,photoByUrl,photoStatusLabel} from './photo-library.js';
 import {applyBakeryBackground} from './background.js';
@@ -7,6 +7,8 @@ import {qrMarkup,qrSvg,bindQrActions} from './qr-code.js';
 import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
 import {SAMPLE_MENU,samplesFor} from './sample-menu.js';
 import {accountNavigationMarkup,bindAccountNavigation} from './account-navigation.js';
+import {catalogCarouselSlides} from './catalog-carousel.js';
+import {normalizeIdle,startIdleWatch,stopIdleWatch,isIdle,idleActivityTime} from './idle-session.js';
 import {bindRequiredMarkers} from './required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
 import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts} from './store-departments.js';
@@ -135,7 +137,7 @@ function layout(content){
  stopHomeCarousel();
  $('#app').innerHTML=`<header class="header"><div class="shell nav">
  <a href="#home" class="brand">MommaBee Bakery&Farmstand</a>
- <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">☰</span></button><nav id="primary-navigation" aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a>${accountNavigationMarkup(Boolean(currentUser()))}${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div><div class="header-offerings" aria-label="Products and services"><div class="shell">${e(settings.brand_subtitle||HEADER_OFFERINGS)}</div></div></header>
+ <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">☰</span></button><nav id="primary-navigation" aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a>${accountNavigationMarkup(Boolean(currentUser()),verifiedBackOfficeRole)}</nav></div><div class="header-offerings" aria-label="Products and services"><div class="shell">${e(settings.brand_subtitle||HEADER_OFFERINGS)}</div></div></header>
  <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${crumb}${content}</main><footer class="footer"><div class="shell">
   <div class="footer-inner">
    <div class="footer-col"><div class="footer-brand-name">MommaBee Bakery&Farmstand</div>
@@ -171,6 +173,7 @@ function layout(content){
  bindAccountNavigation({onSignOut:async()=>{
   try{
    await signOut();
+   stopIdleWatch();idleOwner=null;
    verifiedBackOfficeRole=null;
    all.demoItems=[];
    await load(); // Drop any staff-visible cached records before rendering the guest view.
@@ -209,7 +212,7 @@ function home(){
   primary_label:'Shop ready-to-sell',primary_href:'#ready',
   secondary_label:'Schedule a preorder',secondary_href:'#preorder'
  }]:[];
- const slides=active.length?active:backup;
+ const slides=[...(active.length?active:backup),...catalogCarouselSlides({settings:s,products:sellable(),showcase:all.showcaseItems,categories:all.categories})];
  const split=s.split_store_enabled===true;
  const currentProducts=sellable();
  const storefronts=homepageStorefronts(s,currentProducts,all.categories,4);
@@ -354,7 +357,32 @@ function qrPage(){
  layout('<section class="section qr-page"><div class="eyebrow">Country Bakery · Share Our Shop</div><h1>Scan to Visit MommaBee Bakery&Farmstand</h1><p>Use this printable code on flyers, booth signs, business cards, and packaging. It leads directly to our homepage.</p>'+qrMarkup()+'</section>');
  bindQrActions();
 }
-async function render(){const [route,pid]=decodeURIComponent((location.hash||'#home').substring(1)).split('/');await refreshBackOfficeRole();
+let idleOwner=null,idleMinutes=5,logoutBusy=false;
+setIdleGate(()=>{
+ const user=currentUser();
+ return Boolean(user)&&(localStorage.getItem('mbee_revoked_'+user.id)==='1'||
+  isIdle(idleActivityTime(user.id)||Date.now(),idleMinutes));
+});
+async function watchIdleSession(){
+ const user=currentUser();
+ if(!user){stopIdleWatch();idleOwner=null;return}
+ if(idleOwner===user.id)return;
+ stopIdleWatch();idleOwner=user.id;logoutBusy=false;
+ let minutes=5;
+ try{const result=await list('customer_profiles',{select:'idle_timeout_minutes',id:'eq.'+user.id,limit:1});
+  minutes=normalizeIdle(result?.[0]?.idle_timeout_minutes);
+ }catch{}
+ idleMinutes=minutes;
+ startIdleWatch({userId:user.id,minutes,onExpire:async()=>{
+  if(logoutBusy)return;logoutBusy=true;
+  try{await signOut()}finally{
+   stopIdleWatch();idleOwner=null;verifiedBackOfficeRole=null;all.demoItems=[];
+   location.hash='#account';await render();
+  }
+ }});
+}
+export async function resetAccountIdle(){stopIdleWatch();idleOwner=null;await watchIdleSession()}
+async function render(){await watchIdleSession();const [route,pid]=decodeURIComponent((location.hash||'#home').substring(1)).split('/');await refreshBackOfficeRole();
  // Return from Admin with freshly published carousel settings and slides.
  // Hash navigation does not reload the page; do not reuse initial storefront cache.
  if(route==='home'||!route){

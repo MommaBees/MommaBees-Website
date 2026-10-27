@@ -1,5 +1,6 @@
 import {config,currentUser,list,update,signIn,signUp,signOut,money,escapeHtml as h,fmt} from './api.js';
 import {renderMessages} from './message-center.js';
+import {IDLE_OPTIONS,normalizeIdle} from './idle-session.js';
 const addressFields=[
  ['address_line1','Street address','street-address',true],
  ['address_line2','Apt, suite or unit','address-line2',false],
@@ -54,11 +55,12 @@ async function protect(form){
  const api=await turnstileLoaded(),slot=form.querySelector('[data-captcha]');
  if(!slot)throw Error('CAPTCHA form not found');
  if(!slot.dataset.widget){
-  const id=api.render(slot,{sitekey:config.turnstileSiteKey,theme:'auto',callback:()=>{}});
+  const id=api.render(slot,{sitekey:config.turnstileSiteKey,theme:'auto',appearance:'always',execution:'execute',callback:()=>{const status=form.querySelector('[data-captcha-status]');if(status)status.textContent='Human verification complete.';}});
   slot.dataset.widget=String(id);
  }
  return api;
 }
+async function executeHumanCheck(form){const api=await protect(form);const slot=form.querySelector('[data-captcha]');api.execute(slot.dataset.widget);const status=form.querySelector('[data-captcha-status]');if(status)status.textContent='Checking…';}
 function captchaToken(form){
  const token=form.querySelector('[name="cf-turnstile-response"]')?.value||'';
  if(!token)throw Error('Complete the human verification first.');
@@ -70,12 +72,12 @@ async function authPage({layout,rerender,showError}){
   '<div class="actions"><button type="button" class="button" data-auth-tab="login">Sign In</button>'+
   '<button type="button" class="button secondary" data-auth-tab="register">Create Account</button></div>'+
   '<form id="bakery-login" class="box"><h2>Sign In</h2>'+item('identifier','Username or email address','username',true,'text')+
-  item('password','Password','current-password',true,'password')+'<div data-captcha></div>'+
+  item('password','Password','current-password',true,'password')+'<div data-captcha></div><button type="button" class="button secondary" data-verify-human>Verify I’m Human</button><p class="small" data-captcha-status role="status">Start human verification before signing in.</p>'+
   '<div class="actions"><button class="button" type="submit">Sign In Securely</button></div></form>'+
   '<form id="bakery-register" class="box" hidden><h2>Create Account</h2>'+
   '<p class="small muted">Fields marked * Required are mandatory. Your phone number is optional. Your address is stored privately.</p>'+
   item('email','Email address','email',true,'email')+item('password','Password (at least 8 characters)','new-password',true,'password')+
-  profileFields({billing_same:true})+'<div data-captcha></div><div class="actions"><button class="button" type="submit">Create Account</button></div>'+
+  profileFields({billing_same:true})+'<div data-captcha></div><button type="button" class="button secondary" data-verify-human>Verify I’m Human</button><p class="small" data-captcha-status role="status">Start human verification before registering.</p><div class="actions"><button class="button" type="submit">Create Account</button></div>'+
   '</form></section>');
  const login=document.getElementById('bakery-login'),register=document.getElementById('bakery-register');
  billingToggle(register);
@@ -86,6 +88,7 @@ async function authPage({layout,rerender,showError}){
  };
  document.querySelectorAll('[data-auth-tab]').forEach(b=>b.onclick=()=>select(b.dataset.authTab));
  await select('login');
+ document.querySelectorAll('[data-verify-human]').forEach(button=>button.onclick=async()=>{try{await executeHumanCheck(button.closest('form'))}catch(e){showError(e)}});
  login.onsubmit=async ev=>{
   ev.preventDefault();const button=login.querySelector('[type=submit]');button.disabled=true;
   try{await signIn(login.elements.identifier.value,login.elements.password.value,captchaToken(login));await rerender();}
@@ -111,7 +114,7 @@ export async function account({layout,rerender,showError,section=null}){
   '<section class="box"><h2>My Orders</h2><div id="my-orders">Loading…</div>'+
   '<h2>Notifications</h2><div id="my-notices">Loading…</div>'+
   '<section id="account-settings" aria-label="Account Settings"><h2>Account Settings</h2><label class="checkbox"><input type="checkbox" id="optin"> Receive promotional messages in my account</label>'+ 
-  '<button class="button secondary" id="save-optin">Save Preference</button></section></section></div>'+ 
+  '<button class="button secondary" id="save-optin">Save Preference</button><div class="account-idle-pref"><label for="idle-minutes">Automatic sign-out after inactivity <span class="required-indicator" aria-hidden="true">* Required</span></label><select id="idle-minutes" required>'+IDLE_OPTIONS.map(n=>'<option value="'+n+'">'+n+' minute'+(n===1?'':'s')+'</option>').join('')+'</select><button class="button secondary" type="button" id="save-idle-minutes">Save Timeout</button><p id="idle-pref-status" role="status" aria-live="polite"></p></div></section></section></div>'+ 
   '<section class="section" id="my-messages" aria-label="Private customer messages">Loading messages…</section></section>');
  document.getElementById('signout').onclick=async()=>{await signOut();await rerender();};
  try{
@@ -124,6 +127,17 @@ export async function account({layout,rerender,showError,section=null}){
   document.getElementById('my-orders').innerHTML=orders.map(o=>'<p>'+h(o.id.slice(0,8))+' · '+h(o.status)+' · '+fmt(o.fulfillment_date)+' · '+money(o.total_cents)+'</p>').join('')||'<p>No orders yet.</p>';
   document.getElementById('my-notices').innerHTML=notes.map(n=>'<p><strong>'+h(n.title)+'</strong>: '+h(n.body)+'</p>').join('')||'<p>No notifications.</p>';
   document.getElementById('optin').checked=Boolean(profile.marketing_opt_in);
+  document.getElementById('idle-minutes').value=String(normalizeIdle(profile.idle_timeout_minutes));
+  document.getElementById('save-idle-minutes').onclick=async()=>{
+   const n=Number(document.getElementById('idle-minutes').value);
+   if(!IDLE_OPTIONS.includes(n))return;
+   try{
+    await update('customer_profiles',user.id,{idle_timeout_minutes:n});
+    const app=await import('./app.js');
+    await app.resetAccountIdle();
+    document.getElementById('idle-pref-status').textContent='Saved: '+n+' minute'+(n===1?'':'s')+'.';
+   }catch(e){showError(e)}
+  };
   document.getElementById('save-optin').onclick=async()=>{try{await update('customer_profiles',user.id,{marketing_opt_in:document.getElementById('optin').checked});}catch(e){showError(e);}};
   document.getElementById('my-profile').innerHTML='<button class="button secondary" type="button" id="edit-profile">Edit Profile</button><div id="profile-editor" hidden><form id="profile-form">'+profileFields(profile,{editableUsername:false})+'<div class="actions"><button class="button" type="submit">Save Changes</button><button class="button secondary" type="button" id="cancel-profile">Cancel</button></div></form></div>';
   const form=document.getElementById('profile-form');billingToggle(form);

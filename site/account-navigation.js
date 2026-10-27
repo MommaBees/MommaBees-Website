@@ -3,7 +3,7 @@
 export const ACCOUNT_MENU_OPEN_MS=150;
 export const ACCOUNT_MENU_CLOSE_MS=350;
 
-export function accountNavigationMarkup(isSignedIn){
+export function accountNavigationMarkup(isSignedIn,role=null){
  if(!isSignedIn)return '<a href="#account" class="nav-account-signin">Sign In</a>';
  return '<div class="account-dropdown" data-account-menu>'+
   '<button type="button" class="account-dropdown-trigger" aria-expanded="false" aria-haspopup="true" '+
@@ -14,7 +14,8 @@ export function accountNavigationMarkup(isSignedIn){
    '<div class="account-dropdown-heading">Your bakery account</div>'+
    '<a href="#account">Account Overview</a>'+
    '<a href="#account/profile">Profile</a>'+
-   '<a href="#account/settings">Settings</a>'+
+   '<a href="#account/settings">Settings</a>'+ 
+  (role==='owner'||role==='admin'?'<a href="#admin" class="account-admin-link">Admin</a>':role==='moderator'?'<a href="#admin" class="account-admin-link">Moderation</a>':'')+
    '<div class="account-dropdown-divider" aria-hidden="true"></div>'+
    '<button type="button" class="account-signout" data-nav-signout>Sign Out</button>'+
   '</div></div>';

@@ -769,6 +769,11 @@ test('sitewide account menu is signed-in only with profile, settings and sign-ou
  assert.match(menu,/href="#account\/profile">Profile/);
  assert.match(menu,/href="#account\/settings">Settings/);
  assert.match(menu,/data-nav-signout>Sign Out/);
+ const owner=accountNavigationMarkup(true,'owner');
+ assert.match(owner,/href="#admin" class="account-admin-link">Admin/);
+ assert.match(accountNavigationMarkup(true,'admin'),/href="#admin" class="account-admin-link">Admin/);
+ assert.doesNotMatch(accountNavigationMarkup(true,'customer'),/href="#admin"/);
+ assert.doesNotMatch(accountNavigationMarkup(true,null),/href="#admin"/);
  assert.ok(ACCOUNT_MENU_OPEN_MS>=100&&ACCOUNT_MENU_OPEN_MS<=250);
  assert.ok(ACCOUNT_MENU_CLOSE_MS>=250&&ACCOUNT_MENU_CLOSE_MS<=600);
  assert.ok(ACCOUNT_MENU_OPEN_MS<ACCOUNT_MENU_CLOSE_MS);
@@ -777,7 +782,7 @@ test('navbar sign-out works on every page, clears cached staff data, and uses es
  const app=read('site/app.js');
  const api=read('site/api.js');
  const menu=read('site/account-navigation.js');
- assert.match(app,/accountNavigationMarkup\(Boolean\(currentUser\(\)\)\)/);
+ assert.match(app,/accountNavigationMarkup\(Boolean\(currentUser\(\)\),verifiedBackOfficeRole\)/);
  assert.match(app,/bindAccountNavigation\(\{onSignOut:async\(\)=>/);
  assert.match(app,/await signOut\(\);/);
  assert.match(app,/verifiedBackOfficeRole=null;\s*all\.demoItems=\[\];\s*await load\(\)/);
@@ -1499,4 +1504,46 @@ test('Admin can upload permitted WebP harvest images in bulk without creating in
   assert.ok(sql.includes(name));
  assert.doesNotMatch(sql,/insert into public\.products/i);
  assert.doesNotMatch(sql,/insert into public\.past_bakes/i);
+});
+
+import {IDLE_OPTIONS,DEFAULT_IDLE,normalizeIdle,isIdle} from '../site/idle-session.js';
+import {catalogCarouselSlides} from '../site/catalog-carousel.js';
+test('idle time options apply to all authenticated members with 5 minute default',()=>{
+ assert.deepEqual(IDLE_OPTIONS,[1,3,5,10,15,20,25,30,45,60]);
+ assert.equal(DEFAULT_IDLE,5);
+ for(const n of IDLE_OPTIONS)assert.equal(normalizeIdle(n),n);
+ assert.equal(normalizeIdle(9),5);
+ assert.equal(isIdle(0,5,300000),true);
+ assert.equal(isIdle(0,10,300000),false);
+ const site=read('site/app.js'),acc=read('site/account.js'),api=read('site/api.js'),sql=read('supabase/migrations/20261027_idle_carousel_sources_v133.sql');
+ assert.match(acc,/id="idle-minutes"/);
+ assert.match(acc,/idle_timeout_minutes:n/);
+ assert.match(site,/startIdleWatch\(\{userId:user\.id/);
+ assert.match(site,/stopIdleWatch\(\)/);
+ assert.match(api,/if\(idleGate\(\)\)throw Error/);
+ assert.match(sql,/idle_timeout_minutes integer not null default 5/);
+ assert.match(sql,/1,3,5,10,15,20,25,30,45,60/);
+});
+test('Turnstile does not begin automatically before a visitor starts verification',()=>{
+ const account=read('site/account.js');
+ assert.match(account,/execution:'execute'/);
+ assert.match(account,/appearance:'always'/);
+ assert.match(account,/data-verify-human/);
+ assert.match(account,/api\.execute\(slot\.dataset\.widget\)/);
+ assert.match(account,/captchaToken\(login\)/);
+});
+test('Bakery and Homestand carousel sources only show actual photographed items',()=>{
+ const categories=[{id:'food',department:'bakery'},{id:'veg',department:'homestand'}];
+ const products=[{id:'1',name:'Cinnamon',category_id:'food',published:true,photo_url:'https://example.test/bread.webp'}];
+ const showcases=[{id:'2',name:'Broccoli',department:'homestand',photo_url:'https://example.test/broccoli.webp',active:true},
+ {id:'3',name:'Blackberries',department:'homestand',active:true,photo_url:null}];
+ const slides=catalogCarouselSlides({settings:{},products,showcase:showcases,categories});
+ assert.deepEqual(slides.map(s=>s.title),['Cinnamon','Broccoli']);
+ assert.deepEqual(slides.map(s=>s.primary_href),['#shop/bakery','#shop/homestand']);
+ assert.equal(catalogCarouselSlides({settings:{home_carousel_homestand_items:false},products,showcase:showcases,categories}).length,1);
+ assert.deepEqual(catalogCarouselSlides({settings:{},products:[],showcase:[{...showcases[0],photo_url:null}],categories}),[]);
+ const admin=read('site/admin.js'),carousel=read('site/home-carousel.js');
+ assert.match(admin,/id="carousel-show-bakery"/);
+ assert.match(admin,/id="carousel-show-homestand"/);
+ assert.match(carousel,/bakery\|homestand/);
 });

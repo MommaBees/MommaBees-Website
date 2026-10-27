@@ -1,4 +1,5 @@
 // Dependency-free browser adapter for Supabase REST + Auth. Never handles server secrets.
+import {resetIdleStamp,revokeIdleStamp} from './idle-session.js';
 export const config = window.MAMMA_BEES_CONFIG || {};
 export const isConfigured = () => /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(config.supabaseUrl||'') && !String(config.supabasePublishableKey||'').startsWith('PASTE_');
 const url = (path) => config.supabaseUrl + path;
@@ -7,7 +8,9 @@ let session = null;
 try { session = JSON.parse(sessionStorage.getItem('mb_session')||'null'); } catch { session = null; }
 export const currentSession = () => session;
 export const currentUser = () => session?.user || null;
-function saveSession(s){session=s; if(s) sessionStorage.setItem('mb_session',JSON.stringify(s));else sessionStorage.removeItem('mb_session');}
+let idleGate=()=>false;
+export function setIdleGate(fn){idleGate=typeof fn==='function'?fn:()=>false}
+function saveSession(s){const previous=session?.user?.id;session=s;if(s){sessionStorage.setItem('mb_session',JSON.stringify(s));if(!previous||previous!==s.user?.id)resetIdleStamp(s.user?.id)}else{sessionStorage.removeItem('mb_session');revokeIdleStamp(previous)}}
 async function refresh(){
  if(!session?.refresh_token) return;
  const r=await fetch(url('/auth/v1/token?grant_type=refresh_token'),{method:'POST',headers:{'apikey':key(),'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})});
@@ -15,6 +18,7 @@ async function refresh(){
 }
 function headers(extra={}){return {'apikey':key(),...(session?.access_token?{'Authorization':'Bearer '+session.access_token}:{}),...extra};}
 export async function request(path,options={}){
+ if(idleGate())throw Error('Session expired due to inactivity. Sign in again.');
  if(!isConfigured()) throw Error('Supabase is not configured. See README.md.');
  if(session?.expires_at && session.expires_at*1000 < Date.now()+60000) await refresh();
  const method=options.method||'GET';
@@ -47,6 +51,7 @@ export async function signOut(){
  if(session?.access_token)await fetch(url('/auth/v1/logout'),{method:'POST',headers:headers()}).catch(()=>{});saveSession(null);
 }
 export async function upload(bucket,file,options={}){
+ if(idleGate())throw Error('Session expired due to inactivity. Sign in again.');
  if(!session?.access_token)throw Error('Sign in before uploading photos.');
  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)throw Error('Upload JPG, PNG or WebP images up to 5MB.');
  const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];

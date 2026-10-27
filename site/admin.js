@@ -489,6 +489,14 @@ async function carouselPanel(){
   <p class="small muted" id="carousel-interval-help">3–60 seconds (default 6.5). Rotation requires two published slides.</p>
   <p id="carousel-interval-save-status" role="status" aria-live="polite"></p>
  </form>
+ <form id="carousel-photo-sources" class="admin-carousel-interval" aria-label="Photo item carousel settings">
+ <h3>Show Bakery and Homestand Items</h3>
+ <label class="checkbox"><input id="carousel-show-bakery" type="checkbox" ${settings.home_carousel_bakery_items!==false?'checked':''}> Show Bakery item photographs</label>
+ <label class="checkbox"><input id="carousel-show-homestand" type="checkbox" ${settings.home_carousel_homestand_items!==false?'checked':''}> Show Homestand item photographs</label>
+ <p class="small muted">Only entries with an uploaded photograph appear. Their buttons link to the matching department.</p>
+ <button class="button secondary" type="submit">Save Item Selection</button>
+ <p id="carousel-photo-sources-status" role="status" aria-live="polite"></p>
+ </form>
  <form id="carousel-size-form" class="admin-carousel-interval admin-carousel-size" aria-label="Carousel size settings">
   <label for="carousel-size">Carousel size <span class="required-indicator" aria-hidden="true">* Required</span></label>
   <div class="admin-carousel-interval-controls">
@@ -540,6 +548,14 @@ async function carouselPanel(){
   refreshSizePreview();
   sizeStatus.textContent='Preview updated. Select Save size to apply it to the public website.';
  });
+ $('#carousel-photo-sources').onsubmit=async event=>{
+  event.preventDefault();
+  const settingsUpdate={home_carousel_bakery_items:$('#carousel-show-bakery').checked,
+   home_carousel_homestand_items:$('#carousel-show-homestand').checked};
+  try{await update('site_settings',1,settingsUpdate);Object.assign(settings,settingsUpdate);
+   $('#carousel-photo-sources-status').textContent='Item selection saved.';
+  }catch(error){ctx.showError(error)}
+ };
  $('#carousel-size-form').onsubmit=async event=>{
   event.preventDefault();
   const chosen=sizeInput.value;

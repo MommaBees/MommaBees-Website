@@ -21,11 +21,11 @@ export function eligibleHomeSlides(slides,now=new Date()){
 export function homeCarouselMarkup(slides,escape,photo,size='medium'){
  const count=slides.length;
  if(!count)return '';
- return '<section class="home-carousel home-carousel--'+normalizeCarouselSize(size)+'" role="region" aria-roledescription="carousel" aria-label="Featured bakery stories" tabindex="-1">'+
+ return '<section class="home-carousel home-carousel--'+normalizeCarouselSize(size)+'" role="region" aria-roledescription="carousel" aria-label="Bakery and Homestand highlights" tabindex="-1">'+
   '<div class="home-carousel-slides" aria-live="off">'+slides.map((s,i)=>{
    const first=i===0,hidden=first?'':' hidden';
    const img=photo(s.image_url);
-   const action=(label,href,secondary=false)=>label&&/^#(shop|ready|preorder|gallery|contact|faq)$/.test(href||'')
+   const action=(label,href,secondary=false)=>label&&/^#(shop|ready|preorder|gallery|contact|faq)(\/(bakery|homestand))?$/.test(href||'')
      ?'<a class="button'+(secondary?' secondary':'')+'" href="'+escape(href)+'">'+escape(label)+'</a>':'';
    return '<article class="hero home-carousel-slide" data-slide="'+i+'" aria-label="Slide '+(i+1)+' of '+count+'"'+hidden+'>'+
     '<div class="hero-copy"><div class="eyebrow">'+escape(s.eyebrow||'MommaBee Bakery&Farmstand')+'</div>'+

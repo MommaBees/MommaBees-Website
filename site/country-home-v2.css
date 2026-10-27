@@ -1208,3 +1208,11 @@ body[data-page="home"] .home-department-products .showcase-illustration{height:c
 .harvest-publish-confirm{display:flex!important;gap:10px;align-items:flex-start;font-weight:500!important}
 .harvest-publish-confirm input{width:21px;height:21px;flex:none}
 #harvest-upload-status:not(:empty){margin-top:14px;overflow-wrap:anywhere}
+
+/* MBB-SEC-043 — timeout selector, deferred CAPTCHA verification and profile-only Admin. */
+.account-idle-pref{border-top:1px solid #d5bfa5;margin-top:20px;padding-top:16px}
+.account-idle-pref>label{display:block;font-weight:700;margin-bottom:9px}
+.account-idle-pref select{min-height:44px;padding:9px 12px;border:1px solid #aa8769;border-radius:4px;background:#fff;margin-right:10px}
+#idle-pref-status:not(:empty){font-weight:700;margin-top:9px}
+[data-verify-human]{min-height:44px;margin-top:12px}
+.account-dropdown-panel .account-admin-link{font-weight:750}
