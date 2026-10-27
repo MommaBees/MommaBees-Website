@@ -24,6 +24,7 @@ import {BUILTIN_PHOTO_PRESETS,photoFor} from '../site/photo-library.js';
 import {TEST_PRICES} from '../functions/_lib/demo-prices.js';
 import {STOCK_PHOTOGRAPHY,stockPhotoFor,sandboxProductPhoto,demoMatchesView} from '../site/stock-photography.js';
 import {SAMPLE_MENU,samplesFor} from '../site/sample-menu.js';
+import {accountNavigationMarkup,ACCOUNT_MENU_OPEN_MS,ACCOUNT_MENU_CLOSE_MS} from '../site/account-navigation.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
 import {HOME_URL,qrSvg,qrMarkup} from '../site/qr-code.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -725,7 +726,7 @@ test('whole-site rustic design covers actual storefront and member and staff pag
 });
 test('new home, footer, cart and contact provide personality without inventing bakery fulfillment',()=>{
  const app=read('site/app.js'),auth=read('site/account.js'),checkout=read('site/checkout-form.js');
- assert.match(app,/A little note from our kitchen/);
+ assert.doesNotMatch(app,/A little note from our kitchen/);
  assert.match(app,/Good baking is worth looking forward to/);
  assert.match(app,/Some treats are ready when they/);
  assert.match(app,/class="footer-inner"/);
@@ -741,4 +742,55 @@ test('new home, footer, cart and contact provide personality without inventing b
  assert.match(checkout,/Guest checkout is welcome/);
  assert.match(checkout,/Choose Your Pickup Day/);
  assert.doesNotMatch(app,/Missouri Prairie Roots|From Our Country Kitchen to Your Table/);
+ assert.doesNotMatch(app,/From Nixa, with care|Something sweet for your table|<div class="country-welcome-band"/);
+});
+
+test('sitewide account menu is signed-in only with profile, settings and sign-out controls',()=>{
+ assert.equal(accountNavigationMarkup(false),'<a href="#account" class="nav-account-signin">Sign In</a>');
+ const menu=accountNavigationMarkup(true);
+ assert.match(menu,/class="account-dropdown"/);
+ assert.match(menu,/aria-haspopup="true"/);
+ assert.match(menu,/aria-expanded="false"/);
+ assert.match(menu,/aria-controls="account-dropdown-panel"/);
+ assert.match(menu,/data-account-panel hidden/);
+ assert.match(menu,/href="#account">Account Overview/);
+ assert.match(menu,/href="#account\/profile">Profile/);
+ assert.match(menu,/href="#account\/settings">Settings/);
+ assert.match(menu,/data-nav-signout>Sign Out/);
+ assert.ok(ACCOUNT_MENU_OPEN_MS>=100&&ACCOUNT_MENU_OPEN_MS<=250);
+ assert.ok(ACCOUNT_MENU_CLOSE_MS>=250&&ACCOUNT_MENU_CLOSE_MS<=600);
+ assert.ok(ACCOUNT_MENU_OPEN_MS<ACCOUNT_MENU_CLOSE_MS);
+});
+test('navbar sign-out works on every page, clears cached staff data, and uses established Supabase logout',()=>{
+ const app=read('site/app.js');
+ const api=read('site/api.js');
+ const menu=read('site/account-navigation.js');
+ assert.match(app,/accountNavigationMarkup\(Boolean\(currentUser\(\)\)\)/);
+ assert.match(app,/bindAccountNavigation\(\{onSignOut:async\(\)=>/);
+ assert.match(app,/await signOut\(\);/);
+ assert.match(app,/verifiedBackOfficeRole=null;\s*all\.demoItems=\[\];\s*await load\(\)/);
+ assert.match(api,/export async function signOut\(\)/);
+ assert.match(api,/saveSession\(null\);/);
+ assert.match(menu,/ACCOUNT_MENU_CLOSE_MS=350/);
+ assert.match(menu,/clearTimeout\(openTimer\)/);
+ assert.match(menu,/document\.addEventListener\('pointerdown',onDocPointer\)/);
+ assert.match(menu,/event\.key==='Escape'/);
+ assert.match(menu,/previousCleanup\?\.\(\)/);
+ assert.match(menu,/signingOut=true/);
+ assert.match(menu,/signOutButton\.disabled=true/);
+});
+test('dropdown links address real, accessible customer profile and settings sections',()=>{
+ const app=read('site/app.js');
+ const account=read('site/account.js');
+ const css=read('site/country-home-v2.css');
+ assert.match(app,/else if\(route==='account'\)await account\(pid\)/);
+ assert.match(app,/id==='profile'\?'account-profile-section':'account-settings'/);
+ assert.match(account,/id="account-profile-section"/);
+ assert.match(account,/id="account-settings"/);
+ assert.match(account,/id="edit-profile">Edit Profile/);
+ assert.match(account,/Locked after registration/);
+ assert.match(css,/#primary-navigation \.account-dropdown-trigger/);
+ assert.match(css,/#primary-navigation \.account-dropdown-panel\[hidden\]/);
+ assert.match(css,/@media\(max-width:760px\)/);
+ assert.match(css,/scroll-margin-top:/);
 });
