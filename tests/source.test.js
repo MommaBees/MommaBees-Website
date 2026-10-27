@@ -1095,7 +1095,7 @@ test('carousel Admin navigation/editor CRUD use the actual canonical Supabase ta
  assert.match(admin,/await remove\('home_carousel_slides',slide\.id\)/);
  assert.match(admin,/await add\(selected,body\)/,'New slide insertion must use the canonical selected panel');
  assert.match(admin,/await update\(selected,record\[key\],body,key\)/,'Existing slide editing must use the canonical selected panel');
- assert.match(nav,/\['home_carousel_slides','website_background','site_settings'\]/);
+ assert.match(nav,/\['home_carousel_slides','website_size','website_background','site_settings'\]/);
  assert.match(migration,/create table if not exists public\.home_carousel_slides/);
  assert.match(app,/\['home_carousel_slides',\{order:'sort_order\.asc'\}\]/);
 });
