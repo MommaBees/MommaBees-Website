@@ -6,6 +6,7 @@ import {qrMarkup,qrSvg,bindQrActions} from './qr-code.js';
 import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
 import {SAMPLE_MENU,samplesFor} from './sample-menu.js';
 import {accountNavigationMarkup,bindAccountNavigation} from './account-navigation.js';
+const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
 let checkoutMode='pickup';
@@ -117,14 +118,15 @@ function layout(content){
    :'';
  applyBakeryBackground(settings,config.supabaseUrl);
  $('#app').innerHTML=`<div class="topbar">Faith · Family · Homemade Goodness</div><header class="header"><div class="shell nav">
- <a href="#home" class="brand">MommaBee Bakery&Farmstand <span>${e(settings.brand_subtitle||'Rooted in Faith. Made with Love. Shared with Joy.')}</span></a>
- <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">☰</span></button><nav id="primary-navigation" aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a>${accountNavigationMarkup(Boolean(currentUser()))}${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
+ <a href="#home" class="brand">MommaBee Bakery&Farmstand</a>
+ <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">☰</span></button><nav id="primary-navigation" aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a>${accountNavigationMarkup(Boolean(currentUser()))}${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div><div class="header-offerings" aria-label="Products and services"><div class="shell">${e(settings.brand_subtitle||HEADER_OFFERINGS)}</div></div></header>
  <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${crumb}${content}</main><footer class="footer"><div class="shell">
   <div class="footer-inner">
    <div class="footer-col"><div class="footer-brand-name">MommaBee Bakery&Farmstand</div>
-    <p class="footer-pledge">Rooted in Faith. Made with Love. Shared with Joy.</p>
     <p>Small-batch baking and sweet traditions, made with care.</p>
-    <p class="small">Pickup and local delivery are offered on selected bakery dates.</p></div>
+    <p class="small">Pickup and local delivery are offered on selected bakery dates.</p>
+    <p class="footer-location">Located in Nixa, Missouri — Farmstand &amp; Made to Order</p>
+    <p class="footer-availability">Offerings vary by baking date and availability. Please contact us for current selections and custom orders.</p></div>
    <nav class="footer-col footer-navigation" aria-label="Footer navigation">
     <p class="footer-col-title">Come on in</p><a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a>
     <a href="#preorder">Preorder</a><a href="#gallery">Past Bakes</a>
@@ -133,20 +135,7 @@ function layout(content){
     <a class="footer-qr" href="#qr" aria-label="Open the downloadable bakery homepage QR code">
      ${qrSvg()}<span>Scan to visit our bakery</span></a>
     <p class="small">Share the shop at your next gathering.</p></div>
-  </div><section class="footer-offerings" aria-label="What we make and where to find us">
- <h2 class="footer-offerings-title">What we make</h2>
- <p class="footer-offerings-list">
-  <span>Decorated Cakes, Cake Pops, &amp; Cookies</span>
-  <span>Homemade Cheesecakes &amp; Pies</span>
-  <span>Candies</span>
-  <span>Bread &amp; Pastries</span>
-  <span>Handmade crocheted &amp; sewn items</span>
-  <span>Custom engraved cutting boards</span>
-  <span>Natural homemade products — bug spray, sunscreen, lip balm, soaps &amp; more</span>
- </p>
- <p class="footer-location">Located in Nixa, Missouri — Farmstand &amp; Made to Order</p>
- <p class="footer-availability">Offerings vary by baking date and availability. Please contact us for current selections and custom orders.</p>
- </section><div class="footer-bottom">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</div>
+  </div><div class="footer-bottom">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</div>
  </div></footer>`;
  const toggle=$('#mobile-nav-toggle');
  const primary=$('#primary-navigation');

@@ -412,3 +412,15 @@ body[data-site-background="chickens"] #main.shell{background:rgba(255,251,245,.9
  .footer-offerings-list span:not(:last-child)::after{content:""}
  .footer-offerings-list span:not(:last-child){margin-bottom:5px}
 }
+
+/* MBB-BRAND-026 v1.16 — legible full-width offerings text beneath navigation. */
+.header .brand{flex:0 1 auto;max-width:100%;font-size:clamp(1.42rem,2.2vw,2.15rem)}
+.header-offerings{width:100%;background:#C07C57;color:#2d211c;border-top:1px solid rgba(55,34,24,.28);padding:11px 0 13px;font-size:clamp(.79rem,.94vw,.93rem);font-weight:600;line-height:1.6;letter-spacing:.008em}
+.header-offerings .shell{max-width:1760px;text-align:center;padding-inline:clamp(15px,3vw,40px);overflow-wrap:break-word;text-wrap:pretty}
+.footer .footer-location{color:#251e1b}
+.footer .footer-availability{color:#302720}
+@media(max-width:760px){
+ .header .brand{max-width:calc(100% - 108px);font-size:clamp(1.22rem,5vw,1.65rem);overflow-wrap:anywhere}
+ .header-offerings{font-size:.78rem;line-height:1.55;padding:10px 0}
+ .header-offerings .shell{text-align:left;padding-inline:16px}
+}

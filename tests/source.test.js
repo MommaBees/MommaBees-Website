@@ -26,6 +26,7 @@ import {STOCK_PHOTOGRAPHY,stockPhotoFor,sandboxProductPhoto,demoMatchesView} fro
 import {SAMPLE_MENU,samplesFor} from '../site/sample-menu.js';
 import {accountNavigationMarkup,ACCOUNT_MENU_OPEN_MS,ACCOUNT_MENU_CLOSE_MS} from '../site/account-navigation.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
+import {referenceKeyFor} from '../site/reference-keys.js';
 import {HOME_URL,QR_PNG_PATH,qrSvg,qrMarkup} from '../site/qr-code.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
@@ -731,7 +732,8 @@ test('new home, footer, cart and contact provide personality without inventing b
  assert.match(app,/Good baking is worth looking forward to/);
  assert.match(app,/Some treats are ready when they/);
  assert.match(app,/class="footer-inner"/);
- assert.match(app,/Rooted in Faith\. Made with Love\. Shared with Joy\./);
+ assert.doesNotMatch(app,/Rooted in Faith\. Made with Love\. Shared with Joy\./);
+ assert.match(app,/header-offerings/);
  assert.match(app,/body\.dataset\.page=routeName/);
  assert.match(app,/aria-label="Breadcrumb"/);
  assert.match(app,/setAttribute\('aria-current','page'\)/);
@@ -861,7 +863,7 @@ test('owner branding, originals and watercolor background are published without 
  assert.match(app,/isShopAll\?'/);
  assert.match(app,/\/assets\/branding\/mommabee-shop-logo\.webp/);
  assert.match(app,/Located in Nixa, Missouri/);
- assert.match(app,/Decorated Cakes, Cake Pops, &amp; Cookies/);
+ assert.match(app,/Decorated Cakes, Cake Pops, & Cookies/);
  assert.match(app,/Custom engraved cutting boards/);
  assert.match(app,/Natural homemade products/);
  assert.match(metadata,/MommaBee Bakery&Farmstand/);
@@ -878,4 +880,39 @@ test('owner branding, originals and watercolor background are published without 
   assert.equal(bytes.toString('ascii',0,4),'RIFF');
   assert.equal(bytes.toString('ascii',8,12),'WEBP');
  }
+});
+
+test('admin category options use referenced row primary keys, never undefined foreign-key columns',()=>{
+ const admin=read('site/admin.js');
+ assert.equal(referenceKeyFor('categories'),'id');
+ assert.equal(referenceKeyFor('subcategories'),'id');
+ assert.equal(referenceKeyFor('products'),'id');
+ assert.equal(referenceKeyFor('baking_days'),'date');
+ assert.match(admin,/const rowKey=referenceKeyFor\(f\.table\)/);
+ assert.match(admin,/const refValue=x\[rowKey\]/);
+ assert.doesNotMatch(admin,/x\[f\.key\|\|'id'\]/);
+ assert.match(admin,/String\(value\)===String\(refValue\)/);
+ assert.match(admin,/\['categories','subcategories'\]\.includes\(f\.table\)/);
+});
+
+test('header offerings replace the previous pledge without duplicating footer catalog',()=>{
+ const app=read('site/app.js');
+ const css=read('site/country-home-v2.css');
+ const admin=read('site/admin.js');
+ const html=read('site/index.html');
+ assert.match(app,/const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies/);
+ assert.match(app,/Handmade crocheted&sewn items/);
+ assert.match(app,/Natural homemade products - bug spray, sunscreen, lip balm, soaps & more/);
+ assert.match(app,/class="header-offerings"/);
+ assert.doesNotMatch(app,/class="footer-offerings"/);
+ assert.doesNotMatch(app,/class="footer-pledge"/);
+ assert.match(app,/Located in Nixa, Missouri/);
+ assert.match(css,/\.header-offerings/);
+ assert.match(admin,/field\('brand_subtitle','Header products & services line','textarea'\)/);
+ assert.match(html,/MommaBee Bakery&Farmstand/);
+ const migration=read('supabase/migrations/20261027_header_offerings_categories_v116.sql');
+ for(const term of ["'Handmade'","'Signs/Decor'","'Seasonal'"]){
+  assert.ok(migration.includes(term),term+' missing from catalog migration');
+ }
+ assert.match(migration,/on conflict \(slug\) do nothing/);
 });
