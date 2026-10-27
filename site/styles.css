@@ -190,3 +190,98 @@ body[data-site-background] .past-bakes-gallery .product-photo{height:190px}
 .sandbox-store-page .bakery-product-card .product-photo{height:176px}
 .graceful-image-fallback{font:italic .95rem Georgia,serif;color:#695642;height:160px!important;min-height:150px;padding:14px}
 @media(max-width:680px){.shop-page .shop-hero{grid-template-columns:1fr}.shop-hero-picture{order:-1}.shop-hero-image{max-height:200px;min-height:180px}.shop-hero-copy{padding:19px}.shop-mode-tabs .tab{flex:1;min-width:0;padding:9px 8px;font-size:.85rem}.sandbox-store-page{padding:12px}.sandbox-store-page .bakery-product-card .product-photo{height:150px}}
+
+
+/* Full-display storefront responsive acceptance: desktop, tablet and smartphone */
+html{min-width:320px;scroll-padding-top:110px}
+body,#app{width:100%;max-width:100%;overflow-x:clip}
+.shell{max-width:1760px;width:100%;padding-inline:clamp(16px,3.2vw,65px)}
+#main.shell,body[data-site-background] #main.shell{
+ width:calc(100% - clamp(18px,5vw,115px));max-width:1760px;
+ padding-inline:clamp(16px,3vw,56px);min-width:0;
+}
+.nav{min-height:82px;gap:clamp(12px,2vw,32px)}
+.brand{white-space:normal;min-width:190px;font-size:clamp(1.32rem,1.8vw,2rem)}
+.brand span{font-size:clamp(.62rem,.7vw,.8rem);line-height:1.35;letter-spacing:.045em}
+.navlinks{gap:clamp(8px,1.1vw,20px)}
+.navlinks a{font-size:clamp(.77rem,.85vw,.97rem);white-space:nowrap}
+.grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,258px),1fr));gap:clamp(12px,1.5vw,24px)}
+.section{margin-block:clamp(28px,4vw,58px)}
+.section-head{flex-wrap:wrap}
+.card,.box,.table-wrap,.admin-layout,.admin-main{min-width:0;max-width:100%}
+.table-wrap{overflow-x:auto;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
+.admin-layout{grid-template-columns:minmax(205px,245px) minmax(0,1fr)}
+.admin-side{min-width:0}
+.shop-hero{min-width:0}
+.product-results .card{max-width:none}
+.card-media .product-photo,body[data-site-background] .card-media .product-photo{height:clamp(150px,12vw,198px)}
+.home-gallery-preview .product-photo,body[data-site-background] .home-gallery-preview .product-photo{height:clamp(145px,12vw,188px)}
+.mobile-nav-toggle{display:none;border:1px solid #8e643f;background:#fff6e9;color:#573922;border-radius:7px;padding:10px 14px;min-height:44px;font-weight:750}
+.mobile-nav-toggle span{padding-left:8px}
+.footer .shell{position:relative}
+.footer-qr{display:inline-flex;gap:10px;align-items:center;background:#fff7e8;color:#4a2d1e!important;border-radius:10px;padding:10px 14px;margin-top:15px;text-decoration:none;font-weight:700}
+.footer-qr svg{width:80px!important;height:80px!important;flex:none;background:#fff;padding:3px;display:block}
+.footer-qr span{max-width:120px}
+.qr-page{max-width:1300px;margin-inline:auto}
+.bakery-qr-panel{display:grid;grid-template-columns:minmax(220px,350px) minmax(0,1fr);align-items:center;gap:clamp(20px,5vw,65px);padding:clamp(20px,4vw,54px);border:2px solid #c99f70;background:#fff9ee;border-radius:14px;box-shadow:0 7px 27px rgba(58,38,20,.08)}
+.bakery-qr-art{display:flex;align-items:center;justify-content:center;padding:17px;background:#fff;border:1px solid #d1c2b2;box-shadow:0 4px 16px #4b382122}
+.bakery-qr-art svg{width:min(100%,320px)!important;height:auto!important;aspect-ratio:1}
+.qr-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.qr-actions button{min-width:135px}
+@media(max-width:1100px){
+ .nav{flex-wrap:wrap;justify-content:space-between}
+ .navlinks{width:100%;margin:0;gap:8px 14px;padding:0 0 9px}
+ .navlinks a{font-size:.9rem}
+ .admin-layout{grid-template-columns:minmax(195px,215px) minmax(0,1fr)}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body[data-site-background="prairie_doors"]::before,body[data-site-background="prairie_doors"]::after{opacity:.2}
+}
+@media(max-width:760px){
+ .header{position:relative}
+ .nav{min-height:74px;display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding-block:10px}
+ .brand{max-width:calc(100% - 110px);min-width:0;font-size:clamp(1.15rem,5vw,1.5rem)}
+ .brand span{letter-spacing:0;font-size:.62rem}
+ .mobile-nav-toggle{display:inline-flex;align-items:center;justify-content:center;margin-left:auto}
+ .navlinks{display:none;flex-direction:column;align-items:stretch;width:100%;gap:3px;background:#fff8ec;padding:10px;border:1px solid #e1c5a0;border-radius:10px;box-shadow:0 7px 15px #2a1e1220}
+ .navlinks.mobile-open{display:flex}
+ .navlinks a,.navlinks a.current{padding:12px 14px;white-space:normal;min-height:44px;border-radius:5px}
+ #main.shell,body[data-site-background] #main.shell{width:100%;padding-inline:clamp(14px,4vw,25px)}
+ .admin-layout{display:block}
+ .admin-side{display:flex;flex-direction:row;position:static;overflow-x:auto;max-height:none;padding-bottom:5px;gap:4px;white-space:nowrap;margin-bottom:18px}
+ .admin-side button{min-height:44px}
+ .cols,.detail,.bakery-qr-panel{grid-template-columns:1fr}
+ .bakery-qr-panel{justify-items:center}
+ .bakery-qr-panel>div:last-child{width:100%}
+ .qr-actions button{flex:1}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .topbar{font-size:.66rem;letter-spacing:.07em}
+ .hero{grid-template-columns:1fr}
+ .hero-art{order:-1;min-height:210px}
+ .hero-copy{padding:24px}
+ .section-head h2{font-size:clamp(1.5rem,5vw,2rem)}
+ .table-wrap th,.table-wrap td{padding:10px}
+ .shop-page .shop-hero{grid-template-columns:1fr}
+ .shop-hero-image{min-height:170px;max-height:210px}
+ body[data-site-background="prairie_doors"]::before,body[data-site-background="prairie_doors"]::after{display:none}
+}
+@media(max-width:460px){
+ .grid{grid-template-columns:1fr}
+ .section-head{display:flex;align-items:start}
+ .section-head a{min-height:40px}
+ .footer-qr{width:100%;justify-content:center}
+ .qr-actions{flex-direction:column}
+ .qr-actions button{width:100%}
+ .shop-mode-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .shop-mode-tabs .tab{min-width:0;font-size:.78rem;padding-inline:5px}
+ .card-media .product-photo,body[data-site-background] .card-media .product-photo{height:200px}
+}
+@media print{
+ body{background:#fff!important}
+ .header,.topbar,.footer,.navlinks,.mobile-nav-toggle,.qr-actions,.country-welcome-band{display:none!important}
+ body::before,body::after{display:none!important}
+ #main.shell,body[data-site-background] #main.shell{width:100%;max-width:none;background:#fff!important;box-shadow:none!important}
+ .qr-page>p{display:none}
+ .bakery-qr-panel{display:block;text-align:center;box-shadow:none;border:0}
+ .bakery-qr-art{box-shadow:none;border:0;margin:0 auto;width:350px}
+ .bakery-qr-art svg{width:310px!important;height:310px!important}
+}
