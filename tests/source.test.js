@@ -799,8 +799,8 @@ test('homepage QR PNG is a real downloadable first-party image, not a canvas con
  const qrCode=read('site/qr-code.js');
  const markup=qrMarkup();
  assert.equal(QR_PNG_PATH,'/assets/MommaBeeFarmstandAndBakery-Homepage-QR.png');
- assert.match(markup,/href="\/assets\/MammaBeesBakery-Homepage-QR\.png"/);
- assert.match(markup,/download="MammaBeesBakery-Homepage-QR\.png"/);
+ assert.match(markup,/href="\/assets\/MommaBeeFarmstandAndBakery-Homepage-QR\.png"/);
+ assert.match(markup,/download="MommaBeeFarmstandAndBakery-Homepage-QR\.png"/);
  assert.match(markup,/data-qr-download="png"/);
  assert.match(qrCode,/button\[data-qr-download="svg"\]/);
  assert.match(qrCode,/a\[data-qr-download="png"\]/);
