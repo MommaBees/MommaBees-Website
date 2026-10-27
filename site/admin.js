@@ -158,7 +158,7 @@ function listPanel(){const c=configs[selected],rows=data[selected]||[],key=c.key
  });
 
 }
-function fieldInput(f,r){const val=r?.[f.key], id='field_'+f.key;let raw='';const value=val??'';
+function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.length)return '';const val=r?.[f.key], id='field_'+f.key;let raw='';const value=val??'';
  if(f.type==='bool')raw=`<label><input id="${id}" type="checkbox" ${value?'checked':''}> Enabled / Yes</label>`;
  else if(selected==='customer_profiles'&&f.key==='username')raw=`<input id="${id}" value="${e(value)}" readonly aria-readonly="true"><small>Username changes are managed under Accounts & Roles.</small>`;
  else if(f.type==='textarea')raw=`<textarea id="${id}" rows="4">${e(value)}</textarea>`;
@@ -201,6 +201,22 @@ async function openEditor(record){const c=configs[selected];editing=record;
     draw();
   });
 
+
+ if(selected==='products' && refs.subcategories?.length){
+  const category=$('#field_category_id'),subcat=$('#field_subcategory_id');
+  if(category&&subcat){
+    const filter=()=>{
+      [...subcat.options].forEach(o=>{
+       if(!o.value)return;
+       const match=refs.subcategories.find(x=>x.id===o.value);
+       o.hidden=!match||match.category_id!==category.value;
+       o.disabled=o.hidden;
+      });
+      if(subcat.selectedOptions[0]?.disabled)subcat.value='';
+    };
+    category.addEventListener('change',filter);filter();
+  }
+ }
  if(selected==='orders'&&record){
   const details=record.guest_contact_address||record.delivery_address||{};
   const output='<div class="box"><h3>Pickup / Delivery Details</h3>'+
@@ -258,7 +274,7 @@ async function openEditor(record){const c=configs[selected];editing=record;
  }
 
  const dialog=$('#editor');dialog.showModal();$('#close-editor').onclick=()=>dialog.close();
- $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);let v=f.type==='bool'?el.checked:el.value;
+ $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);if(!el&&f.key==='subcategory_id')continue;let v=f.type==='bool'?el.checked:el.value;
  if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload(selected==='past_bakes'?'past-bakes':'product-photos',inp.files[0]);v=photo.url;} }
  if(f.type==='money')v=v===''?null:Math.round(Number(v)*100);
  if(f.type==='number')v=v===''?null:Number(v);
