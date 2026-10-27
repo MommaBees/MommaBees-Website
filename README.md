@@ -2,7 +2,7 @@
 
 **Version:** 0.2.0 — account and messaging functionality added; not a completed or certified production release  
 **Requirements baseline:** `docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md` (Owner-approved Version 1)  
-**Project:** Mamma Bee's Bakery, Nixa, Missouri  
+**Project:** Mamma Bee's Bakery  
 **Prepared:** 2026-10-26  
 **Repository:** MommaBees/MommaBees-Website (main)  
 **Google Drive location:** Not established  
@@ -57,7 +57,7 @@ This is not being silently deleted from V1. The following require further code a
 - An **Admin download button** for QR PNG/PDF (the repository instead includes a command-line QR generator under `tools/`).
 - Guest-message Turnstile setup; signed-in customers can message through Auth, but guest messages require Turnstile keys.
 - Automatic reservation expiry cron (an owner-triggered cleanup endpoint is included).
-- Final Missouri cottage-food eligibility, labels, licensing, tax, food-handling, accessibility, privacy and terms review.
+- Final cottage-food eligibility, labels, licensing, tax, food-handling, accessibility, privacy and terms review.
 
 Treat this as **Step 1 code foundation**, not as permission to collect real payments immediately.
 
@@ -131,7 +131,7 @@ In `site/config.js`, enter the matching **public** Turnstile site key if accepti
 2. Locate **Developers / API keys** and copy the **test secret** to encrypted Cloudflare variable `STRIPE_SECRET_KEY`.
 3. Register a Stripe webhook endpoint: `https://YOUR-PAGES-DOMAIN/api/stripe-webhook`.
 4. Subscribe to `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`, and `checkout.session.async_payment_failed`. Save the webhook **signing secret** as `STRIPE_WEBHOOK_SECRET`.
-5. Review tax obligations and product/delivery tax codes with an appropriate Missouri tax professional. The current code requests Stripe automatic tax on an aggregate line item and is **not certified tax-accurate**. Keep checkout disabled until corrected/approved.
+5. Review tax obligations and product/delivery tax codes with an appropriately qualified tax professional. The current code requests Stripe automatic tax on an aggregate line item and is **not certified tax-accurate**. Keep checkout disabled until corrected/approved.
 6. Set Admin `Website Appearance & Settings` → ZIP codes, fulfillment choices, food disclosures/policies, then create a category, your actual product(s), inventory batch or baking day, and finally enable checkout **in test environment**.
 7. Use Stripe's documented test payment methods. Verify the success webhook, order status, inventory deduction, failed/expired session restock and guest/account access.
 8. **Do not add LIVE Stripe keys until you personally authorize live transaction testing.**
@@ -170,11 +170,11 @@ For Cloudflare Pages Functions local execution, use Cloudflare Wrangler with `.d
 
 ## Important food-safety and privacy notes
 
-- Specific cottage-food eligibility, home pickup/delivery rules, labels, net weight, allergen disclosures, tax registrations and any local Nixa requirements need independent confirmation before real sales. **This code is not legal or tax advice.**
+- Specific cottage-food eligibility, home pickup/delivery rules, labels, net weight, allergen disclosures, tax registrations and applicable local operating requirements need independent confirmation before real sales. **This code is not legal or tax advice.**
 - **Do not put your private home pickup address in `site_settings.pickup_instructions`.** That table is public to allow the storefront to read its general business settings. Private pickup instructions require a separate protected communication workflow.
 - Product photos are deliberately public; customer review photos are private in Supabase Storage and should be moderated. Customer contact information is restricted through RLS.
 - Product variation price integrity, event replay/disputes, rate limits, abuse and security testing need further development before public launch.
-- Restrict sales to legally permitted products and Missouri customers. Local delivery ZIP validation is implemented but cannot prove the buyer is physically in Missouri; additional address validation is required.
+- Restrict sales to legally permitted products and customers who meet applicable location rules. Local delivery ZIP validation alone cannot establish customer eligibility; additional address validation is required.
 - For scheduled announcements/promotions, enter your times using the **America/Chicago** zone; the current Admin datetime input is interpreted using your browser's timezone and should be improved if you administer the business while travelling.
 - Do not advertise products as fresh today unless they are; approve clearance batches manually and verify eligibility and original customer rights.
 
@@ -211,7 +211,7 @@ For Cloudflare Pages Functions local execution, use Cloudflare Wrangler with `.d
 - Supabase row-level security: https://supabase.com/docs/guides/database/postgres/row-level-security
 - Stripe Checkout Sessions: https://docs.stripe.com/api/checkout/sessions/create
 - Stripe webhooks: https://docs.stripe.com/webhooks
-- Missouri cottage-food statute: https://revisor.mo.gov/main/OneSection.aspx?section=196.298
+- Check the applicable cottage-food statutes and official regulatory guidance before approving online sales; location restrictions remain mandatory.
 
 ## Revision history
 
