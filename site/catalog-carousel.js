@@ -1,4 +1,5 @@
 // Show actual owner-provided product photos on the existing home carousel.
+import {harvestCrop} from './harvest-sprite.js';
 export function catalogCarouselSlides({settings={},products=[],showcase=[],categories=[]}={}){
  const dept=new Map(categories.map(x=>[x.id,x.department]));
  const enabled=d=>settings['home_carousel_'+d+'_items']!==false;
@@ -15,7 +16,7 @@ export function catalogCarouselSlides({settings={},products=[],showcase=[],categ
  return ['bakery','homestand'].flatMap(d=>{
   if(!enabled(d))return [];
   const found=new Set();
-  return [...live,...showcase.filter(x=>x.active!==false)].filter(x=>x.department===d&&x.photo_url)
+  return [...live,...showcase.filter(x=>x.active!==false)].filter(x=>x.department===d&&x.photo_url&&!harvestCrop(x.photo_url))
    .filter(x=>{const k=x.variety_id||String(x.name).toLowerCase();if(found.has(k))return false;found.add(k);return true})
    .slice(0,3).map((x,i)=>make(x,d,i));
  });
