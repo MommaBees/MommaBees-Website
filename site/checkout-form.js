@@ -1,11 +1,20 @@
-import {config,currentUser,currentSession,money,escapeHtml as e,currentDate,fmt} from './api.js';
+import {config,currentUser,currentSession,money,escapeHtml as e,currentDate,futureDate,fmt} from './api.js';
 import {mountPickupCalendar} from './pickup-calendar.js';
 const dollars=n=>money(Math.max(0,Number(n)||0));
 export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
  if(!cart.length){nav('#cart');return;}
  const settings=all.settings||{};
- const days=(all.days||[]).filter(d=>d.enabled&&d.cutoff_at&&new Date(d.cutoff_at)>new Date()&&d.date>=currentDate())
-   .sort((a,b)=>a.date.localeCompare(b.date));
+ const canFulfillCartOn=date=>cart.every(item=>{
+  const product=all.products.find(p=>p.id===item.product_id);
+  if(!product||!product.published)return false;
+  if(item.mode==='preorder')return date>=futureDate(product.lead_days)&&product.mode!=='ready';
+  if(item.mode==='ready')return product.mode!=='preorder'&&
+   all.batches.some(batch=>batch.id===item.batch_id&&batch.product_id===product.id&&
+    !batch.disabled&&batch.baked_on<=currentDate()&&batch.best_before>=date&&batch.quantity_available>=item.quantity);
+  return false;
+ });
+ const days=(all.days||[]).filter(d=>d.enabled&&d.cutoff_at&&new Date(d.cutoff_at)>new Date()&&
+  d.date>=currentDate()&&canFulfillCartOn(d.date)).sort((a,b)=>a.date.localeCompare(b.date));
  const stripeAvailable=settings.checkout_enabled===true;
  const pickupEnabled=settings.pickup_enabled===true;
  const payAtPickup=settings.pay_at_pickup_enabled===true&&
