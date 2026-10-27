@@ -110,7 +110,7 @@ body{background:repeating-linear-gradient(0deg,rgba(117,79,35,.025) 0px,rgba(117
 @media(prefers-reduced-motion:reduce){.bakery-product-card:hover .product-photo{transform:none}.button,.btn{transition:none}}
 
 
-/* Missouri prairie farmhouse background presets; only imagery selected by the bakery is used. */
+/* Rustic farmhouse background presets; only imagery selected by the bakery is used. */
 body[data-site-background]{--bakery-bg-overlay:.76;--bakery-bg-image:none;--bakery-bg-position:center;--bakery-bg-solid:#f8efdf;min-height:100vh}
 body[data-site-background="solid"]{background:var(--bakery-bg-solid)}
 body[data-site-background="linen"]{background:
