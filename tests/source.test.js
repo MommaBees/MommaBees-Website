@@ -27,6 +27,7 @@ import {SAMPLE_MENU,samplesFor} from '../site/sample-menu.js';
 import {accountNavigationMarkup,ACCOUNT_MENU_OPEN_MS,ACCOUNT_MENU_CLOSE_MS} from '../site/account-navigation.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
 import {referenceKeyFor} from '../site/reference-keys.js';
+import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from '../site/product-types.js';
 import {centralInputFromIso,isoFromCentralInput} from '../site/admin-time.js';
 import {HOME_URL,QR_PNG_PATH,qrSvg,qrMarkup} from '../site/qr-code.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -975,4 +976,52 @@ test('catalog RLS hardening drops overly permissive active-account write policie
  assert.doesNotMatch(sql,/drop policy.*staff manage/i);
  assert.doesNotMatch(sql,/drop policy.*public categories/i);
  assert.doesNotMatch(sql,/drop policy.*public products/i);
+});
+
+test('Owner requested footer links use exactly two rows and account tagline is absent',()=>{
+ const app=read('site/app.js'),account=read('site/account.js'),css=read('site/country-home-v2.css');
+ const nav=app.slice(app.indexOf('aria-label="Footer navigation"'),app.indexOf('class="footer-qr"'));
+ assert.equal((nav.match(/class="footer-nav-row"/g)||[]).length,2);
+ const rows=nav.split('class="footer-nav-row"').slice(1);
+ assert.deepEqual([...rows[0].matchAll(/href="#([^"]+)"[^>]*>([^<]+)<\/a>/g)].map(x=>[x[1],x[2]]),
+  [['shop','Shop All'],['ready','Ready to Sell'],['preorder','Preorder']]);
+ assert.deepEqual([...rows[1].matchAll(/href="#([^"]+)"[^>]*>([^<]+)<\/a>/g)].map(x=>[x[1],x[2]]),
+  [['gallery','Past Bakes'],['contact','Ask Momma Bee'],['faq','Questions & Policies']]);
+ assert.match(css,/\.footer-nav-row>a:not\(:last-child\)::after/);
+ assert.doesNotMatch(account,/A place for your bakery favorites/);
+ assert.match(account,/My Bakery Account/);
+});
+
+test('Product type is derived from category and non-food products cannot be published',()=>{
+ const sql=read('supabase/migrations/20261027_product_type_gates_v119.sql');
+ const admin=read('site/admin.js');
+ assert.deepEqual(PRODUCT_TYPES,['food','handmade','regulated']);
+ for(const slug of ['cakes','cake-pops','candies','cookies','breads']){
+  assert.equal(productTypeForCategory(slug),'food');
+ }
+ assert.equal(productTypeForCategory('handmade'),'handmade');
+ assert.equal(productTypeForCategory('signs-decor'),'handmade');
+ assert.equal(productTypeForCategory('natural-homemade-products'),'regulated');
+ assert.equal(productTypeForCategory('seasonal'),null);
+ assert.equal(productTypeForCategory('new-future-category'),'unclassified');
+ assert.match(nonfoodHoldMessage('handmade'),/draft-only/);
+ assert.match(nonfoodHoldMessage('regulated'),/compliance review/);
+ assert.match(sql,/add column if not exists product_type text not null default 'food'/);
+ assert.match(sql,/products_nonfood_unpublished_check/);
+ assert.match(sql,/not published or product_type='food'/);
+ assert.match(sql,/enforce_product_type_gate/);
+ assert.match(sql,/category_slug='natural-homemade-products'/);
+ assert.match(admin,/field\('product_type','Product type','select'/);
+ assert.match(admin,/productTypeForCategory\(cat\?\.slug\)/);
+ assert.match(admin,/publication\.disabled=!isFood/);
+ assert.match(admin,/body\.published=false;body\.featured=false/);
+ assert.match(admin,/if\(body\.published && !reviewed\)/);
+ assert.match(admin,/body\.allergen_reviewed=reviewed/);
+});
+
+test('Non-food drafts can be classified under inactive subcategories without exposing them publicly',()=>{
+ const sql=read('supabase/migrations/20261027_product_type_gates_v119.sql');
+ assert.match(sql,/create or replace function private\.check_product_subcategory\(\)/);
+ assert.match(sql,/s\.active or not new\.published/);
+ assert.match(sql,/Published products require an active matching subcategory/);
 });

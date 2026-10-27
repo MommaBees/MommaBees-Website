@@ -1,5 +1,6 @@
 import {currentUser,list,add,update,remove,rpc,upload,signedImage,money,escapeHtml as e,fmt,pretty} from './api.js';
 import {referenceKeyFor} from './reference-keys.js';
+import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from './product-types.js';
 import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
 import {pastBakeName} from './past-bakes.js';
@@ -10,7 +11,7 @@ const cols=(...x)=>x;
 const field=(key,label,type='text',extra={})=>({key,label,type,...extra});
 const configs={
  categories:{label:'Categories',fields:cols(field('name','Category name'),field('slug','URL slug (example: cookies)'),field('description','Description','textarea'),field('photo_url','Category image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
- products:{label:'Products',fields:cols(field('category_id','Category','ref',{table:'categories'}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Sold by','select',{options:['each','dozen','tray','box','slice']}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
+ products:{label:'Products',fields:cols(field('category_id','Category','ref',{table:'categories'}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Sold by','select',{options:['each','dozen','tray','box','slice']}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
  subcategories:{label:'Subcategories & Varieties',fields:cols(field('category_id','Parent category','ref',{table:'categories'}),field('name','Subcategory name'),field('slug','Subcategory slug'),field('description','Description','textarea'),field('photo_url','Subcategory image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
  past_bakes:{label:'Past Bakes Gallery',fields:cols(field('title','Gallery photo title'),field('description','Optional photo description','textarea'),field('image_url','Past bake photograph','image'),field('sort_order','Display order','number'),field('published','Display in gallery','bool'))},
  demo_catalog_items:{label:'Sandbox Test Products',fields:cols(field('name','Test product name'),field('category','Category','select',{options:['Cookies','Cakes','Pies','Cheesecakes','Pastries']}),field('description','Test description','textarea'),field('price_cents','Example price (dollars)','money'),field('unit','Unit','select',{options:['each','dozen','box','tray','slice']}),field('sort_order','Display order','number'),field('enabled','Enable this sample','bool'))},
@@ -52,7 +53,7 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  authShell();await renderPanel();}
 async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
-function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
+function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['name','product_type','price_cents','mode','published']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
 
 
  if(selected==='baking_days'){
@@ -319,6 +320,37 @@ async function openEditor(record){const c=configs[selected];editing=record;
   }
  }
 
+ if(selected==='products'){
+  const typeSelect=$('#field_product_type');
+  const category=$('#field_category_id');
+  const panel=$('#editor-fields .allergen-panel');
+  const ingredients=$('#field_ingredients')?.closest('.field');
+  const publication=$('#field_published');
+  const note=document.createElement('p');
+  note.className='admin-product-type-note';
+  note.setAttribute('role','status');
+  typeSelect.closest('.field').append(note);
+  const updateTypeControls=(categoryChanged=false)=>{
+   const cat=refs.categories?.find(c=>c.id===category.value);
+   const categoryType=productTypeForCategory(cat?.slug);
+   if(categoryChanged&&categoryType&&categoryType!=='unclassified')typeSelect.value=categoryType;
+   const isFood=typeSelect.value==='food';
+   if(panel)panel.hidden=!isFood;
+   if(ingredients)ingredients.hidden=!isFood;
+   if(publication){
+    if(!isFood)publication.checked=false;
+    publication.disabled=!isFood;
+   }
+   note.textContent=categoryType==='unclassified'
+    ?'This category has not been classified. Product publication is blocked.'
+    :nonfoodHoldMessage(typeSelect.value)||
+      'Food products require a complete ingredient list and confirmed major-allergen review before publication.';
+  };
+  category?.addEventListener('change',()=>updateTypeControls(true));
+  typeSelect?.addEventListener('change',()=>updateTypeControls());
+  updateTypeControls(!record);
+ }
+
  const dialog=$('#editor');dialog.showModal();$('#close-editor').onclick=()=>dialog.close();
  $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);if(!el&&f.key==='subcategory_id')continue;let v=f.type==='bool'?el.checked:el.value;
  if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload(selected==='past_bakes'?'past-bakes':'product-photos',inp.files[0]);v=photo.url;} }
@@ -332,7 +364,7 @@ async function openEditor(record){const c=configs[selected];editing=record;
   v=null;
  }
  if(f.key==='code'&&!v)v=null;
- if(f.key==='published'&&selected==='products'&&v===true&&!$('#field_ingredients')?.value?.trim())throw Error('Add the actual ingredient list before publishing this product.');
+ if(f.key==='published'&&selected==='products'&&v===true&&$('#field_product_type')?.value==='food'&&!$('#field_ingredients')?.value?.trim())throw Error('Add the actual ingredient list before publishing this product.');
  body[f.key]=v;
 
  }
@@ -340,13 +372,23 @@ async function openEditor(record){const c=configs[selected];editing=record;
  (!body.pay_at_pickup_tax_reviewed||body.pay_at_pickup_tax_rate_bps===null))
  throw Error('Pay at Pickup is not yet available with automatic tax handling. Stripe Tax calculates Stripe payments only; cash collection needs its own verified tax calculation.');
  if(selected==='products'){
-  const groups=MAJOR_ALLERGENS.filter(name=>[...document.querySelectorAll('.major-allergen')].some(input=>input.value===name&&input.checked));
-  const reviewed=$('#allergen-reviewed')?.checked===true;
-  body.major_allergens=groups;
-  body.allergens=publicAllergenStatement(groups);
-  body.allergen_reviewed=reviewed;
-  if(body.published && !reviewed)throw Error('Review and confirm all nine major allergen groups before publishing.');
-  if(body.published && !String(body.ingredients||'').trim())throw Error('Enter a complete ingredient list before publishing.');
+  const cat=refs.categories?.find(c=>c.id===body.category_id);
+  const expected=productTypeForCategory(cat?.slug);
+  if(expected==='unclassified')throw Error('Choose a classified product category before saving.');
+  if(expected!==null&&body.product_type!==expected)throw Error('The product type must match its category.');
+  if(body.product_type!=='food'){
+   if(body.published)throw Error(nonfoodHoldMessage(body.product_type));
+   body.published=false;body.featured=false;
+   body.ingredients=null;body.allergens=null;body.major_allergens=[];body.allergen_reviewed=false;
+  }else{
+   const groups=MAJOR_ALLERGENS.filter(name=>[...document.querySelectorAll('.major-allergen')].some(input=>input.value===name&&input.checked));
+   const reviewed=$('#allergen-reviewed')?.checked===true;
+   body.major_allergens=groups;
+   body.allergens=publicAllergenStatement(groups);
+   body.allergen_reviewed=reviewed;
+   if(body.published && !reviewed)throw Error('Review and confirm all nine major allergen groups before publishing.');
+   if(body.published && !String(body.ingredients||'').trim())throw Error('Enter a complete ingredient list before publishing.');
+  }
  }
  const key=c.key||'id';if(c.single){await update(selected,1,body);}else if(record){if(Array.isArray(key))throw Error('Editing records with two-part keys requires deleting/recreating from SQL Editor.');await update(selected,record[key],body,key);}else await add(selected,body);
  dialog.close();await ctx.load();await renderPanel();}catch(x){ctx.showError(x);}};

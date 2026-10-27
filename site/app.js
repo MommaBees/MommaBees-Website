@@ -126,9 +126,10 @@ function layout(content){
     <p class="footer-location">Located in Nixa, Missouri — Farmstand &amp; Made to Order</p>
     <p class="footer-availability">Offerings vary by baking date and availability. Please contact us for current selections and custom orders.</p></div>
    <nav class="footer-col footer-navigation" aria-label="Footer navigation">
-    <p class="footer-col-title">Come on in</p><a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a>
-    <a href="#preorder">Preorder</a><a href="#gallery">Past Bakes</a>
-    <a href="#contact">Ask Momma Bee</a><a href="#faq">Questions & Policies</a></nav>
+    <p class="footer-col-title">Come on in</p>
+    <div class="footer-nav-row"><a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a><a href="#preorder">Preorder</a></div>
+    <div class="footer-nav-row"><a href="#gallery">Past Bakes</a><a href="#contact">Ask Momma Bee</a><a href="#faq">Questions & Policies</a></div>
+   </nav>
    <div class="footer-col"><p class="footer-col-title">Take us along</p>
     <a class="footer-qr" href="#qr" aria-label="Open the downloadable bakery homepage QR code">
      ${qrSvg()}<span>Scan to visit our bakery</span></a>

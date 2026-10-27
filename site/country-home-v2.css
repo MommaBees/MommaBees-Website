@@ -442,3 +442,24 @@ body[data-page="admin"] .admin-settings-detail{padding:20px;background:#fffaf3;b
 body[data-page="admin"] .admin-settings-detail h3{font-size:1.08rem;margin:0 0 8px}
 body[data-page="admin"] .admin-settings-copy{font-size:.98rem;line-height:1.7;overflow-wrap:anywhere;white-space:normal;margin:0;max-width:80ch}
 body[data-page="admin"] .admin-empty-state{padding:18px;border:1px dashed #d2bea7;background:#fffbf4;border-radius:5px;line-height:1.6}
+
+/* MBB-ADMIN-029 v1.19: exact two-line footer navigation. */
+.footer .footer-inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,270px);gap:clamp(20px,3vw,40px);align-items:start}
+.footer .footer-inner>.footer-col:first-child{grid-column:1;grid-row:1}
+.footer .footer-inner>.footer-col:last-child{grid-column:2;grid-row:1}
+.footer .footer-inner>.footer-navigation{grid-column:1/-1;grid-row:2;display:grid;justify-items:center;justify-self:center;align-items:center;gap:10px;width:100%;max-width:670px;white-space:normal}
+.footer .footer-navigation>.footer-col-title{margin:0 0 4px;text-align:center}
+.footer .footer-nav-row{display:flex;align-items:center;justify-content:center;gap:clamp(4px,.9vw,10px);min-width:0;max-width:100%;width:100%}
+.footer .footer-nav-row>a{display:inline-flex;align-items:center;gap:clamp(4px,.9vw,10px);font-size:clamp(.68rem,1.25vw,.93rem);white-space:nowrap;line-height:1.5;text-decoration:none;font-weight:650;min-height:32px}
+.footer .footer-nav-row>a:not(:last-child)::after{content:"|";color:#44372e;pointer-events:none;font-weight:400}
+.footer .footer-nav-row>a:hover{text-decoration:underline;text-underline-offset:3px}
+body[data-page="admin"] .admin-product-type-note{font-size:.82rem;line-height:1.6;color:#583921;background:#fff4e3;border:1px solid #e0c9ab;padding:10px 12px;border-radius:5px;margin:0}
+body[data-page="admin"] #editor-fields .field[hidden],body[data-page="admin"] #editor-fields .allergen-panel[hidden]{display:none!important}
+@media(max-width:760px){
+ .footer .footer-inner{grid-template-columns:1fr}
+ .footer .footer-inner>.footer-col:first-child{grid-column:1;grid-row:1}
+ .footer .footer-inner>.footer-navigation{grid-column:1;grid-row:2}
+ .footer .footer-inner>.footer-col:last-child{grid-column:1;grid-row:3}
+ .footer .footer-nav-row>a{font-size:clamp(.65rem,2.3vw,.83rem)}
+ .footer .footer-nav-row{gap:clamp(3px,.8vw,6px)}
+}
