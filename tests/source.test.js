@@ -1468,3 +1468,35 @@ test('owner catalog showcases render in split home and department Shop All witho
  assert.match(sql,/references public\.catalog_varieties/);
  assert.doesNotMatch(sql,/insert into public\.products/);
 });
+
+
+import {HARVEST_PHOTO_SLUGS,harvestSlugFromFile,harvestUploadMatches} from '../site/harvest-photo-import.js';
+test('uploaded 2027 harvest filenames map uniquely and reject restricted stock-photo watermark',()=>{
+ assert.deepEqual(HARVEST_PHOTO_SLUGS,['broccoli','cauliflower','green-beans','jalapenos','mini-green-peppers','salad-cucumbers','spineless-okra','tomatoes','yellow-summer-squash','zucchini']);
+ assert.equal(harvestSlugFromFile('Green Beans.webp'),'green-beans');
+ assert.equal(harvestSlugFromFile('Spineless_Orka.webp'),null);
+ assert.equal(harvestSlugFromFile('spineless-okra-card.webp'),'spineless-okra');
+ assert.equal(harvestSlugFromFile('Yellow Summer Squash-card.webp'),'yellow-summer-squash');
+ assert.equal(harvestSlugFromFile('Cherry tomatoes.jpeg'),null);
+ assert.equal(harvestSlugFromFile('cherry-tomatoes-card.webp'),null);
+ const files=[{name:'broccoli-card.webp'},{name:'green-beans.webp'},{name:'broccoli.webp'},{name:'cherry-tomatoes.webp'},{name:'unknown.webp'}];
+ const items=[{slug:'broccoli',department:'homestand',id:'b'},{slug:'green-beans',department:'homestand',id:'g'},{slug:'unknown',department:'bakery',id:'x'}];
+ const result=harvestUploadMatches(files,items);
+ assert.deepEqual(result.matched.map(x=>x.slug),['broccoli','green-beans']);
+ assert.deepEqual(result.skipped,['broccoli.webp','cherry-tomatoes.webp','unknown.webp']);
+});
+test('Admin can upload permitted WebP harvest images in bulk without creating inventory',()=>{
+ const admin=read('site/admin.js'),sql=read('supabase/migrations/20261027_harvest_showcase_v132.sql');
+ const css=read('site/country-home-v2.css');
+ assert.match(admin,/id="harvest-upload-files"/);
+ assert.match(admin,/id="harvest-photo-rights"/);
+ assert.match(admin,/harvestUploadMatches\(files,rows\)/);
+ assert.match(admin,/await upload\('product-photos',file\)/);
+ assert.match(admin,/await update\('store_showcase_items',item\.id,\{photo_url:image\.url\}\)/);
+ assert.match(admin,/await ctx\.load\(\)/);
+ assert.match(css,/\.harvest-bulk-panel/);
+ for(const name of ['Broccoli','Cauliflower','Jalapeños','Mini Green Peppers','Salad Cucumbers','Spineless Okra','Tomatoes','Yellow Summer Squash','Zucchini'])
+  assert.ok(sql.includes(name));
+ assert.doesNotMatch(sql,/insert into public\.products/i);
+ assert.doesNotMatch(sql,/insert into public\.past_bakes/i);
+});

@@ -1200,3 +1200,11 @@ body[data-website-size] #main .home-carousel .home-carousel-slide .hero-art img{
  border-bottom-color:#9bb58b;
 }
 body[data-page="home"] .home-department-products .showcase-illustration{height:clamp(140px,15vw,210px)}
+
+/* MBB-CATALOG-042 — Harvest photo batch picker */
+.harvest-bulk-panel{margin:16px 0;padding:clamp(15px,2vw,23px)}
+.harvest-bulk-panel>label{display:block;font-weight:650;margin:10px 0}
+.harvest-bulk-panel input[type="file"]{display:block;margin:8px 0 16px;max-width:100%}
+.harvest-publish-confirm{display:flex!important;gap:10px;align-items:flex-start;font-weight:500!important}
+.harvest-publish-confirm input{width:21px;height:21px;flex:none}
+#harvest-upload-status:not(:empty){margin-top:14px;overflow-wrap:anywhere}

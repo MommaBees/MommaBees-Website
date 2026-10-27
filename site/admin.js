@@ -9,6 +9,7 @@ import {WEBSITE_SIZE_OPTIONS,normalizeWebsiteSize,applyWebsiteSize} from './webs
 import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from './home-carousel.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
 import {pastBakeName} from './past-bakes.js';
+import {harvestUploadMatches} from './harvest-photo-import.js';
 import {BUILTIN_PHOTO_PRESETS,photoByUrl} from './photo-library.js';
 let selected='dashboard', data={},editing=null, refs={},ctx=null;
 async function productStripeRequest(method,productId=null){
@@ -149,7 +150,18 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  authShell();await renderPanel();}
 async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_size')return websiteSizePanel();if(selected==='store_display')return storeDisplayPanel();if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
-function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">${selected==='products'?'Archive':'Archive/Delete'}</button>`:''}${selected==='products'?`<div class="admin-stripe-sync"><span class="tiny" data-stripe-status="${r.id}" role="status">Checking TEST status…</span><button type="button" class="button secondary" data-sync-product="${i}">Sync Stripe TEST</button></div>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
+function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${${selected==='store_showcase_items'?`<section class="box harvest-bulk-panel" aria-labelledby="harvest-upload-title">
+ <h3 id="harvest-upload-title">Upload Homestand Harvest Photos</h3>
+ <p class="small muted">Select converted photos together. Matching vegetables are updated automatically.</p>
+ <label for="harvest-upload-files">Harvest photographs (WebP, JPG, PNG · maximum 5 MB each)</label>
+ <input type="file" id="harvest-upload-files" accept="image/webp,image/jpeg,image/png" multiple>
+ <label class="harvest-publish-confirm" for="harvest-photo-rights">
+  <input type="checkbox" id="harvest-photo-rights" required>
+  <span>I have permission to display the selected photographs on this website.</span>
+ </label>
+ <button class="button secondary" type="button" id="harvest-upload-button">Upload matching harvest photos</button>
+ <p id="harvest-upload-status" role="status" aria-live="polite"></p>
+ </section>`:''}selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">${selected==='products'?'Archive':'Archive/Delete'}</button>`:''}${selected==='products'?`<div class="admin-stripe-sync"><span class="tiny" data-stripe-status="${r.id}" role="status">Checking TEST status…</span><button type="button" class="button secondary" data-sync-product="${i}">Sync Stripe TEST</button></div>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
 
 
  if(selected==='baking_days'){
@@ -188,6 +200,45 @@ function listPanel(){if(selected==='site_settings')return siteSettingsSummary();
     alert('Four fair dates created. Review each calendar record and adjust cutoff before inviting customers.');
     await renderPanel();
    }catch(ex){ctx.showError('Created '+completed+' fair dates. Review existing dates before retrying. '+ex.message);}
+  };
+ }
+ if(selected==='store_showcase_items'){
+  const uploadButton=$('#harvest-upload-button');
+  uploadButton.onclick=async()=>{
+   const files=[...($('#harvest-upload-files')?.files||[])];
+   const status=$('#harvest-upload-status');
+   const consent=$('#harvest-photo-rights');
+   if(!files.length){status.textContent='Choose converted photographs first.';return;}
+   if(!consent.checked){status.textContent='Confirm that you have permission to publish the photographs.';return;}
+   if(files.length>30){status.textContent='Choose no more than 30 photographs at once.';return;}
+   const {matched,skipped}=harvestUploadMatches(files,rows);
+   if(!matched.length){status.textContent='No matching Homestand vegetables were found. Choose WebP files from the store-cards folder.';return;}
+   if(!confirm('Upload '+matched.length+' Homestand photographs? Each matching showcase image will be replaced. No prices or products will change.'))return;
+   uploadButton.disabled=true;
+   let completed=0;
+   const errors=[];
+   try{
+    for(const {file,item} of matched){
+     status.textContent='Uploading '+(completed+1)+' of '+matched.length+': '+file.name;
+     try{
+      const image=await upload('product-photos',file);
+      if(!image.url)throw Error('Storage did not return a public image URL');
+      await update('store_showcase_items',item.id,{photo_url:image.url});
+      completed++;
+     }catch(error){errors.push(file.name+': '+error.message);}
+    }
+    await ctx.load();
+    await renderPanel();
+    const message=[
+     completed+' Homestand photo'+(completed===1?'':'s')+' updated.',
+     skipped.length?skipped.length+' skipped (unmatched, duplicate or restricted): '+skipped.join(', '):'',
+     errors.length?errors.length+' failed: '+errors.join('; '):''
+    ].filter(Boolean).join(' ');
+    const newStatus=$('#harvest-upload-status');
+    if(newStatus)newStatus.textContent=message;
+   }catch(error){
+    status.textContent=completed+' uploaded; refresh and retry unsuccessful images. '+error.message;
+   }finally{uploadButton.disabled=false;}
   };
  }
  if(selected==='past_bakes'){
