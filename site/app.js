@@ -38,7 +38,7 @@ async function startSandboxCheckout(id){
  if(!/^https:\/\/checkout\.stripe\.com\//.test(json.checkout_url||''))throw Error('Invalid checkout redirect');
  location.assign(json.checkout_url);
 }
-function demoStorePreview(mode='all'){
+function demoStorePreview(mode='all',categoryName=null){
  if(!['owner','admin'].includes(verifiedBackOfficeRole)||all.settings.demo_store_enabled!==true)return '';
  const previews={
  'Chocolate Chip Cookies':{cat:'Cookies',sub:'Chocolate Chip',blurb:'A classic dozen of chocolate chip cookies, warm and comforting.'},
@@ -48,10 +48,11 @@ function demoStorePreview(mode='all'){
  'Classic Cheesecake':{cat:'Cheesecakes',sub:'Classic Cheesecakes',blurb:'Rich, smooth cheesecake made for special celebrations.'},
  'Brownie Box':{cat:'Bars & Brownies',sub:'Brownies',blurb:'Six fudgy brownies, sliced and ready to share.'}
  };
- const products=all.demoItems.filter(x=>x.enabled===true&&demoMatchesView(x,mode));
+ const products=all.demoItems.filter(x=>x.enabled===true&&demoMatchesView(x,mode)&&(!categoryName||x.category===categoryName));
+ if(!products.length)return '';
  return '<section class="section demo-store"><div class="section-head"><div>'+
-  '<div class="eyebrow">Owner/Admin preview · Stripe TEST mode</div><h2>Shop Preview</h2>'+
-  '<p class="muted">Six illustrative products and example prices. This preview is private, and no actual product has been offered for purchase.</p>'+
+  '<div class="eyebrow">Owner/Admin Only · Stripe TEST mode</div><h2>Test Products in This Shop View</h2>'+
+  '<p class="muted">Examples for testing the regular shop. Only Owner/Admin can see or check out these test items.</p>'+
   '</div></div><div class="grid">'+products.map(x=>{
   const d=previews[x.name]||{cat:x.category,sub:'',blurb:x.description};
   const preset=sandboxProductPhoto(x);
@@ -107,8 +108,8 @@ function layout(content){
  applyBakeryBackground(settings,config.supabaseUrl);
  $('#app').innerHTML=`<div class="topbar">Faith · Family · Homemade Goodness</div><header class="header"><div class="shell nav">
  <a href="#home" class="brand">Mamma Bee's Bakery <span>${e(settings.brand_subtitle||'Rooted in Faith. Made with Love. Shared with Joy.')}</span></a>
- <nav aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a>${['owner','admin'].includes(verifiedBackOfficeRole)&&settings.demo_store_enabled===true?'<a href="#sandbox-store" class="sandbox-nav-link">Sandbox Store</a>':''}<a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a><a href="#account">${currentUser()?'My Account':'Sign In'}</a>${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
- <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${content}</main><footer class="footer"><div class="shell"><strong>Mamma Bee's Bakery</strong><p>Rooted in Faith. Made with Love. Shared with Joy. · Country baking and sweet traditions</p><p><a href="#faq">FAQ & policies</a> · <a href="#contact">Contact</a></p><p class="tiny">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</p></div></footer>`;
+ <nav aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a><a href="#account">${currentUser()?'My Account':'Sign In'}</a>${backOfficeNavigation(verifiedBackOfficeRole)}</nav></div></header>
+ <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${content}</main><footer class="footer"><div class="shell"><strong>Mamma Bee's Bakery</strong><p>Rooted in Faith. Made with Love. Shared with Joy. · Country baking and sweet traditions</p><p><a href="#faq">FAQ & policies</a> · <a href="#contact">Contact</a> · <a href="#qr">Bakery QR Code</a></p><p class="tiny">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</p></div></footer>`;
  document.querySelectorAll('#app img').forEach(img=>{
   img.addEventListener('error',()=>{
    const placeholder=document.createElement('div');
