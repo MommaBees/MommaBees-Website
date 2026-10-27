@@ -469,7 +469,8 @@ test('terms do not treat an off-schedule inquiry as an accepted order',()=>{
 test('country background presets include weathered wooden doors and safe uploaded photos',()=>{
  assert.equal(backgroundChoice('prairie_doors'),'prairie_doors');
  assert.equal(backgroundChoice('malicious-style'),'prairie_doors');
- assert.equal(BACKGROUND_OPTIONS.length,5);
+ assert.equal(BACKGROUND_OPTIONS.length,6);
+ assert.equal(backgroundChoice('chickens'),'chickens');
  assert.ok(BACKGROUND_OPTIONS.some(x=>x.label.includes('Wooden Barn Doors')));
  const base='https://ryqcfojzdncrshinlpue.supabase.co';
  const photo=base+'/storage/v1/object/public/bakery-backgrounds/00000000-0000-4000-8000-000000000001.jpg';
@@ -817,15 +818,16 @@ test('homepage QR PNG is a real downloadable first-party image, not a canvas con
 });
 
 test('public storefront copy, metadata and background controls omit regional locality wording',()=>{
- const publicFiles=['site/index.html','site/app.js','site/background.js','site/background-admin.js','site/checkout-form.js'];
+ const publicFiles=['site/index.html','site/background.js','site/background-admin.js','site/checkout-form.js'];
+ assert.match(read('site/app.js'),/Located in Nixa, Missouri/);
  for(const file of publicFiles){
   const source=read(file);
   assert.doesNotMatch(source,/\\b(?:Nixa|Missouri)\\b/i,file+' includes unwanted location copy');
  }
  const settings=read('site/background-admin.js');
- assert.match(settings,/Restore Rustic Barn Doors/);
+ assert.match(settings,/Restore Watercolor Chickens/);
  const metadata=read('site/index.html');
- assert.match(metadata,/Momma Bee Farmstand and Bakery \| Rooted in Faith/);
+ assert.match(metadata,/MommaBee Bakery&Farmstand \| Rooted in Faith/);
  assert.doesNotMatch(metadata,/Handmade in|homemade baking in/);
  const checkout=read('site/checkout-form.js');
  assert.match(checkout,/autocomplete="address-level1" placeholder="State" required/);
@@ -836,7 +838,7 @@ test('public storefront copy, metadata and background controls omit regional loc
 });
 
 test('approved full business name is consistent on every customer-facing screen',()=>{
- const brand='Momma Bee Farmstand and Bakery';
+ const brand='MommaBee Bakery&Farmstand';
  const files=['site/app.js','site/index.html','site/account.js','site/admin.js',
    'site/qr-code.js','site/background-admin.js','site/photo-library.js',
    'site/message-center.js','functions/api/checkout.js'];
@@ -844,11 +846,36 @@ test('approved full business name is consistent on every customer-facing screen'
   const content=read(filename);
   assert.doesNotMatch(content,/Mommy Bee|Mamma Bee/i,filename+' contains an outdated brand spelling');
  }
- assert.match(read('site/app.js'),/Momma Bee Farmstand and Bakery/);
- assert.match(read('site/index.html'),/Momma Bee Farmstand and Bakery/);
+ assert.match(read('site/app.js'),/MommaBee Bakery&Farmstand/);
+ assert.match(read('site/index.html'),/MommaBee Bakery&Farmstand/);
  assert.match(read('site/qr-code.js'),/MommaBeeFarmstandAndBakery-Homepage-QR/);
  const png=readFileSync(path.join(root,'site/assets/MommaBeeFarmstandAndBakery-Homepage-QR.png'));
  assert.ok(png.length>900);
  assert.equal(png.toString('ascii',12,16),'IHDR');
  assert.ok(brand.length>12);
+});
+
+test('owner branding, originals and watercolor background are published without changing checkout',()=>{
+ const app=read('site/app.js'),css=read('site/country-home-v2.css');
+ const metadata=read('site/index.html'),bg=read('site/background.js');
+ assert.match(app,/isShopAll\?'/);
+ assert.match(app,/\/assets\/branding\/mommabee-shop-logo\.webp/);
+ assert.match(app,/Located in Nixa, Missouri/);
+ assert.match(app,/Decorated Cakes, Cake Pops, &amp; Cookies/);
+ assert.match(app,/Custom engraved cutting boards/);
+ assert.match(app,/Natural homemade products/);
+ assert.match(metadata,/MommaBee Bakery&Farmstand/);
+ assert.match(metadata,/content="#C07C57"/);
+ assert.match(css,/--mommabee-header:#C07C57/);
+ assert.match(css,/--mommabee-footer:#948D87/);
+ assert.match(css,/data-site-background="chickens"/);
+ assert.match(bg,/value:'chickens'/);
+ const migration=read('supabase/migrations/20261027_brand_chicken_background.sql');
+ assert.match(migration,/background_style = 'chickens'/);
+ for(const img of ['site/assets/branding/mommabee-shop-logo.webp','site/assets/branding/chicken-watercolor-background.webp']){
+  const bytes=readFileSync(path.join(root,img));
+  assert.ok(bytes.length>5000);
+  assert.equal(bytes.toString('ascii',0,4),'RIFF');
+  assert.equal(bytes.toString('ascii',8,12),'WEBP');
+ }
 });

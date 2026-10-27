@@ -1,6 +1,7 @@
 // Public-facing rustic country farmhouse background controls.
 // Database RLS authorizes edits; these helpers defend the CSS sink from unsafe URLs.
 export const BACKGROUND_OPTIONS=Object.freeze([
+ {value:'chickens',label:'Watercolor Chickens (MommaBee House Style)'},
  {value:'prairie_doors',label:'Weathered Wooden Barn Doors'},
  {value:'barnwood',label:'Weathered Barnwood Planks'},
  {value:'linen',label:'Country Linen and Gingham'},

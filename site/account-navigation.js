@@ -1,4 +1,4 @@
-// Momma Bee Farmstand and Bakery: account controls shared across every customer and staff page.
+// MommaBee Bakery&Farmstand: account controls shared across every customer and staff page.
 // No auth identifiers or personal email addresses are exposed in the navigation.
 export const ACCOUNT_MENU_OPEN_MS=150;
 export const ACCOUNT_MENU_CLOSE_MS=350;

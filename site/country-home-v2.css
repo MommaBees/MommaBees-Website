@@ -378,3 +378,37 @@ body[data-page="home"] .bakery-home-note h2{margin-top:0}
 .qr-page .bakery-qr-panel a[href^="https://"]{overflow-wrap:anywhere;word-break:break-word}
 .qr-page .qr-actions a.button{min-width:135px;display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
 @media(max-width:530px){.qr-page .qr-actions a.button{width:100%}}
+
+/* MBB-BRAND-025 v1.15 — Owner-approved palette, original image assets and footer. */
+:root{--mommabee-header:#C07C57;--mommabee-footer:#948D87}
+.topbar{background:#C07C57;color:#30241e;border-bottom:1px solid #996044}
+.header{background:#C07C57;box-shadow:0 5px 16px rgba(53,34,25,.14);border-bottom:2px solid #A86949}
+.header .brand{color:#30231e}
+.header .brand span{color:#392a24}
+.header .navlinks>a{color:#2e211d!important}
+.header .navlinks>a:hover,.header .navlinks>a.current{color:#221916!important}
+#mobile-nav-toggle{background:#493027;color:#fff7ef;border-color:#38221b}
+.footer{background:#948D87;color:#211b18;border-top:5px solid #685f59}
+.footer a{color:#211b18}
+.footer .footer-pledge{color:#2f2722}
+.footer .footer-col-title{color:#29231f}
+.footer .footer-bottom{border-top:1px solid #645d56;color:#2a2421;max-width:none}
+.footer .footer-brand-name{color:#231d1a}
+.footer-offerings{border-top:1px solid rgba(42,34,27,.28);padding-top:24px;margin-top:32px}
+.footer-offerings-title{font:700 .8rem "Trebuchet MS",Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#29211d;margin:0 0 12px}
+.footer-offerings-list{display:flex;flex-wrap:wrap;gap:0 10px;margin:0;font-size:.93rem;line-height:1.85}
+.footer-offerings-list span:not(:last-child)::after{content:" |";margin-left:9px;color:#3f322c}
+.footer-location{font:700 clamp(1.06rem,1.7vw,1.3rem)/1.45 Georgia,serif;margin:14px 0 6px;color:#251e1b}
+.footer-availability{font-size:.82rem;line-height:1.5;margin:5px 0;color:#302720}
+.shop-hero-picture--brand{background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.shop-hero-picture--brand .shop-hero-brand-image{width:100%;height:100%;min-height:210px;max-height:330px;object-fit:contain;object-position:center;background:#fff;padding:clamp(10px,2vw,22px);filter:none}
+body[data-site-background="chickens"]{background-color:#fcf9f3;background-image:linear-gradient(rgba(255,255,255,var(--bakery-bg-overlay,.35)),rgba(255,255,255,var(--bakery-bg-overlay,.35))),url("/assets/branding/chicken-watercolor-background.webp");background-position:center top,left top;background-size:auto,clamp(360px,42vw,620px) auto;background-repeat:repeat;background-attachment:scroll}
+body[data-site-background="chickens"] #main.shell{background:rgba(255,251,245,.94)}
+.site-background-preview[data-preview-style="chickens"]{background-image:linear-gradient(rgba(255,255,255,var(--preview-overlay,.35)),rgba(255,255,255,var(--preview-overlay,.35))),url("/assets/branding/chicken-watercolor-background.webp");background-size:auto,350px auto;background-position:center,left top}
+@media(max-width:760px){
+ .shop-hero-picture--brand .shop-hero-brand-image{min-height:185px;max-height:235px;padding:12px}
+ .footer-offerings-list{display:block;font-size:.91rem}
+ .footer-offerings-list span{display:block}
+ .footer-offerings-list span:not(:last-child)::after{content:""}
+ .footer-offerings-list span:not(:last-child){margin-bottom:5px}
+}

@@ -8,7 +8,7 @@ export async function showBackgroundEditor(ctx){
  }
  const settings=(await list('site_settings',{id:'eq.1',limit:1}))[0];
  if(!settings)throw Error('Website settings could not be loaded');
- const initial={background_enabled:true,background_style:'prairie_doors',
+ const initial={background_enabled:true,background_style:'chickens',
   background_image_url:null,background_position:'center',
   background_overlay_percent:76,background_solid_color:'#f8efdf',...settings};
  const options=BACKGROUND_OPTIONS.map(p=>'<option value="'+e(p.value)+'"'+
@@ -18,7 +18,7 @@ export async function showBackgroundEditor(ctx){
   p[0].toUpperCase()+p.slice(1)+'</option>').join('');
  root.innerHTML='<section class="box background-admin">'+
   '<div class="eyebrow">Rustic farmhouse design</div><h2>Website Background</h2>'+
-  '<p class="muted">Style the public website with wooden barn doors, aged timber, farmhouse linen, warm cream, or your own photograph.</p>'+
+  '<p class="muted">Style the public website with your watercolor chicken pattern, wooden barn doors, farmhouse textures, warm cream, or your own uploaded photograph.</p>'+
   '<form id="website-background-form">'+
   '<div class="field"><label><input type="checkbox" id="bg-enabled"'+
   (initial.background_enabled?' checked':'')+'> Enable the website background</label></div>'+
@@ -34,11 +34,11 @@ export async function showBackgroundEditor(ctx){
   (/^#[0-9a-f]{6}$/i.test(initial.background_solid_color||'')?e(initial.background_solid_color):'#f8efdf')+'"></div>'+
   '<h3>Preview before publishing</h3>'+
   '<div id="bg-preview" class="site-background-preview" role="img" aria-label="Preview of the selected rustic country background">'+
-  '<div class="preview-card">Momma Bee Farmstand and Bakery<div class="small">Rooted in Faith. Made with Love. Shared with Joy.</div></div></div>'+
+  '<div class="preview-card">MommaBee Bakery&Farmstand<div class="small">Rooted in Faith. Made with Love. Shared with Joy.</div></div></div>'+
   '<p id="bg-preview-status" class="small muted" aria-live="polite"></p>'+
   '<div class="site-background-tools">'+
   '<button type="submit" class="button" id="bg-save">Save Background</button>'+
-  '<button type="button" class="button secondary" id="bg-restore">Restore Rustic Barn Doors</button>'+
+  '<button type="button" class="button secondary" id="bg-restore">Restore Watercolor Chickens</button>'+
   '<button type="button" class="button secondary" id="bg-disable">Disable Background</button></div>'+
   '<p id="bg-save-status" aria-live="polite"></p></form></section>';
  const $=id=>root.querySelector('#'+id);
@@ -76,7 +76,7 @@ export async function showBackgroundEditor(ctx){
   forgetBlob();file.value='';existingUrl='';style.value='prairie_doors';showPreview();
  };
  $('bg-restore').onclick=()=>{
-  forgetBlob();file.value='';existingUrl='';enabled.checked=true;style.value='prairie_doors';
+  forgetBlob();file.value='';existingUrl='';enabled.checked=true;style.value='chickens';
   position.value='center';shade.value='76';color.value='#f8efdf';
   status.textContent='Restored default in preview. Save to publish.';showPreview();
  };

@@ -66,7 +66,7 @@ export const BUILTIN_PHOTO_PRESETS=Object.freeze([
     "sub": "Carrot Cakes",
     "url": "https://ryqcfojzdncrshinlpue.supabase.co/storage/v1/object/public/past-bakes/94c17dba-d7ae-4114-a7e9-dd3df0afb6f8.jpg",
     "source": "https://mommabees-website.pages.dev/#gallery",
-    "credit": "Momma Bee Farmstand and Bakery",
+    "credit": "MommaBee Bakery&Farmstand",
     "license": "Bakery owner-supplied image",
     "type": "bakery_original"
   },
@@ -76,7 +76,7 @@ export const BUILTIN_PHOTO_PRESETS=Object.freeze([
     "sub": "Carrot Cakes",
     "url": "https://ryqcfojzdncrshinlpue.supabase.co/storage/v1/object/public/past-bakes/2782c6e2-dc24-4643-b890-5df56680d724.jpg",
     "source": "https://mommabees-website.pages.dev/#gallery",
-    "credit": "Momma Bee Farmstand and Bakery",
+    "credit": "MommaBee Bakery&Farmstand",
     "license": "Bakery owner-supplied image",
     "type": "bakery_original"
   },
@@ -86,7 +86,7 @@ export const BUILTIN_PHOTO_PRESETS=Object.freeze([
     "sub": "Cinnamon Rolls",
     "url": "https://ryqcfojzdncrshinlpue.supabase.co/storage/v1/object/public/past-bakes/63e31534-7c0b-40eb-8e7d-48f50afbb4f1.jpg",
     "source": "https://mommabees-website.pages.dev/#gallery",
-    "credit": "Momma Bee Farmstand and Bakery",
+    "credit": "MommaBee Bakery&Farmstand",
     "license": "Bakery owner-supplied image",
     "type": "bakery_original"
   },
@@ -96,7 +96,7 @@ export const BUILTIN_PHOTO_PRESETS=Object.freeze([
     "sub": "Caramel & Pecan Cheesecakes",
     "url": "https://ryqcfojzdncrshinlpue.supabase.co/storage/v1/object/public/past-bakes/7f55254c-c3fd-4db8-91a9-cb7429bd2eea.jpg",
     "source": "https://mommabees-website.pages.dev/#gallery",
-    "credit": "Momma Bee Farmstand and Bakery",
+    "credit": "MommaBee Bakery&Farmstand",
     "license": "Bakery owner-supplied image",
     "type": "bakery_original"
   },
@@ -106,7 +106,7 @@ export const BUILTIN_PHOTO_PRESETS=Object.freeze([
     "sub": "Fruit Cheesecakes",
     "url": "https://ryqcfojzdncrshinlpue.supabase.co/storage/v1/object/public/past-bakes/893c0d21-f689-41fe-aeb7-cc84e0c4cf0c.jpg",
     "source": "https://mommabees-website.pages.dev/#gallery",
-    "credit": "Momma Bee Farmstand and Bakery",
+    "credit": "MommaBee Bakery&Farmstand",
     "license": "Bakery owner-supplied image",
     "type": "bakery_original"
   },
@@ -116,7 +116,7 @@ export const BUILTIN_PHOTO_PRESETS=Object.freeze([
     "sub": "Candy-Topped Cheesecakes",
     "url": "https://ryqcfojzdncrshinlpue.supabase.co/storage/v1/object/public/past-bakes/dd2c6b0d-854a-4127-9603-33dcde8cb5f7.jpg",
     "source": "https://mommabees-website.pages.dev/#gallery",
-    "credit": "Momma Bee Farmstand and Bakery",
+    "credit": "MommaBee Bakery&Farmstand",
     "license": "Bakery owner-supplied image",
     "type": "bakery_original"
   },
@@ -126,7 +126,7 @@ export const BUILTIN_PHOTO_PRESETS=Object.freeze([
     "sub": "Fruit Cheesecakes",
     "url": "https://ryqcfojzdncrshinlpue.supabase.co/storage/v1/object/public/past-bakes/0949502d-89fe-4e79-bca1-b91a6270d405.jpg",
     "source": "https://mommabees-website.pages.dev/#gallery",
-    "credit": "Momma Bee Farmstand and Bakery",
+    "credit": "MommaBee Bakery&Farmstand",
     "license": "Bakery owner-supplied image",
     "type": "bakery_original"
   }
