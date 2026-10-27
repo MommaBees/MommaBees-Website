@@ -35,7 +35,7 @@ create table public.product_day_limits (product_id uuid not null references publ
  baking_date date not null references public.baking_days(date) on delete cascade,
  max_quantity integer not null check(max_quantity >= 0), primary key(product_id,baking_date));
 create table public.site_settings (id int primary key default 1 check(id=1),
- brand_subtitle text not null default 'Homemade in Nixa, Missouri',
+ brand_subtitle text not null default 'Iowa Roots. Faith-Filled Heart. Baked with Love.',
  home_heading text not null default 'Made with care. Shared with joy.',
  home_intro text not null default 'Explore baked goods ready to enjoy or order ahead for an upcoming baking day.',
  hero_url text, header_url text, email text, phone text,
