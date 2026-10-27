@@ -33,8 +33,8 @@ export async function add(table,record){return request('/rest/v1/'+table,{method
 export async function update(table,id,values,keyName='id'){return request('/rest/v1/'+table+'?'+keyName+'=eq.'+encodeURIComponent(id),{method:'PATCH',body:values,prefer:'return=representation'}).then(r=>r?.[0]);}
 export async function remove(table,id,keyName='id'){return request('/rest/v1/'+table+'?'+keyName+'=eq.'+encodeURIComponent(id),{method:'DELETE'});}
 export async function rpc(name,args){return request('/rest/v1/rpc/'+name,{method:'POST',body:args});}
-export async function signIn(email,password,captchaToken){
- const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,captcha_token:captchaToken})});
+export async function signIn(identifier,password,captchaToken){
+ const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:String(identifier||'').trim(),password,captcha_token:captchaToken})});
  const body=await r.json().catch(()=>({}));if(!r.ok)throw Error(body.error||'Sign in failed');
  saveSession(body);return body;
 }
