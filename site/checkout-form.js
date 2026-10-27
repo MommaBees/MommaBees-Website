@@ -22,7 +22,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
    '<option value="">Select an available date</option>'+days.map(d=>
    '<option value="'+e(d.date)+'">'+e(fmt(d.date))+(d.day_type==='fair'?' — '+e(d.event_label||'Bake fair'):' — Baking day')+'</option>').join('')+
    '</select></div>'+
-  '<div id="pickup-calendar" aria-label="Available baking dates calendar"></div>'+
+  '<details id="calendar-picker"><summary>Open pickup calendar — highlighted days are available</summary><div id="pickup-calendar" aria-label="Available baking dates calendar"></div></details>'+
   '<div class="field"><label for="window">Available pickup/delivery time</label>'+
     '<select name="window" id="window" required><option value="">Choose a date first</option></select></div>'+
   '<div id="delivery-fields" hidden><p class="small">Delivery is only offered for eligible locations and scheduled dates.</p></div>'+
@@ -95,6 +95,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
     '. Your confirmed total is calculated by the bakery server.':'';
  };
  date.addEventListener('change',updateDate);method.addEventListener('change',updateDate);
+ date.addEventListener('focus',()=>{document.getElementById('calendar-picker').open=true;});
  form.querySelectorAll('[name="payment_choice"]').forEach(r=>r.addEventListener('change',updateDate));
  updateDate();
  mountPickupCalendar({days:days.filter(d=>d.pickup_enabled||d.delivery_enabled),
