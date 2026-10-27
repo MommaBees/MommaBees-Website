@@ -1108,3 +1108,11 @@ body[data-website-size] #main .home-carousel .home-carousel-slide .hero-art img{
  .shop-department-tabs .tab{font-size:.89rem;min-height:44px}
  .admin-taxonomy-search{padding:10px}
 }
+
+/* MBB-COMMERCE-039 — catalog synchronization status is staff-only */
+.admin-stripe-sync{
+ margin:8px 0 0;
+ display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+}
+.admin-stripe-sync .tiny{font-weight:700;line-height:1.5;overflow-wrap:anywhere}
+.admin-stripe-sync .button{min-height:44px}

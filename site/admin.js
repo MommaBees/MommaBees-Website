@@ -1,4 +1,4 @@
-import {currentUser,list,add,update,remove,rpc,upload,signedImage,money,escapeHtml as e,fmt,pretty} from './api.js';
+import {currentUser,currentSession,list,add,update,remove,rpc,upload,signedImage,money,escapeHtml as e,fmt,pretty} from './api.js';
 import {referenceKeyFor} from './reference-keys.js';
 import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from './product-types.js';
 import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
@@ -11,6 +11,41 @@ import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './a
 import {pastBakeName} from './past-bakes.js';
 import {BUILTIN_PHOTO_PRESETS,photoByUrl} from './photo-library.js';
 let selected='dashboard', data={},editing=null, refs={},ctx=null;
+async function productStripeRequest(method,productId=null){
+ const token=currentSession()?.access_token;
+ if(!token)throw Error('Sign in as Owner/Admin to synchronize the Stripe TEST catalog.');
+ const path='/api/admin/product-sync'+(method==='GET'?'':'');
+ const headers={Authorization:'Bearer '+token};
+ if(method==='POST')headers['Content-Type']='application/json';
+ const requestOptions={method,headers};
+ if(method==='POST')requestOptions.body=JSON.stringify({product_id:productId});
+ const r=await fetch(path,requestOptions);
+ const result=await r.json().catch(()=>({}));
+ if(!r.ok)throw Error(result.error||'Stripe TEST catalog synchronization is unavailable.');
+ return result;
+}
+function productStripeStateLabel(row){
+ if(!row)return 'Not synchronized';
+ if(row.status==='synced')return 'Synchronized · '+(row.stripe_price_id||'');
+ if(row.status==='pending')return 'Pending — retry';
+ return 'Needs attention — retry';
+}
+async function updateStripeStatusRows(rows){
+ try{
+  const result=await productStripeRequest('GET');
+  const states=new Map((result.records||[]).map(record=>[record.product_id,record]));
+  for(const product of rows){
+   const field=document.querySelector('[data-stripe-status="'+product.id+'"]');
+   if(field)field.textContent=productStripeStateLabel(states.get(product.id));
+  }
+ }catch(error){
+  for(const product of rows){
+   const field=document.querySelector('[data-stripe-status="'+product.id+'"]');
+   if(field)field.textContent='Status unavailable';
+  }
+ }
+}
+
 const $=s=>document.querySelector(s);
 const cols=(...x)=>x;
 const field=(key,label,type='text',extra={})=>({key,label,type,...extra});
@@ -103,7 +138,7 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  authShell();await renderPanel();}
 async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_size')return websiteSizePanel();if(selected==='store_display')return storeDisplayPanel();if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
-function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
+function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">${selected==='products'?'Archive':'Archive/Delete'}</button>`:''}${selected==='products'?`<div class="admin-stripe-sync"><span class="tiny" data-stripe-status="${r.id}" role="status">Checking TEST status…</span><button type="button" class="button secondary" data-sync-product="${i}">Sync Stripe TEST</button></div>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
 
 
  if(selected==='baking_days'){
@@ -170,7 +205,42 @@ function listPanel(){if(selected==='site_settings')return siteSettingsSummary();
  }
  $('#new-record')&&( $('#new-record').onclick=()=>openEditor(c.single?rows[0]||{id:1}:null));
  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(rows[Number(b.dataset.edit)]));
- document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const r=rows[Number(b.dataset.delete)];if(!confirm(`Delete this ${c.label} record? This cannot be undone. Records connected to orders may not be deletable.`))return;try{if(Array.isArray(key)){ctx.showError('Composite-key deletion requires manual SQL review; use the individual Admin forms or SQL Editor.');return;}await remove(selected,r[key],key);await ctx.load();await renderPanel();}catch(x){ctx.showError(x);}});
+ if(selected==='products'){
+  updateStripeStatusRows(rows);
+  document.querySelectorAll('[data-sync-product]').forEach(button=>button.onclick=async()=>{
+   const product=rows[Number(button.dataset.syncProduct)];
+   const label=document.querySelector('[data-stripe-status="'+product.id+'"]');
+   button.disabled=true;
+   if(label)label.textContent='Synchronizing TEST catalog…';
+   try{
+    const synced=await productStripeRequest('POST',product.id);
+    if(label)label.textContent=synced.status==='synced'?'Synchronized · '+synced.stripe_price_id:'Pending — retry';
+   }catch(error){
+    if(label)label.textContent='Needs attention — retry';
+    ctx.showError('Supabase product remains saved. Stripe TEST sync: '+error.message);
+   }finally{button.disabled=false;}
+  });
+ }
+
+ document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{
+  const record=rows[Number(b.dataset.delete)];
+  if(selected==='products'){
+   if(!confirm('Archive '+record.name+'? It will be unpublished and removed from featured items. Its Stripe TEST catalog product will be made inactive when sync succeeds.'))return;
+   try{
+    await update('products',record.id,{published:false,featured:false});
+    let issue=null;
+    try{await productStripeRequest('POST',record.id);}catch(error){issue=error.message;}
+    await ctx.load();await renderPanel();
+    if(issue)ctx.showError('Archived in Supabase. Stripe TEST archive pending: '+issue);
+   }catch(error){ctx.showError(error);}
+   return;
+  }
+  if(!confirm(`Delete this ${c.label} record? This cannot be undone. Records connected to orders may not be deletable.`))return;
+  try{
+   if(Array.isArray(key)){ctx.showError('Composite-key deletion requires manual SQL review; use the individual Admin forms or SQL Editor.');return;}
+   await remove(selected,record[key],key);await ctx.load();await renderPanel();
+  }catch(error){ctx.showError(error);}
+ });
  document.querySelectorAll('[data-deliver]').forEach(b=>b.onclick=async()=>{const p=rows[Number(b.dataset.deliver)];if(!confirm('Send this ACTIVE promotion as an in-app notification to eligible, opted-in customer accounts?'))return;try{const count=await rpc('deliver_promotion',{p_promo_id:p.id});alert('Delivered to '+count+' eligible account(s). No marketing emails or text messages were sent.');}catch(x){ctx.showError(x);}});
  document.querySelectorAll('[data-reply]').forEach(b=>b.onclick=()=>reply(rows[Number(b.dataset.reply)]));
  document.querySelectorAll('[data-reviewpics]').forEach(b=>b.onclick=()=>reviewPhotos(rows[Number(b.dataset.reviewpics)]));
@@ -742,8 +812,24 @@ async function openEditor(record){const c=configs[selected];
    if(body.published && !String(body.ingredients||'').trim())throw Error('Enter a complete ingredient list before publishing.');
   }
  }
- const key=c.key||'id';if(c.single){await update(selected,1,body);}else if(record&&!record._unsaved){if(Array.isArray(key))throw Error('Editing records with two-part keys requires deleting/recreating from SQL Editor.');await update(selected,record[key],body,key);}else await add(selected,body);
- dialog.close();await ctx.load();await renderPanel();}catch(x){ctx.showError(x);}};
+ const key=c.key||'id';let saved=null;
+ if(c.single){saved=await update(selected,1,body);}
+ else if(record&&!record._unsaved){
+  if(Array.isArray(key))throw Error('Editing records with two-part keys requires deleting/recreating from SQL Editor.');
+  saved=await update(selected,record[key],body,key);
+ }else saved=await add(selected,body);
+ // Save succeeds in Supabase first. Stripe TEST errors never cause a duplicate product.
+ let syncError=null;
+ if(selected==='products'){
+  try{
+   if(!saved?.id)throw Error('Saved product identifier was unavailable.');
+   const synced=await productStripeRequest('POST',saved.id);
+   if(synced.status!=='synced')syncError='Product changed during sync. Use Sync Stripe TEST to retry.';
+  }catch(error){syncError=error.message;}
+ }
+ dialog.close();await ctx.load();await renderPanel();
+ if(syncError)ctx.showError('Product saved in Supabase and available to Cloudflare. Stripe TEST sync needs attention: '+syncError);
+ }catch(x){ctx.showError(x);}};
 }
 async function reply(message){const text=prompt('Write your response. It will be saved to the secure account inbox. Email delivery is not enabled by this action:');if(!text)return;try{if(!message.customer_id)throw Error('Guest email replies require a configured email provider; do not mark as replied yet.');await add('messages',{customer_id:message.customer_id,customer_email:message.customer_email,order_id:message.order_id,kind:'reply',subject:'Re: '+message.subject,body:text,parent_id:message.id,is_staff_reply:true,status:'replied'});await update('messages',message.id,{status:'replied'});await renderPanel();}catch(x){ctx.showError(x);}}
 async function reviewPhotos(review){try{const items=await list('review_photos',{review_id:'eq.'+review.id});const urls=[];for(const p of items)urls.push(await signedImage('review-photos',p.storage_path));const win=window.open('','_blank','noopener,noreferrer');if(win){win.document.write('<!doctype html><title>Review photos</title><body style="font-family:sans-serif">'+urls.map(u=>u?`<img alt="Customer review upload" style="max-width:90vw;max-height:65vh" src="${e(u)}">`:'').join('<hr>')+'</body>');win.document.close();}else alert('Allow popups to view review photos.');}catch(x){ctx.showError(x);}}

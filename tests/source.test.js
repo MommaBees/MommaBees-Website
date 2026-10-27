@@ -1347,3 +1347,46 @@ test('store routes have department tabs only in split mode, and Admin holds cata
  assert.match(sql,/Product department must match category department/);
  assert.match(css,/\.shop-department-tabs/);
 });
+
+
+import {testStripeKeyAllowed,safeStripePicture,stripeFingerprint,testStripePriceLookup,MOMMABEES_STRIPE_TEST_ACCOUNT} from '../functions/_lib/product-stripe-test.js';
+test('Stripe TEST integration is isolated to MommaBees sandbox and restricts key modes',()=>{
+ assert.equal(MOMMABEES_STRIPE_TEST_ACCOUNT,'acct_1UUtoDJF02bajTTM');
+ assert.equal(testStripeKeyAllowed('sk_test_example123'),true);
+ assert.equal(testStripeKeyAllowed('rk_test_example123'),true);
+ for(const key of ['sk_live_abc','rk_live_abc','','mytest','sk_test_'])assert.equal(testStripeKeyAllowed(key),false);
+ const env={SUPABASE_URL:'https://ryqcfojzdncrshinlpue.supabase.co'};
+ const allowed='https://ryqcfojzdncrshinlpue.supabase.co/storage/v1/object/public/product-photos/abc.webp';
+ assert.equal(safeStripePicture(env,allowed),allowed);
+ assert.equal(safeStripePicture(env,'https://untrusted.com/abc.webp'),null);
+ assert.equal(safeStripePicture(env,'javascript:alert(1)'),null);
+ const product={id:'b13aa82d-0000-4000-8000-01abcdef0000',name:'Real test name',price_cents:550,unit:'each',published:false};
+ assert.match(testStripePriceLookup(product),/^mbee_b13aa82d00004000800001abcdef0000_550$/);
+ assert.notEqual(stripeFingerprint(product),stripeFingerprint({...product,price_cents:600}));
+ assert.notEqual(stripeFingerprint(product),stripeFingerprint({...product,published:true}));
+});
+test('saving product synchronizes Stripe TEST through authenticated Cloudflare API, with retry',()=>{
+ const admin=read('site/admin.js'),source=read('functions/api/admin/product-sync.js');
+ const migration=read('supabase/migrations/20261027_product_stripe_test_sync_v129.sql');
+ const shared=read('functions/_lib/product-stripe-test.js');
+ assert.match(admin,/productStripeRequest\('POST',saved\.id\)/);
+ assert.match(admin,/productStripeRequest\('GET'\)/);
+ assert.match(admin,/data-sync-product/);
+ assert.match(admin,/Product saved in Supabase and available to Cloudflare/);
+ assert.match(source,/requireBakeryManager\(env,request\)/);
+ assert.match(source,/verifyMommaBeesTestAccount\(env\)/);
+ assert.match(source,/stripeProduct=current\?\.stripe_product_id/);
+ assert.match(source,/products\/search\?/);
+ assert.match(source,/lookup_keys\[0\]/);
+ assert.match(source,/price-create-/);
+ assert.match(source,/synced_fingerprint/);
+ assert.match(source,/status:'pending'/);
+ assert.match(source,/status:'error'/);
+ assert.match(shared,/MOMMABEES_STRIPE_TEST_ACCOUNT/);
+ assert.match(shared,/sk_test_/);
+ assert.match(shared,/rk_test_/);
+ assert.match(migration,/create table if not exists public\.product_stripe_test_sync/);
+ assert.match(migration,/enable row level security/);
+ assert.match(migration,/revoke all on public\.product_stripe_test_sync from public,anon,authenticated/);
+ assert.doesNotMatch(source,/LIVE_PAYMENT_ALLOWED\s*=\s*'yes'/);
+});
