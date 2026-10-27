@@ -246,7 +246,7 @@ test('staff role comes from Supabase RLS and direct access is guarded',()=>{
  assert.match(app,/const roles=await list\('staff_roles',\{select:'role',user_id:'eq\.'\+user\.id/);
  assert.match(app,/verifiedBackOfficeRole=null; \/\/ Fail closed/);
  assert.match(app,/await refreshBackOfficeRole\(\)/);
- assert.match(app,/backOfficeNavigation\(verifiedBackOfficeRole\)/);
+ assert.match(app,/accountNavigationMarkup\(Boolean\(currentUser\(\)\),verifiedBackOfficeRole\)/);
  assert.match(app,/route==='admin'&&!isBackOfficeRole\(verifiedBackOfficeRole\)/);
  assert.match(app,/Page unavailable/);
  assert.doesNotMatch(app,/<a href="#admin">Admin<\/a>/, 'Admin must never be hardcoded into public navigation');
