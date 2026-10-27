@@ -89,7 +89,7 @@ test('sign-in requires verified Turnstile before contacting authentication',asyn
  assert.match((await result.json()).error,/Human verification/);
 });
 test('account creation rejects missing CAPTCHA before saving private profile',async()=>{
- const request=new Request('https://mommabees-website.pages.dev/api/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:'example@example.test',password:'NotARealPassword123',first_name:'Test',last_name:'User',username:'tester123',address_line1:'address',city:'Nixa',state:'MO',country:'US',postal_code:'65714',billing_same:true,captcha_token:''})});
+ const request=new Request('https://mommabees-website.pages.dev/api/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:'example@example.test',password:'NotARealPassword123',first_name:'Test',last_name:'User',username:'tester123',address_line1:'address',city:'Exampleville',state:'CA',country:'US',postal_code:'90210',billing_same:true,captcha_token:''})});
  const result=await protectedRegistration({request,env:{TURNSTILE_SECRET_KEY:'fake-test-secret',SITE_URL:'https://mommabees-website.pages.dev'}});
  assert.equal(result.status,400);
  assert.match((await result.json()).error,/Human verification/);
@@ -137,7 +137,7 @@ test('native Supabase CAPTCHA receives a single unspent Turnstile token for both
    method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({email:'unit-test@example.test',password:'NotARealPassword123',first_name:'Test',
     last_name:'Member',username:'unit_test_signup',address_line1:'Not a real address',
-    city:'Nixa',state:'MO',country:'US',postal_code:'65714',billing_same:true,
+    city:'Exampleville',state:'CA',country:'US',postal_code:'90210',billing_same:true,
     captcha_token:signupToken})
   });
   assert.equal((await protectedRegistration({request:signupRequest,env})).status,200);
@@ -462,11 +462,11 @@ test('terms do not treat an off-schedule inquiry as an accepted order',()=>{
  const store=read('site/app.js');
  assert.match(store,/Special-date requests are not confirmed orders/);
  assert.match(store,/A special-order request is an inquiry only/);
- assert.match(store,/both be located in Missouri/);
+ assert.match(store,/location, product, and fulfillment restrictions required by applicable law/);
 });
 
 
-test('country background presets include Missouri wooden doors and safe uploaded photos',()=>{
+test('country background presets include weathered wooden doors and safe uploaded photos',()=>{
  assert.equal(backgroundChoice('prairie_doors'),'prairie_doors');
  assert.equal(backgroundChoice('malicious-style'),'prairie_doors');
  assert.equal(BACKGROUND_OPTIONS.length,5);
@@ -496,7 +496,7 @@ test('website background settings, image storage and owner-only editor are conne
  assert.match(editor,/Only Owner\/Admin accounts/);
  assert.match(editor,/upload\('bakery-backgrounds'/);
  assert.match(editor,/Save Background/);
- assert.match(editor,/Restore Missouri Barn Doors/);
+ assert.match(editor,/Restore Rustic Barn Doors/);
  assert.match(app,/applyBakeryBackground\(settings,config\.supabaseUrl\)/);
  assert.match(api,/'bakery-backgrounds'/);
  assert.match(css,/prairie_doors/);
@@ -814,4 +814,23 @@ test('homepage QR PNG is a real downloadable first-party image, not a canvas con
  assert.equal(data.toString('ascii',12,16),'IHDR');
  assert.equal(data.readUInt32BE(16),900);
  assert.equal(data.readUInt32BE(20),900);
+});
+
+test('public storefront copy, metadata and background controls omit regional locality wording',()=>{
+ const publicFiles=['site/index.html','site/app.js','site/background.js','site/background-admin.js','site/checkout-form.js'];
+ for(const file of publicFiles){
+  const source=read(file);
+  assert.doesNotMatch(source,/\\b(?:Nixa|Missouri)\\b/i,file+' includes unwanted location copy');
+ }
+ const settings=read('site/background-admin.js');
+ assert.match(settings,/Restore Rustic Barn Doors/);
+ const metadata=read('site/index.html');
+ assert.match(metadata,/Mamma Bee's Bakery \| Rooted in Faith/);
+ assert.doesNotMatch(metadata,/Handmade in|homemade baking in/);
+ const checkout=read('site/checkout-form.js');
+ assert.match(checkout,/autocomplete="address-level1" placeholder="State" required/);
+ assert.doesNotMatch(checkout,/autocomplete="address-level1" value="MO"/);
+ const migration=read('supabase/migrations/20261026_remove_public_location_terms.sql');
+ assert.match(migration,/COTTAGE-FOOD SALES ELIGIBILITY/);
+ assert.match(migration,/food-sale and location restrictions/);
 });
