@@ -108,3 +108,57 @@ body{background:repeating-linear-gradient(0deg,rgba(117,79,35,.025) 0px,rgba(117
 .announcement{background:#efe0c4;border-left:5px solid #9a5934}
 @media(max-width:700px){.country-welcome-band{gap:10px;letter-spacing:.04em;font-size:.62rem}.country-welcome-band span:nth-child(3){display:none}.country-welcome-band span{max-width:49%}.hero-photo-stamp{font-size:.79rem;right:12px;bottom:12px;padding:9px}.hero-photo-stamp strong{font-size:1rem}}
 @media(prefers-reduced-motion:reduce){.bakery-product-card:hover .product-photo{transform:none}.button,.btn{transition:none}}
+
+
+/* Missouri prairie farmhouse background presets; only imagery selected by the bakery is used. */
+body[data-site-background]{--bakery-bg-overlay:.76;--bakery-bg-image:none;--bakery-bg-position:center;--bakery-bg-solid:#f8efdf;min-height:100vh}
+body[data-site-background="solid"]{background:var(--bakery-bg-solid)}
+body[data-site-background="linen"]{background:
+ repeating-linear-gradient(90deg,rgba(116,78,39,.025) 0 2px,transparent 2px 9px),
+ repeating-linear-gradient(0deg,rgba(116,78,39,.026) 0 2px,transparent 2px 9px),
+ #f7eedf}
+body[data-site-background="barnwood"]{background:
+ repeating-linear-gradient(0deg,transparent 0 14px,rgba(75,42,20,.05) 14px 15px,transparent 15px 24px),
+ repeating-linear-gradient(90deg,#d7b995 0px,#b99068 45px,#987250 47px,#6f4c34 50px,#bb966b 53px,#d0b18a 104px,#745137 108px,#e1c49d 113px),
+ #cbaa80;background-attachment:fixed}
+body[data-site-background="photo"]{background-image:
+ linear-gradient(rgba(252,245,232,var(--bakery-bg-overlay)),rgba(252,245,232,var(--bakery-bg-overlay))),
+ var(--bakery-bg-image);background-position:center,var(--bakery-bg-position);background-size:cover;background-attachment:fixed}
+body[data-site-background="prairie_doors"]{background:
+ radial-gradient(ellipse at 50% 35%,rgba(255,252,240,.9),rgba(234,206,166,.65) 67%,rgba(125,83,49,.18) 100%),
+ repeating-linear-gradient(0deg,#eed9bb 0px,#e9d4b3 1px,#f0dec4 6px,#f0dec4 12px);background-attachment:fixed}
+/* Decorative weathered wooden barn-door leaves at either edge of the prairie theme.
+   Pure CSS, keeping text/cards separate so controls remain accessible. */
+body[data-site-background="prairie_doors"]::before,
+body[data-site-background="prairie_doors"]::after{
+ content:"";position:fixed;top:0;bottom:0;width:clamp(72px,14vw,215px);
+ background-image:
+ linear-gradient(43deg,transparent 46%,rgba(95,55,33,.57) 47%,rgba(130,84,45,.72) 53%,transparent 54%),
+ linear-gradient(-43deg,transparent 46%,rgba(95,55,33,.55) 47%,rgba(132,87,51,.74) 53%,transparent 54%),
+ repeating-linear-gradient(90deg,rgba(47,27,15,.28) 0 2px,transparent 2px 28px,rgba(255,239,202,.09) 29px 31px,transparent 31px 59px),
+ repeating-linear-gradient(0deg,rgba(51,29,17,.06) 0 2px,transparent 2px 18px),
+ linear-gradient(95deg,#956b43,#bc9462 28%,#8a5c36 52%,#af8154 77%,#825433);
+ box-shadow:inset 0 0 0 9px rgba(68,40,22,.45),inset 0 0 0 14px rgba(206,164,110,.3),0 0 24px rgba(69,41,20,.16);
+ opacity:.78;pointer-events:none;z-index:0}
+body[data-site-background="prairie_doors"]::before{left:0;border-right:4px solid #68452d}
+body[data-site-background="prairie_doors"]::after{right:0;border-left:4px solid #68452d}
+body[data-site-background="prairie_doors"] #app{position:relative;z-index:1}
+body[data-site-background] #main{background:rgba(255,250,241,.9);border-left:1px solid rgba(158,111,67,.13);border-right:1px solid rgba(158,111,67,.13);box-shadow:0 8px 38px rgba(63,38,22,.06);padding-inline:clamp(12px,2vw,30px)}
+body[data-site-background="photo"] #main{background:rgba(255,250,241,.91)}
+body[data-site-background] .topbar,body[data-site-background] .header,body[data-site-background] .footer{position:relative;z-index:1}
+body[data-site-background] .card,body[data-site-background] .box{background:#fffaf2}
+body[data-site-background] .hero{min-height:345px}
+body[data-site-background] .card-media .product-photo{height:178px}
+body[data-site-background] .home-gallery-preview .product-photo{height:170px}
+body[data-site-background] .past-bakes-gallery .product-photo{height:190px}
+.site-background-preview{min-height:175px;border:2px solid #c29c6c;border-radius:12px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;background:#f5e8d5}
+.site-background-preview .preview-card{position:relative;z-index:2;background:rgba(255,249,239,.92);padding:13px 20px;box-shadow:0 3px 12px rgba(50,30,18,.2);border:1px solid rgba(122,78,45,.3);font:700 1.1rem Georgia,serif;color:#523720}
+.site-background-preview[data-preview-style="barnwood"]{background:repeating-linear-gradient(90deg,#b68c5c 0 25px,#805735 26px 29px,#c5a177 31px 52px)}
+.site-background-preview[data-preview-style="linen"]{background:repeating-linear-gradient(90deg,#f7eedf 0 8px,#e5d5bc 9px 10px),repeating-linear-gradient(0deg,#f7eedf 0 8px,#e5d5bc 9px 10px)}
+.site-background-preview[data-preview-style="prairie_doors"]{background:linear-gradient(47deg,transparent 42%,#81553388 43% 47%,transparent 48%),linear-gradient(-47deg,transparent 42%,#81553388 43% 47%,transparent 48%),repeating-linear-gradient(90deg,#d7b286 0 14px,#815432 15px 18px,#ba9061 20px 33px)}
+.site-background-preview[data-preview-style="solid"]{background:var(--preview-solid,#f8efdf)}
+.site-background-preview[data-preview-style="photo"]{background-image:linear-gradient(rgba(252,245,232,var(--preview-overlay,.76)),rgba(252,245,232,var(--preview-overlay,.76))),var(--preview-image,none);background-position:center,var(--preview-position,center);background-size:cover}
+.site-background-tools{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0}
+.site-background-tools button{width:auto}
+@media(max-width:850px){body[data-site-background="prairie_doors"]::before,body[data-site-background="prairie_doors"]::after{opacity:.35;width:7vw}}
+@media(max-width:600px){body[data-site-background="prairie_doors"]::before,body[data-site-background="prairie_doors"]::after{display:none}body[data-site-background="photo"]{background-attachment:scroll}body[data-site-background] #main{padding-inline:14px}body[data-site-background] .card-media .product-photo{height:148px}body[data-site-background] .home-gallery-preview .product-photo{height:145px}}
