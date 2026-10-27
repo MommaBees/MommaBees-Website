@@ -384,12 +384,16 @@ async function render(){await watchIdleSession();const [route,pid]=decodeURIComp
  // Hash navigation does not reload the page; do not reuse initial storefront cache.
  if(route==='home'||!route){
   try{
-   const [freshSlides,rows]=await Promise.all([
+   const [freshSlides,rows,showcaseItems,products]=await Promise.all([
     list('home_carousel_slides',{order:'sort_order.asc',limit:500}),
-    list('site_settings',{limit:1})
+    list('site_settings',{limit:1}),
+    list('store_showcase_items',{order:'sort_order.asc',limit:500}),
+    list('products',{limit:500})
    ]);
    all.carouselSlides=freshSlides;
    all.settings=rows[0]||{};
+   all.showcaseItems=showcaseItems;
+   all.products=products;
   }catch(ex){console.warn('Homepage carousel refresh unavailable; retaining last loaded content',ex);}
  }
  all.demoItems=[];if(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true){all.demoItems=await list('demo_catalog_items',{order:'sort_order.asc',limit:100}).catch(()=>[]);}document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"MommaBee Bakery&Farmstand";if(!isConfigured()){layout(`<section class="section"><h1>Welcome to MommaBee Bakery&Farmstand</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in MommaBee Bakery&Farmstand.</p></section>`);return;}
