@@ -4,6 +4,7 @@ import {PRODUCT_TYPES,productTypeForCategory,nonfoodHoldMessage} from './product
 import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
 import {adminGroupsForRole,ADMIN_DESCRIPTIONS} from './admin-navigation.js';
 import {adminFieldIsRequired} from './admin-required.js';
+import {WEBSITE_SIZE_OPTIONS,normalizeWebsiteSize,applyWebsiteSize} from './website-size.js';
 import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from './home-carousel.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
 import {pastBakeName} from './past-bakes.js';
@@ -43,7 +44,7 @@ const short=(value)=>{if(value===null||value===undefined)return '—';if(typeof 
 const formatCell=(key,val)=>key.endsWith('_cents')?money(val):key==='created_at'?fmt(val):short(val);
 function authShell(){
  const visibleGroups=adminGroupsForRole(ctx.role);
- const labelFor=id=>id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id);
+ const labelFor=id=>id==='website_size'?'Website Size':id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id);
  const groupFor=visibleGroups.find(([,ids])=>ids.includes(selected))?.[0]||'Overview';
  const sections=visibleGroups.map(([group,ids],i)=>
   `<details class="admin-nav-group" ${group===groupFor?'open':''}>
@@ -98,7 +99,7 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  catch(x){ctx.layout(`<div class="section box"><h1>Access denied</h1><p>${e(x.message)}</p><a href="#shop">Return to shop</a></div>`);return;}
  if(ctx.role==='moderator')selected='messages';
  authShell();await renderPanel();}
-async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
+async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_size')return websiteSizePanel();if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
 function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['name','product_type','price_cents','mode','published']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">Archive/Delete</button>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
 
@@ -208,6 +209,59 @@ function listPanel(){if(selected==='site_settings')return siteSettingsSummary();
  });
 
 }
+async function websiteSizePanel(){
+ if(ctx.role!=='owner'&&ctx.role!=='admin')throw Error('Website size can only be managed by Owner/Admin.');
+ await loadTable('site_settings');
+ let saved=normalizeWebsiteSize(data.site_settings?.[0]?.website_size);
+ $('#admin-main').innerHTML=`<section class="box admin-website-size">
+  <div class="section-head"><div><h2>Website Size</h2>
+   <p class="muted">Change the size of the entire website, not the homepage carousel.</p></div></div>
+  <form id="website-size-form">
+   <label for="website-size-select">Website size <span class="required-indicator" aria-hidden="true">* Required</span></label>
+   <div class="admin-carousel-interval-controls">
+    <select id="website-size-select" name="website_size" required aria-describedby="website-size-help">
+     ${WEBSITE_SIZE_OPTIONS.map(option=>`<option value="${option}" ${saved===option?'selected':''}>${option==='extra-small'?'Extra Small':pretty(option)}</option>`).join('')}
+    </select>
+    <button type="submit" class="button" id="website-size-save">Save website size</button>
+    <button type="button" class="button secondary" id="website-size-reset">Reset preview</button>
+   </div>
+   <p class="small muted" id="website-size-help">Extra Small, Small, Medium or Large. Text, page width, menus, photos, cards and form spacing scale together. The carousel size remains separate. Buttons retain accessible touch targets.</p>
+   <p id="website-size-status" aria-live="polite" role="status"></p>
+  </form>
+ </section>`;
+ const field=$('#website-size-select'),status=$('#website-size-status');
+ field.onchange=()=>{
+  const preview=applyWebsiteSize(field.value);
+  status.textContent='Preview: '+(preview==='extra-small'?'Extra Small':pretty(preview))+'. Save to apply sitewide.';
+ };
+ $('#website-size-reset').onclick=()=>{
+  field.value=saved;
+  applyWebsiteSize(saved);
+  status.textContent='Preview reset to the saved size.';
+ };
+ $('#website-size-form').onsubmit=async event=>{
+  event.preventDefault();
+  const value=field.value;
+  if(!WEBSITE_SIZE_OPTIONS.includes(value)){
+   status.textContent='Choose a listed size.';
+   return;
+  }
+  const save=$('#website-size-save');
+  save.disabled=true;
+  try{
+   await update('site_settings',1,{website_size:value});
+   applyWebsiteSize(value);
+   await ctx.load();
+   saved=value; // Keep the site's cached settings in sync after Admin navigation.
+   status.textContent='Website size saved: '+(value==='extra-small'?'Extra Small':pretty(value))+'.';
+  }catch(error){
+   applyWebsiteSize(saved);
+   status.textContent='Website size was not saved.';
+   ctx.showError(error);
+  }finally{save.disabled=false;}
+ };
+}
+
 async function carouselPanel(){
  await Promise.all([loadTable('home_carousel_slides'),loadTable('site_settings')]);
  const settings=data.site_settings?.[0]||{};

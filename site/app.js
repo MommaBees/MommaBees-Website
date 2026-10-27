@@ -2,6 +2,7 @@ import {config,isConfigured,currentUser,currentSession,signIn,signUp,signOut,lis
 import {isBackOfficeRole,backOfficeNavigation} from './role-navigation.js';
 import {photoFor,photoByUrl,photoStatusLabel} from './photo-library.js';
 import {applyBakeryBackground} from './background.js';
+import {applyWebsiteSize} from './website-size.js';
 import {qrMarkup,qrSvg,bindQrActions} from './qr-code.js';
 import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
 import {SAMPLE_MENU,samplesFor} from './sample-menu.js';
@@ -118,6 +119,7 @@ function layout(content){
  const crumb=routeName!=='home'&&crumbLabels[routeName]
    ?'<nav class="page-crumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span aria-current="page">'+e(crumbLabels[routeName])+'</span></nav>'
    :'';
+ applyWebsiteSize(settings.website_size);
  applyBakeryBackground(settings,config.supabaseUrl);
  stopHomeCarousel();
  $('#app').innerHTML=`<header class="header"><div class="shell nav">

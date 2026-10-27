@@ -851,3 +851,189 @@ label.checkbox .required-indicator,label.allergen-confirm .required-indicator{wh
   padding:7px 8px;
  }
 }
+
+
+/* MBB-UI-037 v1.27 — Owner-controlled WHOLE WEBSITE sizes.
+   Default Medium retains existing layout. The carousel has its own independent presets. */
+body[data-website-size]{
+ --website-font-scale:1;
+ --website-density:1;
+ --website-image-scale:1;
+ --website-main-max:1700px;
+ --website-shell-max:1760px;
+ font-size:calc(1rem * var(--website-font-scale));
+}
+body[data-website-size="extra-small"]{
+ --website-font-scale:.9;
+ --website-density:.78;
+ --website-image-scale:.78;
+ --website-main-max:1280px;
+ --website-shell-max:1350px;
+}
+body[data-website-size="small"]{
+ --website-font-scale:.96;
+ --website-density:.89;
+ --website-image-scale:.9;
+ --website-main-max:1460px;
+ --website-shell-max:1530px;
+}
+body[data-website-size="medium"]{
+ --website-font-scale:1;
+ --website-density:1;
+ --website-image-scale:1;
+ --website-main-max:1700px;
+ --website-shell-max:1760px;
+}
+body[data-website-size="large"]{
+ --website-font-scale:1.11;
+ --website-density:1.13;
+ --website-image-scale:1.14;
+ --website-main-max:1840px;
+ --website-shell-max:1920px;
+}
+body[data-website-size] .shell,
+body[data-website-size] .nav{
+ max-width:var(--website-shell-max);
+}
+body[data-website-size] #main.shell,
+body[data-website-size][data-site-background] #main.shell,
+body[data-website-size][data-page="admin"] #main.shell{
+ max-width:var(--website-main-max);
+ padding-inline:calc(clamp(18px,3.5vw,63px) * var(--website-density));
+ padding-block:calc(clamp(16px,2.5vw,38px) * var(--website-density));
+}
+body[data-website-size] .nav{
+ gap:calc(clamp(12px,2vw,32px) * var(--website-density));
+ min-height:max(68px,calc(82px * var(--website-density)));
+}
+body[data-website-size] .brand{
+ font-size:calc(clamp(1.32rem,1.8vw,2rem) * var(--website-font-scale));
+}
+body[data-website-size] .navlinks a{
+ font-size:max(.85rem,calc(.88rem * var(--website-font-scale)));
+ padding-inline:calc(4px * var(--website-density));
+}
+body[data-website-size] .navlinks{
+ gap:calc(clamp(6px,1vw,16px) * var(--website-density));
+}
+body[data-website-size] #main .section{
+ margin-block:calc(clamp(30px,4.6vw,67px) * var(--website-density));
+}
+body[data-website-size] #main h1{
+ font-size:calc(clamp(2rem,3.4vw,3.1rem) * var(--website-font-scale));
+}
+body[data-website-size] #main h2{
+ font-size:calc(clamp(1.5rem,2.35vw,2.15rem) * var(--website-font-scale));
+}
+body[data-website-size] #main .shop-hero h1{
+ font-size:calc(clamp(2.2rem,3.7vw,3.35rem) * var(--website-font-scale));
+}
+body[data-website-size] #main .detail h1{
+ font-size:calc(clamp(2rem,3.6vw,3.4rem) * var(--website-font-scale));
+}
+body[data-website-size] #main .card h3{
+ font-size:calc(clamp(1.25rem,1.6vw,1.5rem) * var(--website-font-scale));
+}
+body[data-website-size] #main .section-head{
+ padding-bottom:calc(16px * var(--website-density));
+ margin-bottom:calc(23px * var(--website-density));
+}
+body[data-website-size] #main .card-content{
+ padding:calc(clamp(15px,1.6vw,22px) * var(--website-density));
+}
+body[data-website-size] #main .grid{
+ gap:calc(clamp(14px,1.8vw,25px) * var(--website-density));
+}
+body[data-website-size] #main .card-media .product-photo{
+ height:calc(clamp(170px,14vw,225px) * var(--website-image-scale));
+}
+body[data-website-size] #main .past-bakes-gallery .product-photo{
+ height:calc(clamp(180px,20vw,280px) * var(--website-image-scale));
+}
+body[data-website-size] #main .shop-hero-image{
+ min-height:calc(260px * var(--website-image-scale));
+ max-height:calc(330px * var(--website-image-scale));
+}
+body[data-website-size] #main .shop-hero-copy{
+ padding:calc(clamp(24px,4vw,55px) * var(--website-density));
+}
+body[data-website-size] #main .tabs{
+ gap:calc(8px * var(--website-density));
+}
+body[data-website-size] #main .tab{
+ padding:calc(10px * var(--website-density)) calc(15px * var(--website-density));
+ font-size:max(.85rem,calc(.95rem * var(--website-font-scale)));
+}
+body[data-website-size] #main .button,
+body[data-website-size] #main button.button{
+ font-size:max(.875rem,calc(1rem * var(--website-font-scale)));
+ padding:calc(10px * var(--website-density)) calc(18px * var(--website-density));
+ min-height:max(44px,calc(44px * var(--website-density)));
+}
+body[data-website-size] #main form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),select,textarea){
+ font-size:max(.875rem,calc(1rem * var(--website-font-scale)));
+ padding:calc(10px * var(--website-density));
+ min-height:max(44px,calc(44px * var(--website-density)));
+}
+body[data-website-size] #main :is(.box,.card,.admin-content-toolbar){
+ overflow-wrap:anywhere;
+}
+body[data-website-size][data-page="admin"] #admin-main>.box{
+ padding:calc(clamp(16px,2.6vw,37px) * var(--website-density));
+}
+body[data-website-size] #main .admin-workspace .admin-layout{
+ gap:calc(24px * var(--website-density));
+}
+body[data-website-size] .footer{
+ font-size:calc(1rem * var(--website-font-scale));
+}
+body[data-website-size] .footer-inner{
+ gap:calc(clamp(20px,3vw,40px) * var(--website-density));
+}
+/* Explicit carousel exceptions: never override independent carousel sizes. */
+body[data-website-size] #main .home-carousel .home-carousel-slide h1{
+ font-size:var(--carousel-headline-size);
+}
+body[data-website-size] #main .home-carousel .home-carousel-slide h2{
+ font-size:var(--carousel-headline-size);
+}
+body[data-website-size] #main .home-carousel .home-carousel-slide .hero-actions .button{
+ font-size:var(--carousel-cta-font);
+ padding:var(--carousel-cta-padding);
+ min-height:var(--carousel-cta-height);
+}
+body[data-website-size] #main .home-carousel .home-carousel-slides{
+ height:var(--carousel-height);
+}
+body[data-website-size] #main .home-carousel .home-carousel-slide.hero .hero-copy{
+ padding:var(--carousel-copy-padding);
+}
+body[data-website-size] #main .home-carousel .home-carousel-slide .hero-art img{
+ height:100%;
+}
+.admin-website-size form>label{display:block;font-weight:700;margin-bottom:10px}
+.admin-website-size .admin-carousel-interval-controls{gap:10px}
+.admin-website-size select{min-height:44px;min-width:180px;background:#fff;padding:9px 12px;border:1px solid #aa8769;border-radius:5px}
+#website-size-status:not(:empty){font-weight:700;margin-top:12px}
+@media(max-width:760px){
+ body[data-website-size] #main.shell,
+ body[data-website-size][data-site-background] #main.shell{
+  width:100%;
+  max-width:100%;
+  padding-inline:max(12px,calc(18px * var(--website-density)));
+ }
+ body[data-website-size] #main .grid{
+  gap:max(10px,calc(14px * var(--website-density)));
+ }
+ body[data-website-size] #main .shop-hero-image{
+  min-height:0;
+  max-height:calc(210px * var(--website-image-scale));
+ }
+ body[data-website-size] #main .admin-workspace .admin-layout{
+  grid-template-columns:minmax(0,1fr);
+ }
+}
+@media(max-width:450px){
+ .admin-website-size .admin-carousel-interval-controls > *{flex:1 1 100%}
+ .admin-website-size select{width:100%}
+}

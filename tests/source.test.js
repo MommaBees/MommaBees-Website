@@ -27,6 +27,8 @@ import {SAMPLE_MENU,samplesFor} from '../site/sample-menu.js';
 import {accountNavigationMarkup,ACCOUNT_MENU_OPEN_MS,ACCOUNT_MENU_CLOSE_MS} from '../site/account-navigation.js';
 import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
 import {referenceKeyFor} from '../site/reference-keys.js';
+import {WEBSITE_SIZE_OPTIONS,DEFAULT_WEBSITE_SIZE,normalizeWebsiteSize,applyWebsiteSize} from '../site/website-size.js';
+
 import {ADMIN_REQUIRED,adminFieldIsRequired} from '../site/admin-required.js';
 import {syncRequiredMarkers,bindRequiredMarkers} from '../site/required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup,carouselIntervalMilliseconds,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from '../site/home-carousel.js';
@@ -1242,4 +1244,44 @@ test('redundant text removed without losing customer-facing commerce and safety 
  assert.match(checkout,/Pay at pickup does not charge a card now/);
  assert.match(admin,/A product cannot be published until ingredients and the allergen review are completed/);
  assert.match(admin,/No products have been created/);
+});
+
+test('sitewide size is independent from carousel and applied on every page',()=>{
+ assert.deepEqual(WEBSITE_SIZE_OPTIONS,['extra-small','small','medium','large']);
+ assert.equal(DEFAULT_WEBSITE_SIZE,'medium');
+ for(const value of WEBSITE_SIZE_OPTIONS){
+  assert.equal(normalizeWebsiteSize(value),value);
+  const target={dataset:{}};
+  assert.equal(applyWebsiteSize(value,target),value);
+  assert.equal(target.dataset.websiteSize,value);
+ }
+ const target={dataset:{}};
+ assert.equal(applyWebsiteSize('unsafe-value',target),'medium');
+ const app=read('site/app.js'),admin=read('site/admin.js'),nav=read('site/admin-navigation.js');
+ assert.match(app,/applyWebsiteSize\(settings\.website_size\)/);
+ assert.match(admin,/selected==='website_size'\)return websiteSizePanel\(\)/);
+ assert.match(nav,/\['home_carousel_slides','website_size','website_background','site_settings'\]/);
+ assert.match(admin,/website_size:value/);
+ assert.match(admin,/await ctx\.load\(\)/);
+ assert.match(admin,/Preview: /);
+ assert.match(admin,/id="website-size-reset"/);
+ assert.match(admin,/Website size <span class="required-indicator"/);
+ assert.match(app,/homeCarouselMarkup\(slides,e,photo,s\.home_carousel_size\)/);
+});
+test('whole-site sizing changes layouts and text while preserving accessible controls and carousel size',()=>{
+ const css=read('site/country-home-v2.css');
+ const size=css.slice(css.indexOf('/* MBB-UI-037 v1.27'));
+ const sql=read('supabase/migrations/20261027_website_size_v127.sql');
+ for(const value of ['extra-small','small','medium','large'])assert.ok(size.includes('body[data-website-size="'+value+'"]'));
+ for(const val of ['--website-font-scale','--website-density','--website-image-scale','--website-main-max','--website-shell-max'])assert.ok(size.includes(val));
+ for(const selector of ['#main.shell','.navlinks a','.brand','.section','.card-content','.grid','.shop-hero-image','.past-bakes-gallery','.footer','.admin-workspace'])assert.ok(size.includes(selector));
+ assert.ok(size.includes('min-height:max(44px'));
+ assert.ok(size.includes('.home-carousel .home-carousel-slide h1'));
+ assert.ok(size.includes('font-size:var(--carousel-headline-size)'));
+ assert.ok(size.includes('height:var(--carousel-height)'));
+ assert.ok(size.includes('@media(max-width:760px)'));
+ assert.match(sql,/website_size text not null default 'medium'/);
+ assert.match(sql,/check \(website_size in \('extra-small','small','medium','large'\)\)/);
+ assert.match(sql,/drop policy if exists "active account only" on public\.site_settings/);
+ assert.doesNotMatch(sql,/drop policy.*staff manage site_settings/);
 });
