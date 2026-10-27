@@ -22,6 +22,7 @@ import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from '../
 import {PAST_BAKE_IMAGE_NAMES,pastBakeName} from '../site/past-bakes.js';
 import {BUILTIN_PHOTO_PRESETS,photoFor} from '../site/photo-library.js';
 import {TEST_PRICES} from '../functions/_lib/demo-prices.js';
+import {BACKGROUND_OPTIONS,backgroundChoice,verifiedBackgroundUrl,applyBakeryBackground} from '../site/background.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
 const required=['site/account.js','site/message-center.js','functions/_lib/turnstile.js','functions/api/auth/login.js','functions/api/auth/register.js','supabase/migrations/20261026_customer_profiles_message_photos.sql','README.md','site/index.html','site/styles.css','site/config.js','site/app.js','site/api.js','site/admin.js','functions/api/checkout.js','functions/api/stripe-webhook.js','functions/api/order-status.js','functions/api/contact.js','functions/api/reconcile.js','supabase/schema.sql','docs/Mamma_Bees_Bakery_V1_Master_Project_Requirements.md'];
@@ -457,4 +458,42 @@ test('terms do not treat an off-schedule inquiry as an accepted order',()=>{
  assert.match(store,/Special-date requests are not confirmed orders/);
  assert.match(store,/A special-order request is an inquiry only/);
  assert.match(store,/both be located in Missouri/);
+});
+
+
+test('country background presets include Missouri wooden doors and safe uploaded photos',()=>{
+ assert.equal(backgroundChoice('prairie_doors'),'prairie_doors');
+ assert.equal(backgroundChoice('malicious-style'),'prairie_doors');
+ assert.equal(BACKGROUND_OPTIONS.length,5);
+ assert.ok(BACKGROUND_OPTIONS.some(x=>x.label.includes('Wooden Barn Doors')));
+ const base='https://ryqcfojzdncrshinlpue.supabase.co';
+ const photo=base+'/storage/v1/object/public/bakery-backgrounds/00000000-0000-4000-8000-000000000001.jpg';
+ assert.equal(verifiedBackgroundUrl(photo,base),photo);
+ assert.equal(verifiedBackgroundUrl('https://other-site.com/storage/v1/object/public/bakery-backgrounds/00000000-0000-4000-8000-000000000001.jpg',base),'');
+ assert.equal(verifiedBackgroundUrl(base+'/storage/v1/object/public/product-photos/00000000-0000-4000-8000-000000000001.jpg',base),'');
+ assert.equal(verifiedBackgroundUrl('javascript:alert(1)',base),'');
+ const vars=new Map();
+ const fake={dataset:{},style:{setProperty:(key,val)=>vars.set(key,val)}};
+ assert.equal(applyBakeryBackground({background_style:'prairie_doors'},base,fake),'prairie_doors');
+ assert.equal(fake.dataset.siteBackground,'prairie_doors');
+ assert.equal(applyBakeryBackground({background_enabled:false,background_style:'photo'},base,fake),'solid');
+ assert.equal(fake.dataset.siteBackground,'solid');
+});
+test('website background settings, image storage and owner-only editor are connected',()=>{
+ const migration=read('supabase/migrations/20261026_rustic_background_controls.sql');
+ const app=read('site/app.js'),admin=read('site/admin.js'),editor=read('site/background-admin.js');
+ const api=read('site/api.js'),css=read('site/styles.css');
+ assert.match(migration,/background_style text not null default 'prairie_doors'/);
+ assert.match(migration,/create policy "bakery management upload website backgrounds"/);
+ assert.match(migration,/s\.role in \('owner','admin'\)/);
+ assert.match(migration,/file_size_limit=5242880/);
+ assert.match(admin,/website_background/);
+ assert.match(editor,/Only Owner\/Admin accounts/);
+ assert.match(editor,/upload\('bakery-backgrounds'/);
+ assert.match(editor,/Save Background/);
+ assert.match(editor,/Restore Missouri Barn Doors/);
+ assert.match(app,/applyBakeryBackground\(settings,config\.supabaseUrl\)/);
+ assert.match(api,/'bakery-backgrounds'/);
+ assert.match(css,/prairie_doors/);
+ assert.doesNotMatch(app,/From Our Country Kitchen to Your Table|From Our Country Kitchen<br>/);
 });
