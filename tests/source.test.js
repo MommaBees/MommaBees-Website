@@ -556,7 +556,9 @@ test('real shop routes contain staff-only test examples without customer test ac
  const end=app.indexOf('function detail(id){',start);
  const shop=app.slice(start,end);
  assert.ok(start>0&&end>start);
- assert.doesNotMatch(shop,/demoStorePreview/);
+ assert.ok(shop.includes("demoStorePreview(mode||'all',category?.name||null)"));
+ assert.match(app,/const showPublicSamples=false/);
+ assert.match(app,/demo_store_enabled===true/);
  assert.match(shop,/filter\(productReady\)/);
  assert.match(shop,/filter\(productPreorder\)/);
  assert.match(shop,/shop-page--/);
