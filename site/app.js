@@ -11,7 +11,7 @@ import {catalogCarouselSlides} from './catalog-carousel.js';
 import {normalizeIdle,startIdleWatch,stopIdleWatch,isIdle,idleActivityTime} from './idle-session.js';
 import {bindRequiredMarkers} from './required-fields.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
-import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts,homepageVisibleDepartments,shopVisibleDepartments} from './store-departments.js';
+import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts,homepageVisibleDepartments,homepageGridLayout,shopVisibleDepartments} from './store-departments.js';
 import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
 import {showcaseEnabled,showcaseDescription,showcasePrice,showcaseOrigin,showcaseFields} from './product-showcase-details.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
@@ -215,7 +215,8 @@ function home(){
  const slides=[...(active.length?active:backup),...catalogCarouselSlides({settings:s,products:sellable(),showcase:showcaseEnabled(s)?all.showcaseItems:[],categories:all.categories})];
  const split=s.split_store_enabled===true;
  const currentProducts=sellable();
- const homepageLimit=homepageVisibleDepartments(s).length===1?8:4;
+ const homeGrid=homepageGridLayout(s);
+  const homepageLimit=homeGrid.limit;
  const storefronts=homepageStorefronts(s,currentProducts,all.categories,homepageLimit);
  const departmentPanels=storefronts.length?
   '<section class="section home-departments-section" aria-label="Bakery and Homestand products">'+
@@ -224,7 +225,7 @@ function home(){
    '" aria-labelledby="home-'+view.department+'-heading">'+
     '<div class="home-department-heading"><h2 id="home-'+view.department+'-heading">'+e(view.label)+'</h2>'+
       '<a href="'+view.href+'">Shop '+e(view.label)+'</a></div>'+
-    '<div class="home-department-products">'+
+    '<div class="home-department-products" style="--home-product-columns:'+homeGrid.columns+';--home-product-columns-tablet:'+Math.min(3,homeGrid.columns)+';--home-product-columns-mobile:'+Math.min(2,homeGrid.columns)+';">'+
       (view.products.map(card).join('')+
        (showcaseEnabled(s)?showcaseItemsFor(all.showcaseItems,view.department,null,null,homepageLimit):[])
         .filter(item=>!view.products.some(p=>p.variety_id&&p.variety_id===item.variety_id))

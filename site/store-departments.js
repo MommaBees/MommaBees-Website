@@ -45,9 +45,27 @@ export function shopVisibleDepartments(settings,requestedDepartment=null,categor
  if(STORE_DEPARTMENTS.includes(requestedDepartment))return [requestedDepartment];
  return homepageVisibleDepartments(settings);
 }
+// Configured homepage card counts apply to both departments independently.
+export const HOMEPAGE_GRID_DEFAULTS=Object.freeze({home_both_columns:3,home_both_rows:3,home_single_columns:5,home_single_rows:2});
+export function normalizeHomepageGridNumber(value,fallback){
+ const number=Number(value);
+ return Number.isInteger(number)&&number>=1&&number<=6?number:fallback;
+}
+export function homepageGridSettings(settings={}){
+ return Object.fromEntries(Object.entries(HOMEPAGE_GRID_DEFAULTS)
+  .map(([key,fallback])=>[key,normalizeHomepageGridNumber(settings?.[key],fallback)]));
+}
+export function homepageGridLayout(settings={}){
+ const visible=homepageVisibleDepartments(settings).length;
+ if(!visible)return {mode:'none',columns:0,rows:0,limit:0};
+ const grid=homepageGridSettings(settings);
+ const columns=visible===1?grid.home_single_columns:grid.home_both_columns;
+ const rows=visible===1?grid.home_single_rows:grid.home_both_rows;
+ return {mode:visible===1?'single':'both',columns,rows,limit:columns*rows};
+}
 export function homepageStorefronts(settings,products,categories,limit=3){
  if(settings?.split_store_enabled!==true)return [];
- const count=Number.isInteger(limit)&&limit>0?Math.min(limit,12):3;
+ const count=Number.isInteger(limit)&&limit>0?Math.min(limit,36):3;
  const views=homepageVisibleDepartments(settings);
  return views.map(department=>{
   const items=filterStoreProducts(products,settings,department,categories)

@@ -5,7 +5,7 @@ import {centralInputFromIso,isoFromCentralInput} from './admin-time.js';
 import {adminGroupsForRole,ADMIN_DESCRIPTIONS} from './admin-navigation.js';
 import {adminFieldIsRequired} from './admin-required.js';
 import {formatShowcaseDate} from './showcase-date.js';
-import {STORE_DEPARTMENTS,departmentForCategory,departmentLabel,taxonomyPaths,searchTaxonomyPaths} from './store-departments.js';
+import {STORE_DEPARTMENTS,departmentForCategory,departmentLabel,taxonomyPaths,searchTaxonomyPaths,homepageGridSettings} from './store-departments.js';
 import {WEBSITE_SIZE_OPTIONS,normalizeWebsiteSize,applyWebsiteSize} from './website-size.js';
 import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from './home-carousel.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
@@ -95,7 +95,7 @@ const configs={
  recipe_ingredients:{label:'Recipe Ingredient Quantities',fields:cols(field('recipe_id','Recipe','ref',{table:'recipes'}),field('ingredient_id','Ingredient','ref',{table:'ingredients'}),field('quantity','Quantity required per batch','number'))},
  customer_profiles:{label:'Customer Accounts',readMostly:true,fields:cols(field('first_name','First name'),field('last_name','Last name'),field('username','Username'),field('phone','Phone'),field('address_line1','Account street'),field('address_line2','Apt / suite'),field('city','City'),field('state','State'),field('country','Country'),field('postal_code','ZIP / postal'),field('billing_same','Billing same as account','bool'),field('billing_line1','Billing street'),field('billing_line2','Billing apt / suite'),field('billing_city','Billing city'),field('billing_state','Billing state'),field('billing_country','Billing country'),field('billing_postal_code','Billing ZIP / postal'),field('marketing_opt_in','Marketing permission','bool'))},
  home_carousel_slides:{label:'Homepage Carousel',fields:cols(field('sort_order','Display position','number'),field('eyebrow','Small heading'),field('title','Main headline'),field('description','Supporting text','textarea'),field('image_url','Carousel photo','carousel_image'),field('image_alt','Image description for screen readers'),field('primary_label','Main button label'),field('primary_href','Main button destination','select',{options:['#shop','#ready','#preorder','#gallery','#contact','#faq']}),field('secondary_label','Second button label (optional)'),field('secondary_href','Second button destination','select',{options:['#shop','#ready','#preorder','#gallery','#contact','#faq']}),field('published','Published / visible','bool'),field('starts_at','Start showing (Central Time)','datetime'),field('ends_at','Stop showing (Central Time)','datetime'))},
- site_settings:{label:'Website Appearance & Settings',single:true,fields:cols(field('brand_subtitle','Header products & services line','textarea'),field('split_store_enabled','Split store into Bakery / Homestand','bool'),field('product_showcase_enabled','Enable Product Showcase','bool'),field('home_bakery_visible','Show Bakery on homepage (split mode)','bool'),field('home_homestand_visible','Show Homestand on homepage (split mode)','bool'),field('placeholder_empty_shop','Show empty-shop message','bool'),field('placeholder_empty_gallery','Show empty-gallery message','bool'),field('placeholder_missing_image','Show missing-photo placeholder','bool'),field('placeholder_featured','Show empty-featured message','bool'),field('demo_store_enabled','Show test products to Owner/Admin ONLY','bool'),field('home_heading','Homepage headline'),field('home_intro','Homepage introduction','textarea'),field('hero_url','Homepage background photo','image'),field('header_url','Header image','image'),field('email','Contact email'),field('phone','Contact phone'),field('pickup_instructions','Pickup instructions','textarea'),field('delivery_zips','Allowed delivery ZIP codes (comma-separated)','csv'),field('delivery_fee_cents','Local delivery fee (dollars)','money'),field('pickup_enabled','Offer pickup','bool'),field('delivery_enabled','Offer local delivery','bool'),field('checkout_enabled','ENABLE LIVE CHECKOUT AFTER TESTING','bool'),field('pay_at_pickup_enabled','Offer Pay at Pickup (separate from Stripe)','bool'),field('pay_at_pickup_tax_reviewed','Pay-at-pickup tax configuration (staff-only; do not enable until supported)','bool'),field('pay_at_pickup_tax_rate_bps','Pay-at-pickup fallback tax rate (restricted legacy setting)','number'),field('special_date_requests_enabled','Offer off-schedule special date inquiries','bool'),field('special_date_convenience_fee_cents','Proposed off-day convenience fee (dollars; subject to approval)','money'),field('food_notice','Food/allergen disclosure','textarea'),field('terms','Cancellation, return and store terms','textarea'))}
+ site_settings:{label:'Website Appearance & Settings',single:true,fields:cols(field('brand_subtitle','Header products & services line','textarea'),field('split_store_enabled','Split store into Bakery / Homestand','bool'),field('product_showcase_enabled','Enable Product Showcase','bool'),field('home_bakery_visible','Show Bakery on homepage (split mode)','bool'),field('home_homestand_visible','Show Homestand on homepage (split mode)','bool'),field('home_both_columns','Both visible: columns per department','number'),field('home_both_rows','Both visible: rows per department','number'),field('home_single_columns','Only one visible: columns','number'),field('home_single_rows','Only one visible: rows','number'),field('placeholder_empty_shop','Show empty-shop message','bool'),field('placeholder_empty_gallery','Show empty-gallery message','bool'),field('placeholder_missing_image','Show missing-photo placeholder','bool'),field('placeholder_featured','Show empty-featured message','bool'),field('demo_store_enabled','Show test products to Owner/Admin ONLY','bool'),field('home_heading','Homepage headline'),field('home_intro','Homepage introduction','textarea'),field('hero_url','Homepage background photo','image'),field('header_url','Header image','image'),field('email','Contact email'),field('phone','Contact phone'),field('pickup_instructions','Pickup instructions','textarea'),field('delivery_zips','Allowed delivery ZIP codes (comma-separated)','csv'),field('delivery_fee_cents','Local delivery fee (dollars)','money'),field('pickup_enabled','Offer pickup','bool'),field('delivery_enabled','Offer local delivery','bool'),field('checkout_enabled','ENABLE LIVE CHECKOUT AFTER TESTING','bool'),field('pay_at_pickup_enabled','Offer Pay at Pickup (separate from Stripe)','bool'),field('pay_at_pickup_tax_reviewed','Pay-at-pickup tax configuration (staff-only; do not enable until supported)','bool'),field('pay_at_pickup_tax_rate_bps','Pay-at-pickup fallback tax rate (restricted legacy setting)','number'),field('special_date_requests_enabled','Offer off-schedule special date inquiries','bool'),field('special_date_convenience_fee_cents','Proposed off-day convenience fee (dollars; subject to approval)','money'),field('food_notice','Food/allergen disclosure','textarea'),field('terms','Cancellation, return and store terms','textarea'))}
 };
 // Administrative groups are centralized in admin-navigation.js.
 const titleFor=(table,row)=>row?.name||row?.title||row?.email||row?.description||row?.date||row?.product_name||row?.full_name||row?.subject||String(row?.id||row?.product_id||'').slice(0,8);
@@ -380,7 +380,8 @@ async function storeDisplayPanel(){
  const original={
   split_store_enabled:settings.split_store_enabled===true,
   home_bakery_visible:settings.home_bakery_visible!==false,
-  home_homestand_visible:settings.home_homestand_visible!==false
+  home_homestand_visible:settings.home_homestand_visible!==false,
+  ...homepageGridSettings(settings)
  };
  $('#admin-main').innerHTML=`<section class="box admin-store-display">
  <h2>Store Display</h2>
@@ -402,16 +403,40 @@ async function storeDisplayPanel(){
     <span><strong>Show Homestand on homepage</strong></span>
    </label>
   </fieldset>
-  <p class="small muted">One department: 8 featured items. Both departments: 4 each, side by side on desktop.</p>
+  <fieldset class="admin-home-grid-settings">
+  <legend>Homepage product layout</legend>
+  <div class="admin-home-grid-option">
+   <strong>Both Bakery and Homestand visible</strong>
+   <div class="admin-home-grid-fields">
+    <label for="store-display-home_both_columns">Columns per department<input id="store-display-home_both_columns" type="number" min="1" max="6" step="1" required value="${original.home_both_columns}"></label>
+    <label for="store-display-home_both_rows">Rows per department<input id="store-display-home_both_rows" type="number" min="1" max="6" step="1" required value="${original.home_both_rows}"></label>
+   </div>
+  </div>
+  <div class="admin-home-grid-option">
+   <strong>Only Bakery or only Homestand visible</strong>
+   <div class="admin-home-grid-fields">
+    <label for="store-display-home_single_columns">Columns<input id="store-display-home_single_columns" type="number" min="1" max="6" step="1" required value="${original.home_single_columns}"></label>
+    <label for="store-display-home_single_rows">Rows<input id="store-display-home_single_rows" type="number" min="1" max="6" step="1" required value="${original.home_single_rows}"></label>
+   </div>
+  </div>
+  <p class="small muted">Cards per department = columns × rows. Smaller screens automatically use fewer columns.</p>
+ </fieldset>
   <button type="submit" class="button" id="store-display-save">Save store display</button>
   <p id="store-display-status" role="status" aria-live="polite"></p>
  </form></section>`;
  $('#store-display-form').onsubmit=async event=>{
   event.preventDefault();
+  const gridKeys=Object.keys(homepageGridSettings(settings));
+  const gridValues=Object.fromEntries(gridKeys.map(key=>[key,Number($('#store-display-'+key).value)]));
+  if(Object.values(gridValues).some(value=>!Number.isInteger(value)||value<1||value>6)){
+   $('#store-display-status').textContent='Columns and rows must be whole numbers from 1 through 6.';
+   return;
+  }
   const next={
    split_store_enabled:$('#store-display-split').checked,
    home_bakery_visible:$('#home-bakery-visible').checked,
-   home_homestand_visible:$('#home-homestand-visible').checked
+   home_homestand_visible:$('#home-homestand-visible').checked,
+   ...gridValues
   };
   const save=$('#store-display-save');
   save.disabled=true;
@@ -423,6 +448,7 @@ async function storeDisplayPanel(){
    $('#store-display-split').checked=original.split_store_enabled;
    $('#home-bakery-visible').checked=original.home_bakery_visible;
    $('#home-homestand-visible').checked=original.home_homestand_visible;
+   Object.keys(homepageGridSettings(settings)).forEach(key=>{$('#store-display-'+key).value=original[key];});
    ctx.showError(error);
   }finally{save.disabled=false;}
  };

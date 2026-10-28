@@ -1293,7 +1293,7 @@ test('whole-site sizing changes layouts and text while preserving accessible con
 
 
 import {STORE_DEPARTMENTS,normalizeDepartment,departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,taxonomyPaths,searchTaxonomyPaths} from '../site/store-departments.js';
-import {homepageStorefronts,homepageVisibleDepartments,shopVisibleDepartments} from '../site/store-departments.js';
+import {homepageStorefronts,homepageVisibleDepartments,shopVisibleDepartments,homepageGridLayout,homepageGridSettings} from '../site/store-departments.js';
 
 test('Bakery and Homestand storefront filtering respects the Owner toggle and category truth',()=>{
  assert.deepEqual(STORE_DEPARTMENTS,['bakery','homestand']);
@@ -1713,4 +1713,31 @@ test('Shop All follows selected departments and denser cards do not alter the ca
  assert.match(compact,/\.product-results\.grid/);
  assert.match(compact,/\.home-department-products/);
  assert.doesNotMatch(compact,/\.home-carousel|\.hero-art|carousel-size/);
+});
+
+test('homepage grid configuration has distinct two-department and single-department limits',()=>{
+ const both={split_store_enabled:true,home_bakery_visible:true,home_homestand_visible:true};
+ const one={...both,home_homestand_visible:false};
+ assert.deepEqual(homepageGridLayout(both),{mode:'both',columns:3,rows:3,limit:9});
+ assert.deepEqual(homepageGridLayout(one),{mode:'single',columns:5,rows:2,limit:10});
+ assert.equal(homepageGridLayout({...both,home_bakery_visible:false}).limit,10);
+ assert.equal(homepageGridLayout({...one,home_bakery_visible:false}).limit,0);
+ assert.equal(homepageGridLayout({split_store_enabled:false}).limit,0);
+ assert.equal(homepageGridLayout({...both,home_both_columns:4,home_both_rows:2}).limit,8);
+ assert.equal(homepageGridLayout({...one,home_single_columns:6,home_single_rows:4}).limit,24);
+ assert.deepEqual(homepageGridSettings({home_both_columns:99,home_both_rows:0,home_single_columns:-1,home_single_rows:1.5}),
+  {home_both_columns:3,home_both_rows:3,home_single_columns:5,home_single_rows:2});
+ const cats=[{id:'b',department:'bakery'},{id:'h',department:'homestand'}];
+ const products=[...Array.from({length:40},(_,i)=>({id:'b'+i,name:'Bakery '+i,category_id:'b'})),...Array.from({length:40},(_,i)=>({id:'h'+i,name:'Homestand '+i,category_id:'h'}))];
+ assert.deepEqual(homepageStorefronts(both,products,cats,homepageGridLayout(both).limit).map(v=>v.products.length),[9,9]);
+ assert.deepEqual(homepageStorefronts(one,products,cats,homepageGridLayout(one).limit).map(v=>v.products.length),[10]);
+ const app=read('site/app.js'),admin=read('site/admin.js'),css=read('site/country-home-v2.css');
+ const migration=read('supabase/migrations/20261027_home_grid_layout_v140.sql');
+ assert.match(app,/const homeGrid=homepageGridLayout\(s\)/);
+ assert.match(app,/--home-product-columns:/);
+ for(const key of Object.keys(homepageGridSettings({}))){
+  assert.ok(admin.includes('id="store-display-'+key+'"'),key);
+  assert.ok(migration.includes('add column if not exists '+key+' smallint not null default'),key);
+ }
+ assert.match(css,/repeat\(var\(--home-product-columns,3\)/);
 });
