@@ -12,6 +12,7 @@ import {normalizeIdle,startIdleWatch,stopIdleWatch,isIdle,idleActivityTime} from
 import {bindRequiredMarkers} from './required-fields.js';
 import {legalIndexPage,legalPage} from './legal-policies.js';
 import {initCookiePreferences} from './cookie-consent.js';
+import {faqPage} from './customer-faq.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
 import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts,homepageVisibleDepartments,homepageGridLayout,shopVisibleDepartments} from './store-departments.js';
 import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
@@ -153,13 +154,16 @@ function layout(content){
     <a class="footer-qr" href="#qr" aria-label="Open the downloadable bakery homepage QR code">
      ${qrSvg()}<span>Scan to visit our bakery</span></a>
     </div>
-  </div><nav class="footer-legal" aria-label="Legal and policies">
-   <a href="#legal">Legal & Policies</a><a href="#legal/terms">Terms of Service</a>
-   <a href="#legal/privacy">Privacy</a><a href="#legal/cookies">Cookies</a>
-   <a href="#legal/pickup">Pickup</a><a href="#legal/delivery">Delivery</a>
-   <a href="#legal/refunds">Refunds</a><a href="#legal/property">Visitor & Animal Safety</a>
-   <a href="#legal/food">Food & Allergens</a>
-   <button type="button" class="footer-cookie-link" data-cookie-settings>Cookie Settings</button>
+  </div>
+  <nav class="footer-legal" aria-label="Legal and customer policies">
+   <div class="footer-legal-heading"><span>LEGAL &amp; CUSTOMER POLICIES</span><a href="#legal">View all policies</a></div>
+   <div class="footer-legal-links">
+    <a href="#legal/terms">Terms of Service</a><a href="#legal/privacy">Privacy Policy</a>
+    <a href="#legal/cookies">Cookie Policy</a><a href="#legal/pickup">Pickup Policy</a>
+    <a href="#legal/delivery">Delivery Policy</a><a href="#legal/refunds">Refunds &amp; Cancellations</a>
+    <a href="#legal/property">Visitor &amp; Animal Safety</a><a href="#legal/food">Food &amp; Allergens</a>
+    <button type="button" class="footer-cookie-link" data-cookie-settings>Cookie Settings</button>
+   </div>
   </nav><div class="footer-bottom">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</div>
  </div></footer>`;
  bindHomeCarousel(settings.home_carousel_interval_seconds);
@@ -371,14 +375,7 @@ async function account(section=null){
  return mod.account({layout,section,rerender:async()=>{await load();await render();},showError});
 }
 function contact(){const requestDate=sessionStorage.getItem('mb_requested_special_date')||'';sessionStorage.removeItem('mb_requested_special_date');layout(`<section class="section"><h1>Contact Momma Bee</h1><p>Questions and special-order requests are welcome. Quotes are confirmed before payment.</p><form class="box" id="contact-form"><div class="field"><label>Name<input name="name" required maxlength="120"></label></div><div class="field"><label>Email<input name="email" type="email" required value="${e(currentUser()?.email||'')}"></label></div><div class="field"><label>Request type<select name="kind"><option value="question">General question</option><option value="custom_order" ${requestDate?'selected':''}>Custom baking request</option><option value="message">Existing order question</option></select></label></div><div class="field"><label>Subject<input name="subject" maxlength="160" required value="${requestDate?e('Special order request for '+requestDate):''}"></label></div><div class="field"><label>Message / desired date / quantity<textarea name="body" maxlength="3000" minlength="10" required>${requestDate?e('I would like to ask about a special order for '+requestDate+'. Please let me know if you can accommodate it, the total price, and any additional convenience fee.'):''}</textarea></label></div>${config.turnstileSiteKey?`<div class="cf-turnstile" data-sitekey="${e(config.turnstileSiteKey)}"></div>`:''}<button class="button">Send request</button><p class="small">Sending does not create an order or reserve production capacity.</p></form></section>`);if(!currentUser()&&config.turnstileSiteKey){const script=document.createElement('script');script.src='https://challenges.cloudflare.com/turnstile/v0/api.js';script.async=true;script.defer=true;document.head.appendChild(script);}$('#contact-form').onsubmit=async ev=>{ev.preventDefault();const payload=Object.fromEntries(new FormData(ev.target));try{if(currentUser())await add('messages',{customer_id:currentUser().id,customer_email:payload.email,kind:payload.kind,subject:payload.subject,body:payload.body});else{const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,turnstile_token:ev.target.querySelector('[name="cf-turnstile-response"]')?.value||''})});const data=await r.json();if(!r.ok)throw Error(data.error||'Message could not be sent');}ev.target.reset();$('#feedback').innerHTML='<div class="notice success">Your message was submitted to the bakery inbox.</div>';}catch(x){showError(x);}};}
-function faq(){const s=all.settings;layout(`<section class="section"><h1>Questions & Bakery Policies</h1><div class="box"><h2>How do orders work?</h2><p>Ready-to-sell items are already baked; preorders are made for the bakery dates offered at checkout. All orders are subject to actual availability.</p><h2>Pickup and delivery</h2><p>Only approved local dates and time windows appear during checkout. Delivery is available only to eligible ZIP codes and may include a fee.</p>
-<h2>Special-date requests are not confirmed orders</h2>
-<p>Choosing a date outside the published baking schedule, sending a message, or requesting a quote does not reserve that date or create a promise that the bakery will bake or deliver. A special-order request is an inquiry only. The bakery must review its capacity, product eligibility, ingredients, preparation requirements, and pickup arrangements, and explicitly accept the order. Any additional convenience fee is a proposed fee only and will be disclosed before the customer accepts a final quote. We do not charge an off-schedule fee without that acceptance.</p>
-<h2>Product photographs and availability</h2>
-<p>Images identified as representative photographs or pictures of previous bakes show examples only; they may not depict the specific item currently for sale. Only specifically published products with available capacity and approved fulfillment dates can be ordered. Final availability and pricing are determined during checkout and bakery confirmation.</p>
-<h2>Cottage-food eligibility and food safety</h2>
-<p>Online cottage-food sales must meet the location, product, and fulfillment restrictions required by applicable law. Products requiring refrigeration or other special handling may not qualify for cottage-food sales. All food must satisfy the bakery's applicable operating and labeling requirements before being offered.</p>
-<h2>Food and allergens</h2><p>${e(s.food_notice||'Contact us about ingredients, allergens, dietary questions and storage before placing an order.')}</p><h2>Cancellation, refunds and other policies</h2><p>${e(s.terms||'The bakery owner has not published the final cancellation, refund, and fulfillment policies yet. Ordering stays disabled until configured.')}</p><p>Review our <a href="#legal">complete Legal & Policies directory</a>, including pickup, delivery, privacy, cookies, visitor safety, and food handling.</p></div></section>`);}
+function faq(){layout(faqPage());}
 function gallery(){
  const photos=all.pastBakes.filter(x=>x.published&&x.image_url);
  layout('<section class="section"><div class="eyebrow"></div>'+
