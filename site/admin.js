@@ -109,7 +109,7 @@ const short=(value)=>{if(value===null||value===undefined)return '—';if(typeof 
 const formatCell=(key,val)=>key==='availability_date'?formatShowcaseDate(val)||'—':key.endsWith('_cents')?money(val):key==='created_at'?fmt(val):short(val);
 function authShell(){
  const visibleGroups=adminGroupsForRole(ctx.role);
- const labelFor=id=>id==='website_size'?'Website Size':id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id);
+ const labelFor=id=>id==='store_display'?'Homepage & Category Layout':id==='website_size'?'Website Size':id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id);
  const groupFor=visibleGroups.find(([,ids])=>ids.includes(selected))?.[0]||'Overview';
  const sections=visibleGroups.map(([group,ids],i)=>
   `<details class="admin-nav-group" ${group===groupFor?'open':''}>
@@ -390,7 +390,7 @@ async function storeDisplayPanel(){
   ...homepageGridSettings(settings)
  };
  $('#admin-main').innerHTML=`<section class="box admin-store-display">
- <h2>Store Display</h2>
+ <h2>Homepage & Category Layout</h2>
  <form id="store-display-form">
   <label class="admin-store-switch" for="store-display-split">
    <input id="store-display-split" type="checkbox" ${original.split_store_enabled?'checked':''}>
@@ -672,7 +672,7 @@ function siteSettingsSummary(){
  $('#admin-main').innerHTML='<section class="box admin-site-settings-summary">'+
  '<div class="section-head"><div><h2>'+e(conf.label)+'</h2></div>'+
  '<button type="button" class="button" id="edit-site-settings">Edit settings</button></div>'+
- '<dl class="admin-settings-list">'+fields+'</dl>'+
+ '<dl class="admin-settings-list admin-settings-copy">'+fields+'</dl>'+
  '<dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit settings</h2>'+
  '<div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button>'+
  '<button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>'+

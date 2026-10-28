@@ -93,7 +93,7 @@ function captchaToken(form){
 }
 async function authPage({layout,rerender,showError}){
  layout('<section class="section bakery-account-entry"><h1>Bakery Account</h1>'+
-  '<p>Use your username or email address to access your account.</p>'+
+  '<p>Use your username or email address to access your account. Guest checkout is available.</p>'+
   '<form id="bakery-login" class="box">'+item('identifier','Username or email address','username',true,'text')+
   item('password','Password','current-password',true,'password')+
   '<p class="auth-form-error" data-auth-error role="alert" hidden></p>'+
