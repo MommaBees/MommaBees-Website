@@ -23,6 +23,7 @@
 | Version | Date | Change | Approval |
 |---|---|---|---|
 | 1.0 | 2026-10-27 | Owner-directed addition of legal/policy pages, fulfillment acknowledgments, and optional cookie preferences | Owner authorized development; legal approval not represented |
+| 1.1 | 2026-10-27 | Replaced legacy administrative terms wall of text in FAQ with expandable customer guidance; added prominently labeled, compact footer legal links and cookie settings; marked legacy Admin terms field as internal | Owner-directed presentation correction; legal approval not represented |
 
 ## Public policy inventory (all in website source)
 
@@ -62,3 +63,12 @@ Source of record: site/legal-policies.js. Landing page: #legal. Footer links and
 ## Document management rule
 
 Do not publish unverified business-specific deadlines, amounts, physical addresses, insurance statements, cancellation penalties, third-party tracking claims, or blanket waivers as if they were established facts. Changes to customer-facing text require version/date updates, an operational review, and a legal review where appropriate.
+
+## October 27, 2026 presentation correction
+
+- Customer FAQ source: `site/customer-faq.js`; route `#faq` now displays concise, expandable answers and links to the appropriate individual legal documents.
+- Legacy `site_settings.terms` content is no longer rendered as a public FAQ paragraph. Admin retains it as an archived internal draft field; it is not the published contractual Terms of Service.
+- The original two-row shopping footer navigation remains unchanged, with the distinct `footer-legal` section below it.
+- `site/legal.css` provides compact footer policy links with readable contrast, FAQ accordion styling, and mobile layouts.
+- `tests/customer-faq.test.js` adds regression coverage; `tests/source.test.js` was updated for the new source-of-truth split.
+- The published website should be independently browser-checked for layout, keyboard accessibility, new links, and current cookie preferences; a successful Cloudflare Pages deployment does not by itself establish legal or browser acceptance.
