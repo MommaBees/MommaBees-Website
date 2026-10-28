@@ -90,3 +90,12 @@ body[data-page="faq"] #main .customer-faq{
  .customer-faq-answer{padding:0 14px 14px}
  .customer-faq-legal{padding:15px}
 }
+
+
+/* Keep the existing footer composition while reducing its oversized vertical footprint. */
+.footer .footer-brand-name{font-size:clamp(1.35rem,1.8vw,1.85rem);line-height:1.2}
+.footer .footer-location{font-size:clamp(.93rem,1.25vw,1.1rem);margin:8px 0 0}
+.footer .footer-navigation{gap:4px}
+.footer .footer-nav-row>a{min-height:26px}
+.footer .footer-qr{margin-top:5px;max-width:240px}
+.footer .footer-qr svg{width:68px!important;height:68px!important}
