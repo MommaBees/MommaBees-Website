@@ -298,7 +298,7 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
  <div class="grid product-results">${items.map(card).join('')+
  showcase.filter(item=>!items.some(p=>p.variety_id&&p.variety_id===item.variety_id)).map(showcaseCard).join('')||
  '<p class="shop-empty">'+e(empty)+'</p>'}</div>
- 
+ ${department!=='homestand'?demoStorePreview(mode||'all',category?.name||null):''}
  </section>`);bindDemoStore();
 }
 /** An Owner-supplied catalog item's own page; the existing purchasable product route remains separate. */
