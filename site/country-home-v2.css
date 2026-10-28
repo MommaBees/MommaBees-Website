@@ -173,7 +173,7 @@ body[data-page="checkout"] #calendar-picker summary{cursor:pointer;font-weight:7
 #pickup-calendar .calendar-day.calendar-available{background:#e8d2a4;border-color:#92633c}
 #pickup-calendar .calendar-day.calendar-selected{background:#5c6a4e;border-color:#5c6a4e}
 body[data-page="account"] #main>.section:first-of-type{max-width:1330px;margin-inline:auto}
-body[data-page="account"] #bakery-login{max-width:700px;margin:24px auto}
+body[data-page="account"] #bakery-login{max-width:480px;margin:18px auto}
 body[data-page="account"] #bakery-login,#bakery-register,
 body[data-page="account"] #my-profile,body[data-page="account"] .cols>.box{border-top:3px solid #ad8252}
 body[data-page="account"] #bakery-login>.field{max-width:100%}
@@ -1333,3 +1333,23 @@ body[data-website-size] #main .product-results.grid{gap:calc(clamp(9px,1.3vw,16p
 @media(max-width:440px){
  #main .home-department-products{grid-template-columns:minmax(0,1fr)}
 }
+
+/* MBB-AUTH-053: narrower sign-in, inline errors, verified checkbox placement. */
+body[data-page="account"] .bakery-account-entry{width:min(100%,520px);max-width:520px;margin:clamp(16px,3vw,28px) auto}
+body[data-page="account"] .bakery-account-entry>h1{margin-bottom:8px}
+body[data-page="account"] .bakery-account-entry>p{margin-top:0}
+body[data-page="account"] .bakery-account-entry #bakery-login,
+body[data-page="account"] .bakery-account-entry #bakery-register{width:100%;max-width:480px;margin:16px auto;padding:clamp(16px,2vw,24px);box-sizing:border-box}
+body[data-page="account"] .bakery-account-entry:has(#bakery-register:not([hidden])){width:min(100%,640px);max-width:640px}
+body[data-page="account"] .bakery-account-entry #bakery-register{max-width:640px}
+body[data-page="account"] .auth-submit-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+body[data-page="account"] .auth-submit-actions .button{min-height:44px;white-space:normal}
+body[data-page="account"] .auth-verification{margin:12px 0 0}
+body[data-page="account"] .auth-verify-choice{display:inline-flex;align-items:center;gap:9px;margin:5px 0;font-weight:650;cursor:pointer}
+body[data-page="account"] .auth-verify-choice input{width:19px;height:19px;margin:0;flex:none}
+body[data-page="account"] .auth-verification [data-captcha]{min-height:0;margin:6px 0}
+body[data-page="account"] .auth-verification [data-captcha]:empty,
+body[data-page="account"] .auth-verification [data-captcha-status]:empty{display:none}
+body[data-page="account"] .auth-form-error{margin:10px 0;color:#963c2f;font-weight:650;line-height:1.45}
+body[data-page="account"] .auth-form-error[hidden]{display:none}
+@media(max-width:440px){body[data-page="account"] .auth-submit-actions{grid-template-columns:1fr}}

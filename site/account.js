@@ -50,58 +50,90 @@ function turnstileLoaded(){
   script.onerror=()=>reject(Error('CAPTCHA could not load'));document.head.appendChild(script);
  });return loader;
 }
+
+function authError(form,message){
+ const slot=form.querySelector('[data-auth-error]');
+ if(slot){slot.textContent=String(message||'');slot.hidden=!message;}
+}
+function verificationStatus(form,message){
+ const slot=form.querySelector('[data-captcha-status]');
+ if(slot)slot.textContent=message||'';
+}
+function resetVerification(form){
+ const slot=form.querySelector('[data-captcha]');
+ if(slot?.dataset.widget!==undefined&&window.turnstile)window.turnstile.reset(slot.dataset.widget);
+ form.querySelector('[data-verify-human]').checked=false;
+ verificationStatus(form,'');
+}
 async function protect(form){
- if(!config.turnstileSiteKey)throw Error('Account CAPTCHA is not configured; registration/sign-in is temporarily unavailable.');
+ if(!config.turnstileSiteKey)throw Error('Human verification is unavailable. Please try again later.');
  const api=await turnstileLoaded(),slot=form.querySelector('[data-captcha]');
- if(!slot)throw Error('CAPTCHA form not found');
+ if(!slot)throw Error('Verification form not found.');
  if(!slot.dataset.widget){
-  const id=api.render(slot,{sitekey:config.turnstileSiteKey,theme:'auto',appearance:'always',execution:'execute',callback:()=>{const status=form.querySelector('[data-captcha-status]');if(status)status.textContent='Human verification complete.';}});
+  const id=api.render(slot,{
+   sitekey:config.turnstileSiteKey,theme:'auto',appearance:'interaction-only',execution:'execute',
+   callback:()=>verificationStatus(form,'Verification complete.'),
+   'error-callback':()=>{verificationStatus(form,'Verification failed. Select the checkbox to retry.');form.querySelector('[data-verify-human]').checked=false;},
+   'expired-callback':()=>{verificationStatus(form,'Verification expired. Select the checkbox again.');form.querySelector('[data-verify-human]').checked=false;}
+  });
   slot.dataset.widget=String(id);
  }
  return api;
 }
-async function executeHumanCheck(form){const api=await protect(form);const slot=form.querySelector('[data-captcha]');api.execute(slot.dataset.widget);const status=form.querySelector('[data-captcha-status]');if(status)status.textContent='Checking…';}
+async function executeHumanCheck(form){
+ const api=await protect(form),slot=form.querySelector('[data-captcha]');
+ verificationStatus(form,'Verifying…');
+ api.execute(slot.dataset.widget);
+}
 function captchaToken(form){
+ if(!form.querySelector('[data-verify-human]')?.checked)throw Error('Select Verify I’m Human before signing in.');
  const token=form.querySelector('[name="cf-turnstile-response"]')?.value||'';
- if(!token)throw Error('Complete the human verification first.');
+ if(!token)throw Error('Complete human verification before signing in.');
  return token;
 }
 async function authPage({layout,rerender,showError}){
- layout('<section class="section bakery-account-entry" style="max-width:850px;margin:24px auto"><h1>Bakery Account</h1>'+
-  '<p>Sign in with your username or email. Guest checkout is available.</p>'+
-  '<div class="actions"><button type="button" class="button" data-auth-tab="login">Sign In</button>'+
+ layout('<section class="section bakery-account-entry"><h1>Bakery Account</h1>'+
+  '<p>Use your username or email address to access your account.</p>'+
+  '<form id="bakery-login" class="box">'+item('identifier','Username or email address','username',true,'text')+
+  item('password','Password','current-password',true,'password')+
+  '<p class="auth-form-error" data-auth-error role="alert" hidden></p>'+
+  '<div class="actions auth-submit-actions"><button class="button" type="submit">Sign In Securely</button>'+
   '<button type="button" class="button secondary" data-auth-tab="register">Create Account</button></div>'+
-  '<form id="bakery-login" class="box"><h2>Sign In</h2>'+item('identifier','Username or email address','username',true,'text')+
-  item('password','Password','current-password',true,'password')+'<div data-captcha></div><button type="button" class="button secondary" data-verify-human>Verify I’m Human</button><p class="small" data-captcha-status role="status">Start human verification before signing in.</p>'+
-  '<div class="actions"><button class="button" type="submit">Sign In Securely</button></div></form>'+
+  '<div class="auth-verification"><label class="checkbox auth-verify-choice"><input type="checkbox" data-verify-human> Verify I’m Human</label>'+
+  '<div data-captcha></div><p class="small" data-captcha-status role="status" aria-live="polite"></p></div></form>'+
   '<form id="bakery-register" class="box" hidden><h2>Create Account</h2>'+
   '<p class="small muted">Fields marked * Required are mandatory. Your phone number is optional. Your address is stored privately.</p>'+
   item('email','Email address','email',true,'email')+item('password','Password (at least 8 characters)','new-password',true,'password')+
-  profileFields({billing_same:true})+'<div data-captcha></div><button type="button" class="button secondary" data-verify-human>Verify I’m Human</button><p class="small" data-captcha-status role="status">Start human verification before registering.</p><div class="actions"><button class="button" type="submit">Create Account</button></div>'+
-  '</form></section>');
+  profileFields({billing_same:true})+
+  '<p class="auth-form-error" data-auth-error role="alert" hidden></p>'+
+  '<div class="actions auth-submit-actions"><button class="button" type="submit">Create Account</button>'+
+  '<button type="button" class="button secondary" data-auth-tab="login">Back to Sign In</button></div>'+
+  '<div class="auth-verification"><label class="checkbox auth-verify-choice"><input type="checkbox" data-verify-human> Verify I’m Human</label>'+
+  '<div data-captcha></div><p class="small" data-captcha-status role="status" aria-live="polite"></p></div></form></section>');
  const login=document.getElementById('bakery-login'),register=document.getElementById('bakery-register');
  billingToggle(register);
- const select=async kind=>{
-  const isRegister=kind==='register';login.hidden=isRegister;register.hidden=!isRegister;
-  document.querySelectorAll('[data-auth-tab]').forEach(b=>b.classList.toggle('secondary',b.dataset.authTab!==kind));
-  try{await protect(isRegister?register:login);}catch(e){showError(e);}
- };
+ const select=kind=>{const r=kind==='register';login.hidden=r;register.hidden=!r;authError(r?register:login,'');};
  document.querySelectorAll('[data-auth-tab]').forEach(b=>b.onclick=()=>select(b.dataset.authTab));
- await select('login');
- document.querySelectorAll('[data-verify-human]').forEach(button=>button.onclick=async()=>{try{await executeHumanCheck(button.closest('form'))}catch(e){showError(e)}});
+ select('login');
+ document.querySelectorAll('[data-verify-human]').forEach(checkbox=>checkbox.onchange=async()=>{
+  const form=checkbox.closest('form');authError(form,'');
+  if(!checkbox.checked){resetVerification(form);return;}
+  try{await executeHumanCheck(form);}catch(error){checkbox.checked=false;authError(form,error.message);}
+ });
  login.onsubmit=async ev=>{
-  ev.preventDefault();const button=login.querySelector('[type=submit]');button.disabled=true;
+  ev.preventDefault();const button=login.querySelector('[type=submit]');authError(login,'');button.disabled=true;
   try{await signIn(login.elements.identifier.value,login.elements.password.value,captchaToken(login));await rerender();}
-  catch(e){showError(e);window.turnstile?.reset();button.disabled=false;}
+  catch(error){authError(login,error.message);resetVerification(login);button.disabled=false;}
  };
  register.onsubmit=async ev=>{
-  ev.preventDefault();const button=register.querySelector('[type=submit]');button.disabled=true;
+  ev.preventDefault();const button=register.querySelector('[type=submit]');authError(register,'');button.disabled=true;
   try{
-   const p=collect(register);
-   const result=await signUp(register.elements.email.value,register.elements.password.value,p,captchaToken(register));
+   const result=await signUp(register.elements.email.value,register.elements.password.value,collect(register),captchaToken(register));
    if(result.access_token)await rerender();
-   else{const info=document.createElement('div');info.className='notice success';info.textContent='Account created. Check your email to verify your address, then sign in.';register.prepend(info);button.disabled=false;}
-  }catch(e){showError(e);window.turnstile?.reset();button.disabled=false;}
+   else{const info=document.createElement('div');info.className='notice success';
+    info.textContent='Account created. Check your email to verify your address, then sign in.';
+    register.prepend(info);resetVerification(register);button.disabled=false;}
+  }catch(error){authError(register,error.message);resetVerification(register);button.disabled=false;}
  };
 }
 export async function account({layout,rerender,showError,section=null}){

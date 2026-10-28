@@ -1527,7 +1527,7 @@ test('idle time options apply to all authenticated members with 5 minute default
 test('Turnstile does not begin automatically before a visitor starts verification',()=>{
  const account=read('site/account.js');
  assert.match(account,/execution:'execute'/);
- assert.match(account,/appearance:'always'/);
+ assert.match(account,/appearance:'interaction-only'/);
  assert.match(account,/data-verify-human/);
  assert.match(account,/api\.execute\(slot\.dataset\.widget\)/);
  assert.match(account,/captchaToken\(login\)/);
@@ -1741,4 +1741,17 @@ test('homepage grid configuration has distinct two-department and single-departm
   assert.ok(migration.includes('add column if not exists '+key+' smallint not null default'),key);
  }
  assert.match(css,/repeat\(var\(--home-product-columns,3\)/);
+});
+
+test('compact sign-in places error above buttons and checkbox verification below them',()=>{
+ const auth=read('site/account.js'),css=read('site/country-home-v2.css');
+ const entry=auth.slice(auth.indexOf('async function authPage'),auth.indexOf('export async function account'));
+ assert.doesNotMatch(entry,/<h2>Sign In<\/h2>|data-verify-human>Verify I’m Human<\/button>/);
+ const a=entry.indexOf('data-auth-error role="alert" hidden'),b=entry.indexOf('Sign In Securely'),c=entry.indexOf('data-auth-tab="register"'),d=entry.indexOf('data-verify-human> Verify I’m Human');
+ assert.ok(a>=0&&a<b&&b<c&&c<d);
+ assert.match(auth,/checkbox\.onchange=async/);
+ assert.match(auth,/api\.execute\(slot\.dataset\.widget\)/);
+ assert.match(auth,/authError\(login,error\.message\)/);
+ assert.match(auth,/'expired-callback'/);
+ assert.match(css,/max-width:480px/);
 });
