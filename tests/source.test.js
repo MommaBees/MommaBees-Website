@@ -453,6 +453,8 @@ test('sandbox checkout uses exactly the six created Stripe prices, never live pr
  assert.match(source,/catalog\.stripePrice/);
  assert.match(source,/catalog\.amount!==item\.price_cents/);
  assert.match(source,/checkout\.livemode!==false/);
+ assert.match(source,/allowed_payment_method_types\[0\]/);
+ assert.doesNotMatch(source,/'payment_method_types\[0\]'/);
  assert.match(source,/sk_test_/);
  assert.doesNotMatch(source,/sk_live_/);
 });

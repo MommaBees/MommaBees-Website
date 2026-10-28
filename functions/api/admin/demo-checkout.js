@@ -32,7 +32,7 @@ export async function onRequestPost({request,env}){
   try{
    const checkout=await createStripeSession(env,{
     mode:'payment',
-    'payment_method_types[0]':'card',
+    'allowed_payment_method_types[0]':'card',
     'line_items[0][price]':catalog.stripePrice,
     'line_items[0][quantity]':'1',
     'metadata[demo_checkout_test_id]':testId,
