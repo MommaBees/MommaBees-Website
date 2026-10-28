@@ -1,13 +1,5 @@
-// Owner/Admin navigation hierarchy. No permissions granted by navigation itself.
-export const ADMIN_GROUPS=Object.freeze([
- ['Overview',['dashboard']],
- ['Orders & Fulfillment',['orders','baking_days','product_day_limits','stock_batches','shopping']],
- ['Products & Inventory',['products','store_showcase_items','categories','subcategories','catalog_varieties','product_photos','recipes','recipe_ingredients','ingredients','past_bakes']],
- ['Customers & Communication',['messages','reviews','notifications','customer_profiles']],
- ['Marketing & Promotions',['announcements','announcement_recipients','promotions','promotion_recipients']],
- ['Website & Design',['home_carousel_slides','store_display','website_size','website_background','site_settings']],
- ['Finance & Administration',['reports','expenses','demo_checkout_tests','demo_catalog_items','users']]
-]);
+// Functional Admin navigation. Does not grant permissions.
+export const ADMIN_GROUPS=Object.freeze([["Overview",["dashboard"]],["Orders & Fulfillment",["orders","baking_days","product_day_limits","stock_batches","shopping","fulfillment_settings"]],["Products & Inventory",["products","store_showcase_items","categories","subcategories","catalog_varieties","product_photos","recipes","recipe_ingredients","ingredients","past_bakes"]],["Accounts & Permissions",["customer_profiles","users"]],["Customer Service",["messages","reviews","notifications"]],["Marketing & Promotions",["announcements","announcement_recipients","promotions","promotion_recipients"]],["Website & Design",["homepage_content","home_carousel_slides","store_display","website_size","website_background","site_settings"]],["Checkout & Finance",["checkout_settings","reports","expenses"]],["Sandbox & Testing",["sandbox_settings","demo_catalog_items","demo_checkout_tests"]]]);
 export function adminGroupsForRole(role){
  if(role==='moderator')return [['Customer Moderation',['messages','reviews']]];
  return role==='owner'||role==='admin'?ADMIN_GROUPS:[];
@@ -39,9 +31,13 @@ export const ADMIN_DESCRIPTIONS=Object.freeze({
  promotion_recipients:'Private promotional audiences.',
  home_carousel_slides:'Homepage featured slides, photographs and buttons.',
  website_size:'Scale all site pages, text, navigation, cards and forms.',
- store_display:'Show Bakery and Homestand as separate store tabs or one combined store.',
+ store_display:'Homepage department visibility and configurable columns × rows.',
  website_background:'Site background artwork and display treatment.',
- site_settings:'Header, homepage information and checkout settings.',
+ homepage_content:'Homepage headline, introduction, hero and empty-section display.',
+ site_settings:'Website header, contact, notices and public policy wording.',
+ fulfillment_settings:'Pickup, delivery, service area and special dates.',
+ checkout_settings:'Checkout and restricted payment controls.',
+ sandbox_settings:'Owner-only demo catalog visibility.',
  reports:'Sales and expense reporting.',
  expenses:'Record business expenses.',
  demo_checkout_tests:'Sandbox checkout evidence (not LIVE payments).',

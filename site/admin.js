@@ -97,6 +97,12 @@ const configs={
  home_carousel_slides:{label:'Homepage Carousel',fields:cols(field('sort_order','Display position','number'),field('eyebrow','Small heading'),field('title','Main headline'),field('description','Supporting text','textarea'),field('image_url','Carousel photo','carousel_image'),field('image_alt','Image description for screen readers'),field('primary_label','Main button label'),field('primary_href','Main button destination','select',{options:['#shop','#ready','#preorder','#gallery','#contact','#faq']}),field('secondary_label','Second button label (optional)'),field('secondary_href','Second button destination','select',{options:['#shop','#ready','#preorder','#gallery','#contact','#faq']}),field('published','Published / visible','bool'),field('starts_at','Start showing (Central Time)','datetime'),field('ends_at','Stop showing (Central Time)','datetime'))},
  site_settings:{label:'Website Appearance & Settings',single:true,fields:cols(field('brand_subtitle','Header products & services line','textarea'),field('split_store_enabled','Split store into Bakery / Homestand','bool'),field('product_showcase_enabled','Enable Product Showcase','bool'),field('home_bakery_visible','Show Bakery on homepage (split mode)','bool'),field('home_homestand_visible','Show Homestand on homepage (split mode)','bool'),field('home_both_columns','Both visible: columns per department','number'),field('home_both_rows','Both visible: rows per department','number'),field('home_single_columns','Only one visible: columns','number'),field('home_single_rows','Only one visible: rows','number'),field('placeholder_empty_shop','Show empty-shop message','bool'),field('placeholder_empty_gallery','Show empty-gallery message','bool'),field('placeholder_missing_image','Show missing-photo placeholder','bool'),field('placeholder_featured','Show empty-featured message','bool'),field('demo_store_enabled','Show test products to Owner/Admin ONLY','bool'),field('home_heading','Homepage headline'),field('home_intro','Homepage introduction','textarea'),field('hero_url','Homepage background photo','image'),field('header_url','Header image','image'),field('email','Contact email'),field('phone','Contact phone'),field('pickup_instructions','Pickup instructions','textarea'),field('delivery_zips','Allowed delivery ZIP codes (comma-separated)','csv'),field('delivery_fee_cents','Local delivery fee (dollars)','money'),field('pickup_enabled','Offer pickup','bool'),field('delivery_enabled','Offer local delivery','bool'),field('checkout_enabled','ENABLE LIVE CHECKOUT AFTER TESTING','bool'),field('pay_at_pickup_enabled','Offer Pay at Pickup (separate from Stripe)','bool'),field('pay_at_pickup_tax_reviewed','Pay-at-pickup tax configuration (staff-only; do not enable until supported)','bool'),field('pay_at_pickup_tax_rate_bps','Pay-at-pickup fallback tax rate (restricted legacy setting)','number'),field('special_date_requests_enabled','Offer off-schedule special date inquiries','bool'),field('special_date_convenience_fee_cents','Proposed off-day convenience fee (dollars; subject to approval)','money'),field('food_notice','Food/allergen disclosure','textarea'),field('terms','Cancellation, return and store terms','textarea'))}
 };
+const SITE_SETTING_GROUPS=Object.freeze({"site_settings":{"label":"Website Settings","keys":["brand_subtitle","header_url","email","phone","placeholder_empty_gallery","placeholder_missing_image","food_notice","terms"]},"homepage_content":{"label":"Homepage Content","keys":["home_heading","home_intro","hero_url","placeholder_empty_shop","placeholder_featured"]},"fulfillment_settings":{"label":"Pickup & Delivery Settings","keys":["pickup_instructions","delivery_zips","delivery_fee_cents","pickup_enabled","delivery_enabled","special_date_requests_enabled","special_date_convenience_fee_cents"]},"checkout_settings":{"label":"Checkout & Payment Settings","keys":["checkout_enabled","pay_at_pickup_enabled","pay_at_pickup_tax_reviewed","pay_at_pickup_tax_rate_bps"]},"sandbox_settings":{"label":"Sandbox Display Settings","keys":["demo_store_enabled"]}});
+const originalSiteFields=configs.site_settings.fields;
+for(const [moduleId,group] of Object.entries(SITE_SETTING_GROUPS)){
+ const fields=group.keys.map(key=>{const f=originalSiteFields.find(item=>item.key===key);if(!f)throw Error('Missing site setting '+key);return f;});
+ configs[moduleId]={label:group.label,single:true,table:'site_settings',fields};
+}
 // Administrative groups are centralized in admin-navigation.js.
 const titleFor=(table,row)=>row?.name||row?.title||row?.email||row?.description||row?.date||row?.product_name||row?.full_name||row?.subject||String(row?.id||row?.product_id||'').slice(0,8);
 const short=(value)=>{if(value===null||value===undefined)return '—';if(typeof value==='boolean')return value?'Yes':'No';if(typeof value==='object')return JSON.stringify(value).slice(0,90);return String(value).slice(0,105);};
@@ -159,8 +165,8 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  if(ctx.role==='moderator')selected='messages';
  authShell();await renderPanel();}
 async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_size')return websiteSizePanel();if(selected==='store_display')return storeDisplayPanel();if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'&&ctx.role==='moderator'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);if(selected==='store_showcase_items')await loadTable('site_settings');listPanel();}catch(err){ctx.showError(err);}}
-async function loadTable(t){data[t]=await list(t,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
-function listPanel(){if(selected==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='store_showcase_items'?['department','name','price_cents','price_unit','availability_date','active']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='store_showcase_items'?`<form id="showcase-master-form" class="showcase-master-switch" aria-label="Product Showcase visibility">
+async function loadTable(t){const table=configs[t]?.table||t;data[t]=await list(table,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
+function listPanel(){if(configs[selected]?.table==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='store_showcase_items'?['department','name','price_cents','price_unit','availability_date','active']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='store_showcase_items'?`<form id="showcase-master-form" class="showcase-master-switch" aria-label="Product Showcase visibility">
  <label class="admin-store-switch" for="showcase-master-enabled">
   <input type="checkbox" id="showcase-master-enabled" ${data.site_settings?.[0]?.product_showcase_enabled!==false?'checked':''}>
   <span><strong>Enable Product Showcase</strong><small>Show or hide all showcases on the homepage, store pages, details, and carousel. Individual products have their own Show on Website control.</small></span>
@@ -657,18 +663,20 @@ async function carouselPanel(){
  });
 }
 function siteSettingsSummary(){
- const row=data.site_settings?.[0]||{id:1};
- const subtitle=String(row.brand_subtitle||'');
- $('#admin-main').innerHTML=`<section class="box admin-site-settings-summary">
- <div class="section-head">
-  <div><h2>Website Appearance &amp; Settings</h2><p class="muted"></p></div>
-  <button type="button" class="button" id="edit-site-settings">Edit settings</button>
- </div>
- <div class="admin-settings-detail"><h3>Header products &amp; services line</h3>
-  <p class="admin-settings-copy">${e(subtitle)||'No header description configured.'}</p></div>
- 
- <dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit settings</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>
- </section>`;
+ const conf=configs[selected],row=data[selected]?.[0]||{id:1};
+ const fields=conf.fields.map(f=>{
+  const value=row[f.key];
+  const display=f.type==='money'?money(value):f.type==='bool'?(value?'Enabled':'Disabled'):short(value);
+  return '<div class="admin-setting-row"><dt>'+e(f.label)+'</dt><dd>'+e(display)+'</dd></div>';
+ }).join('');
+ $('#admin-main').innerHTML='<section class="box admin-site-settings-summary">'+
+ '<div class="section-head"><div><h2>'+e(conf.label)+'</h2></div>'+
+ '<button type="button" class="button" id="edit-site-settings">Edit settings</button></div>'+
+ '<dl class="admin-settings-list">'+fields+'</dl>'+
+ '<dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit settings</h2>'+
+ '<div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button>'+
+ '<button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>'+
+ '</section>';
  $('#edit-site-settings').onclick=()=>openEditor(row);
 }
 function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.length)return '';const val=r?.[f.key], id='field_'+f.key;let raw='';const value=val??'';
@@ -998,7 +1006,7 @@ async function openEditor(record){const c=configs[selected];
   if(body.starts_at&&body.ends_at&&new Date(body.ends_at)<=new Date(body.starts_at))throw Error('The ending date must follow the starting date.');
   if(body.published&&!body.image_url)throw Error('Upload a photograph before publishing this slide.');
  }
- if(selected==='site_settings'&&body.pay_at_pickup_enabled&&
+ if(selected==='checkout_settings'&&body.pay_at_pickup_enabled&&
  (!body.pay_at_pickup_tax_reviewed||body.pay_at_pickup_tax_rate_bps===null))
  throw Error('Pay at Pickup is not yet available with automatic tax handling. Stripe Tax calculates Stripe payments only; cash collection needs its own verified tax calculation.');
  if(selected==='products'){
@@ -1022,7 +1030,7 @@ async function openEditor(record){const c=configs[selected];
   }
  }
  const key=c.key||'id';let saved=null;
- if(c.single){saved=await update(selected,1,body);}
+ if(c.single){saved=await update(c.table||selected,1,body);}
  else if(record&&!record._unsaved){
   if(Array.isArray(key))throw Error('Editing records with two-part keys requires deleting/recreating from SQL Editor.');
   saved=await update(selected,record[key],body,key);

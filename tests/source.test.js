@@ -1100,7 +1100,7 @@ test('carousel Admin navigation/editor CRUD use the actual canonical Supabase ta
  assert.match(admin,/await remove\('home_carousel_slides',slide\.id\)/);
  assert.match(admin,/await add\(selected,body\)/,'New slide insertion must use the canonical selected panel');
  assert.match(admin,/await update\(selected,record\[key\],body,key\)/,'Existing slide editing must use the canonical selected panel');
- assert.match(nav,/\['home_carousel_slides','store_display','website_size','website_background','site_settings'\]/);
+ assert.match(nav,/homepage_content.*home_carousel_slides.*store_display.*website_size.*website_background.*site_settings/);
  assert.match(migration,/create table if not exists public\.home_carousel_slides/);
  assert.match(app,/\['home_carousel_slides',\{order:'sort_order\.asc'\}\]/);
 });
@@ -1265,7 +1265,7 @@ test('sitewide size is independent from carousel and applied on every page',()=>
  const app=read('site/app.js'),admin=read('site/admin.js'),nav=read('site/admin-navigation.js');
  assert.match(app,/applyWebsiteSize\(settings\.website_size\)/);
  assert.match(admin,/selected==='website_size'\)return websiteSizePanel\(\)/);
- assert.match(nav,/\['home_carousel_slides','store_display','website_size','website_background','site_settings'\]/);
+ assert.match(nav,/homepage_content.*home_carousel_slides.*store_display.*website_size.*website_background.*site_settings/);
  assert.match(admin,/website_size:value/);
  assert.match(admin,/await ctx\.load\(\)/);
  assert.match(admin,/Preview: /);
@@ -1754,4 +1754,19 @@ test('compact sign-in places error above buttons and checkbox verification below
  assert.match(auth,/authError\(login,error\.message\)/);
  assert.match(auth,/'expired-callback'/);
  assert.match(css,/max-width:480px/);
+});
+
+test('Admin groups place related functional controls together',()=>{
+ const g=adminGroupsForRole('owner'),group=id=>g.find(([,ids])=>ids.includes(id))?.[0];
+ for(const id of ['products','store_showcase_items','categories'])assert.equal(group(id),'Products & Inventory');
+ for(const id of ['users','customer_profiles'])assert.equal(group(id),'Accounts & Permissions');
+ for(const id of ['homepage_content','store_display','home_carousel_slides','site_settings'])assert.equal(group(id),'Website & Design');
+ assert.equal(group('fulfillment_settings'),'Orders & Fulfillment');
+ assert.equal(group('checkout_settings'),'Checkout & Finance');
+ assert.equal(group('sandbox_settings'),'Sandbox & Testing');
+ const admin=read('site/admin.js');
+ assert.match(admin,/const SITE_SETTING_GROUPS=/);
+ assert.match(admin,/const table=configs\[t\]\?\.table\|\|t/);
+ assert.match(admin,/update\(c\.table\|\|selected,1,body\)/);
+ assert.match(admin,/selected==='checkout_settings'&&body\.pay_at_pickup_enabled/);
 });
