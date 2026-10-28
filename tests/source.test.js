@@ -1770,3 +1770,23 @@ test('Admin groups place related functional controls together',()=>{
  assert.match(admin,/update\(c\.table\|\|selected,1,body\)/);
  assert.match(admin,/selected==='checkout_settings'&&body\.pay_at_pickup_enabled/);
 });
+
+test('sitewide content and signed-in account become narrower without changing the carousel or showcase columns',()=>{
+ const css=read('site/country-home-v2.css');
+ const section=css.slice(css.indexOf('/* MBB-UI-055'));
+ assert.match(css,/--website-main-max:1480px/);
+ assert.match(css,/--website-main-max:1160px/);
+ assert.match(css,/--website-main-max:1320px/);
+ assert.match(css,/--website-main-max:1660px/);
+ assert.match(section,/body\[data-website-size\]\[data-page="account"\] #main\.shell/);
+ assert.match(section,/max-width:calc\(1010px \* var\(--website-density\)\)/);
+ assert.match(section,/body\[data-website-size\]\[data-page="admin"\] #main\.shell/);
+ for(const route of ['checkout','contact','faq','qr','cart','track','success','product','gallery'])
+  assert.ok(section.includes('body[data-website-size][data-page="'+route+'"] #main.shell'),route+' width not scoped');
+ assert.match(section,/@media\(max-width:900px\)/);
+ assert.match(section,/@media\(max-width:760px\)/);
+ assert.match(section,/max-width:100%/);
+ assert.doesNotMatch(section,/\.home-carousel|carousel-height|carousel-size|--home-product-columns|\.home-department-products/);
+ assert.match(section,/\.field\{margin-block:/);
+ assert.doesNotMatch(section,/min-height:[\s\S]*?\d+px/);
+});

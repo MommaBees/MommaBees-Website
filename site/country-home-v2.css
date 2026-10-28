@@ -859,7 +859,7 @@ body[data-website-size]{
  --website-font-scale:1;
  --website-density:1;
  --website-image-scale:1;
- --website-main-max:1700px;
+ --website-main-max:1480px;
  --website-shell-max:1760px;
  font-size:calc(1rem * var(--website-font-scale));
 }
@@ -867,28 +867,28 @@ body[data-website-size="extra-small"]{
  --website-font-scale:.9;
  --website-density:.78;
  --website-image-scale:.78;
- --website-main-max:1280px;
+ --website-main-max:1160px;
  --website-shell-max:1350px;
 }
 body[data-website-size="small"]{
  --website-font-scale:.96;
  --website-density:.89;
  --website-image-scale:.9;
- --website-main-max:1460px;
+ --website-main-max:1320px;
  --website-shell-max:1530px;
 }
 body[data-website-size="medium"]{
  --website-font-scale:1;
  --website-density:1;
  --website-image-scale:1;
- --website-main-max:1700px;
+ --website-main-max:1480px;
  --website-shell-max:1760px;
 }
 body[data-website-size="large"]{
  --website-font-scale:1.11;
  --website-density:1.13;
  --website-image-scale:1.14;
- --website-main-max:1840px;
+ --website-main-max:1660px;
  --website-shell-max:1920px;
 }
 body[data-website-size] .shell,
@@ -1353,3 +1353,110 @@ body[data-page="account"] .auth-verification [data-captcha-status]:empty{display
 body[data-page="account"] .auth-form-error{margin:10px 0;color:#963c2f;font-weight:650;line-height:1.45}
 body[data-page="account"] .auth-form-error[hidden]{display:none}
 @media(max-width:440px){body[data-page="account"] .auth-submit-actions{grid-template-columns:1fr}}
+
+/* MBB-UI-055 v1.42 — narrower content rails and restrained density.
+   Respect Website Size presets. Leave carousel, navigation, and 3x3/5x2 showcase rules untouched. */
+body[data-website-size] #main.shell,
+body[data-website-size][data-site-background] #main.shell{
+ width:100%;
+ max-width:var(--website-main-max);
+}
+body[data-website-size][data-page="admin"] #main.shell{
+ max-width:calc(var(--website-main-max) + 110px);
+}
+/* Focused pages avoid long lines and oversized two-column account cards. */
+body[data-website-size][data-page="account"] #main.shell{
+ max-width:min(100%,calc(1190px * var(--website-density)));
+}
+body[data-website-size][data-page="account"] #main>.section:not(.bakery-account-entry){
+ max-width:calc(1010px * var(--website-density));
+ margin-inline:auto;
+}
+body[data-website-size][data-page="account"] #main>.section:not(.bakery-account-entry)>.cols{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:calc(15px * var(--website-density));
+ align-items:start;
+ margin-top:16px;
+}
+body[data-website-size][data-page="account"] #main>.section:not(.bakery-account-entry)>.cols>.box{
+ min-width:0;
+}
+body[data-page="account"] #account-profile-section,
+body[data-page="account"] #account-settings{margin-top:18px}
+body[data-page="account"] .account-fields{gap:10px}
+body[data-page="account"] .account-fields fieldset{
+ grid-template-columns:minmax(0,1fr);
+ padding:12px;
+ gap:7px;
+}
+body[data-page="account"] #my-messages{max-width:100%;margin-inline:auto}
+/* Checkout retains room for payment details; read-only and form pages become narrower. */
+body[data-website-size][data-page="checkout"] #main.shell{
+ max-width:min(100%,calc(1310px * var(--website-density)));
+}
+body[data-website-size][data-page="contact"] #main.shell,
+body[data-website-size][data-page="faq"] #main.shell,
+body[data-website-size][data-page="qr"] #main.shell{
+ max-width:min(100%,calc(1130px * var(--website-density)));
+}
+body[data-website-size][data-page="cart"] #main.shell,
+body[data-website-size][data-page="track"] #main.shell,
+body[data-website-size][data-page="success"] #main.shell{
+ max-width:min(100%,calc(1140px * var(--website-density)));
+}
+body[data-website-size][data-page="product"] #main.shell{
+ max-width:min(100%,calc(1370px * var(--website-density)));
+}
+body[data-website-size][data-page="gallery"] #main.shell{
+ max-width:min(100%,calc(1500px * var(--website-density)));
+}
+body[data-page="contact"] #contact-form{max-width:740px}
+body[data-page="faq"] #main>.section{max-width:930px}
+body[data-page="product"] .detail{max-width:1150px}
+body[data-page="cart"] #main>section,
+body[data-page="track"] #main>section,
+body[data-page="success"] #main>section{max-width:980px}
+/* Slightly tighter whitespace without reducing input/button hit targets. */
+body[data-website-size] #main .section{
+ margin-block:calc(clamp(22px,3.1vw,44px) * var(--website-density));
+}
+body[data-website-size] #main .section-head{
+ padding-bottom:calc(12px * var(--website-density));
+ margin-bottom:calc(16px * var(--website-density));
+}
+body[data-website-size] #main .cols{gap:calc(16px * var(--website-density))}
+body[data-website-size] #main .box{padding:calc(clamp(15px,1.5vw,21px) * var(--website-density))}
+body[data-website-size] #main .field{margin-block:calc(9px * var(--website-density))}
+body[data-website-size] #main :is(.message-form,.message-reply-form){max-width:740px;gap:10px}
+body[data-website-size] #main .detail{gap:calc(clamp(19px,2.5vw,35px) * var(--website-density))}
+body[data-website-size][data-page="checkout"] #checkout-form{gap:calc(clamp(16px,2vw,26px) * var(--website-density))}
+body[data-website-size][data-page="checkout"] #checkout-form>.box{
+ padding:calc(clamp(16px,2.2vw,27px) * var(--website-density));
+}
+body[data-website-size][data-page="admin"] #admin-main>.box{
+ padding:calc(clamp(15px,2vw,27px) * var(--website-density));
+}
+@media(max-width:900px){
+ body[data-website-size][data-page="account"] #main>.section:not(.bakery-account-entry)>.cols{
+  grid-template-columns:minmax(0,1fr);
+ }
+}
+@media(max-width:760px){
+ body[data-website-size][data-page="account"] #main.shell,
+ body[data-website-size][data-page="checkout"] #main.shell,
+ body[data-website-size][data-page="contact"] #main.shell,
+ body[data-website-size][data-page="faq"] #main.shell,
+ body[data-website-size][data-page="qr"] #main.shell,
+ body[data-website-size][data-page="cart"] #main.shell,
+ body[data-website-size][data-page="track"] #main.shell,
+ body[data-website-size][data-page="success"] #main.shell,
+ body[data-website-size][data-page="product"] #main.shell,
+ body[data-website-size][data-page="gallery"] #main.shell{
+  max-width:100%;
+ }
+ body[data-website-size][data-page="account"] #main>.section:not(.bakery-account-entry){
+  max-width:100%;
+ }
+ body[data-website-size] #main .section{margin-block:calc(20px * var(--website-density))}
+}
