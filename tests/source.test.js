@@ -1709,7 +1709,7 @@ test('Shop All follows selected departments and denser cards do not alter the ca
  assert.match(app,/visibleDepartments\.flatMap\(d=>showcaseItemsFor/);
  assert.match(admin,/Both Bakery and Homestand visible/);
  assert.match(admin,/Only Bakery or only Homestand visible/);
- const compact=css.slice(css.indexOf('/* MBB-UI-051:'));
+ const compact=css.slice(css.indexOf('/* MBB-UI-051:'),css.indexOf('/* MBB-UI-052:'));
  assert.match(compact,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
  assert.match(compact,/\.product-results\.grid/);
  assert.match(compact,/\.home-department-products/);
@@ -1773,7 +1773,7 @@ test('Admin groups place related functional controls together',()=>{
 
 test('sitewide content and signed-in account become narrower without changing the carousel or showcase columns',()=>{
  const css=read('site/country-home-v2.css');
- const section=css.slice(css.indexOf('/* MBB-UI-055'));
+ const section=css.slice(css.indexOf('/* MBB-UI-055'),css.indexOf('/* MBB-UI-056'));
  assert.match(css,/--website-main-max:1480px/);
  assert.match(css,/--website-main-max:1160px/);
  assert.match(css,/--website-main-max:1320px/);
