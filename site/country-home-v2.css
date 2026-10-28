@@ -1464,23 +1464,25 @@ body[data-website-size][data-page="admin"] #admin-main>.box{
 
 /* MBB-UI-056 v1.43: narrower responsive pages, compact uniform product tiles.
    Homepage grid columns, Website Size presets and carousel timing remain controlled separately. */
-/* Preserve each Website Size preset's relative width while reducing long desktop lines. */
-body[data-website-size][data-page] #main.shell,
-body[data-website-size][data-page][data-site-background] #main.shell{
- max-width:min(100%,calc(var(--website-main-max) * .84));
+/* MBB-UI-057 v1.44: correct the overly narrow storefront seen at 70% zoom.
+   Keep dedicated account, checkout, contact and other focused-page width caps intact. */
+body[data-website-size]:is([data-page="home"],[data-page="shop"],[data-page="ready"],[data-page="preorder"],[data-page="category"],[data-page="subcategory"]) #main.shell{
+ width:calc(100% - clamp(20px,3vw,64px));
+ max-width:min(100%,calc(var(--website-shell-max) * .92));
  margin-inline:auto;
 }
-/* The Admin center retains additional horizontal space for tables and forms. */
-body[data-website-size][data-page="admin"] #main.shell,
-body[data-website-size][data-page="admin"][data-site-background] #main.shell{
- max-width:min(100%,calc(var(--website-main-max) * .93));
+/* The Admin workspace remains slightly wider; its vertical layout may grow. */
+body[data-website-size][data-page="admin"] #main.shell{
+ width:calc(100% - clamp(20px,3vw,64px));
+ max-width:min(100%,calc(var(--website-shell-max) * .96));
+ margin-inline:auto;
  padding-inline:calc(clamp(15px,2.5vw,40px) * var(--website-density));
 }
 body[data-page="admin"] .admin-workspace .admin-layout{
  grid-template-columns:minmax(210px,255px) minmax(0,1fr);
  gap:clamp(12px,1.6vw,20px);
 }
-/* Narrow only the carousel's outer frame: slide dimensions, text, controls and timing are untouched. */
+/* Narrow only the carousel's outer frame; controls, slide layout and timing stay unchanged. */
 body[data-page="home"] #main .home-carousel{
  width:100%;
  max-width:1080px;
@@ -1567,6 +1569,7 @@ body[data-website-size] #main .showcase-detail-related .card-media .product-phot
 @media(max-width:760px){
  body[data-website-size][data-page] #main.shell,
  body[data-website-size][data-page][data-site-background] #main.shell{
+  width:100%;
   max-width:100%;
  }
  body[data-page="home"] #main .home-carousel{max-width:100%}

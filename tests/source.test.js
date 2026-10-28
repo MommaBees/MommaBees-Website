@@ -1796,8 +1796,13 @@ test('responsive storefront widths and uniform product cards do not alter carous
  const css=read('site/country-home-v2.css');
  const block=css.slice(css.indexOf('/* MBB-UI-056'));
  assert.ok(block.startsWith('/* MBB-UI-056'));
- assert.match(block,/max-width:min\(100%,calc\(var\(--website-main-max\) \* \.84\)\)/);
- assert.match(block,/max-width:min\(100%,calc\(var\(--website-main-max\) \* \.93\)\)/);
+ const widthRules=block.slice(block.indexOf('/* MBB-UI-057'),block.indexOf('/* Products share'));
+ assert.ok(widthRules.includes('max-width:min(100%,calc(var(--website-shell-max) * .92))'));
+ assert.ok(widthRules.includes('max-width:min(100%,calc(var(--website-shell-max) * .96))'));
+ for(const route of ['home','shop','ready','preorder','category','subcategory'])assert.ok(widthRules.includes('[data-page="'+route+'"]'));
+ for(const focusedRoute of ['account','checkout','contact','faq','qr','cart','track','success','product','gallery'])assert.ok(!widthRules.includes('[data-page="'+focusedRoute+'"]'));
+ assert.ok(widthRules.includes('width:calc(100% - clamp(20px,3vw,64px))'));
+ assert.ok(block.includes('width:100%;\n  max-width:100%;'));
  assert.match(block,/body\[data-page="home"\] #main \.home-carousel\s*\{/);
  assert.match(block,/max-width:1080px/);
  for(const selector of ['.home-department-products','.product-results.grid','.showcase-detail-related .grid']){
