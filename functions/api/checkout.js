@@ -1,5 +1,6 @@
 import {response,rpc,db,sha256,randomToken,getVerifiedUser,origin,limited} from '../_lib/db.js';
 import {createStripeSession} from '../_lib/stripe.js';
+import {acceptedOrderNote} from '../_lib/order-legal.js';
 export async function onRequestPost({request,env}){
  let orderId=null;
  try{
@@ -28,7 +29,7 @@ export async function onRequestPost({request,env}){
     p_items:items,p_date:date,p_window:window,p_method:method,
     p_email:user?.email||limited(body.email,254),p_name:limited(body.name,120),p_phone:limited(body.phone,50),
     p_user_id:user?.id||null,p_address:method==='delivery'?body.address:null,
-    p_note:limited(body.note,1000),p_code:limited(body.promo_code,60)||null,p_guest_hash:guestHash
+    p_note:acceptedOrderNote(body,method),p_code:limited(body.promo_code,60)||null,p_guest_hash:guestHash
   });
   orderId=reserved.order_id;
   if(addr)await db(env,'/rest/v1/orders?id=eq.'+orderId,{method:'PATCH',body:{
@@ -51,7 +52,8 @@ export async function onRequestPost({request,env}){
     'billing_address_collection':'required',
     'expires_at':String(Math.floor(Date.now()/1000)+1800),
     'success_url':site+'/#success', 'cancel_url':site+'/#cart',
-    'metadata[order_id]':orderId
+    'metadata[order_id]':orderId,
+    'metadata[terms_version]':String(body.policy_acceptance.version)
   };
   const session=await createStripeSession(env,params);
   return response({checkout_url:session.url,order_id:orderId,guest_token:guestToken});
