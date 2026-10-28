@@ -1,5 +1,6 @@
 import {config,currentUser,currentSession,money,escapeHtml as e,currentDate,futureDate,fmt} from './api.js';
 import {mountPickupCalendar} from './pickup-calendar.js';
+import {LEGAL_VERSION} from './legal-policies.js';
 const dollars=n=>money(Math.max(0,Number(n)||0));
 export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
  if(!cart.length){nav('#cart');return;}
@@ -60,6 +61,8 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   '<p id="pickup-tax-estimate" class="small" aria-live="polite"></p>'+
   '<p class="small">Pay at pickup does not charge a card now. Staff will record your payment when collected. Taxes are included in the confirmed amount due.</p>'+
   (!anyAvailable?'<div class="notice error">Ordering is not enabled for this bakery yet.</div>':'')+
+  '<label class="checkbox checkout-policy-consent"><input type="checkbox" name="policy_acceptance" value="yes" required> I agree to the <a href="#legal/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>, the <a href="#legal/pickup" target="_blank" rel="noopener noreferrer" id="checkout-fulfillment-policy">Customer Pickup Policy</a>, and the <a href="#legal/refunds" target="_blank" rel="noopener noreferrer">Refund & Cancellation Policy</a>.</label>'+
+  '<p class="small">Privacy and optional cookie preferences are governed separately by the Privacy and Cookie Policies.</p>'+
   '<button type="submit" class="button" id="submit-order"'+(!anyAvailable?' disabled':'')+'>Continue</button>'+
   '</div></form></section>'+
   '<dialog id="unavailable-day-dialog" aria-labelledby="unavailable-title"><h2 id="unavailable-title">Sorry, that day is not available</h2>'+
@@ -88,6 +91,8 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
  const updateDate=()=>{
   const selected=days.find(d=>d.date===date.value);
   const isPickup=method.value==='pickup';
+  const fulfillmentPolicy=document.getElementById('checkout-fulfillment-policy');
+  if(fulfillmentPolicy){fulfillmentPolicy.href=isPickup?'#legal/pickup':'#legal/delivery';fulfillmentPolicy.textContent=isPickup?'Customer Pickup Policy':'Local Delivery Policy';}
   const windows=isPickup?selected?.pickup_windows:selected?.delivery_windows;
   const validMode=isPickup?selected?.pickup_enabled:selected?.delivery_enabled;
   windowSelect.innerHTML='<option value="">Choose an available time</option>'+
@@ -121,6 +126,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   const f=new FormData(form),choice=String(f.get('payment_choice')||'');
   const selected=days.find(d=>d.date===f.get('date'));
   if(!selected)return showError('Choose a highlighted available baking day.');
+  if(f.get('policy_acceptance')!=='yes')return showError('Review and accept the applicable order and fulfillment policies.');
   if(choice==='pickup'&&(method.value!=='pickup'||!payAtPickup||!selected.pay_at_pickup_available))
    return showError('Pay at pickup is not available on this date.');
   if(choice==='stripe'&&!stripeAvailable)return showError('Online checkout is not available.');
@@ -132,7 +138,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   const payload={items,date:f.get('date'),window:f.get('window'),method:f.get('method'),
    first_name:f.get('first_name'),last_name:f.get('last_name'),email:f.get('email'),
    phone:f.get('phone'),contact_channel:f.get('contact_channel'),address,
-   note:f.get('note'),captcha_token:form.querySelector('[name="cf-turnstile-response"]')?.value||''};
+   note:f.get('note'),policy_acceptance:{accepted:true,version:LEGAL_VERSION,method:method.value},captcha_token:form.querySelector('[name="cf-turnstile-response"]')?.value||''};
   const original=submit.textContent;
   submit.disabled=true;submit.textContent='Submitting…';
   try{
@@ -140,7 +146,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
    const body=choice==='pickup'?payload:{
     items,date:payload.date,window:payload.window,method:payload.method,
     name:payload.first_name+' '+payload.last_name,first_name:payload.first_name,last_name:payload.last_name,email:payload.email,phone:payload.phone,
-    address,guest_address:address,contact_channel:payload.contact_channel,promo_code:f.get('promo'),note:payload.note
+    address,guest_address:address,contact_channel:payload.contact_channel,promo_code:f.get('promo'),note:payload.note,policy_acceptance:payload.policy_acceptance
    };
    const response=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json',
     ...(currentSession()?.access_token?{Authorization:'Bearer '+currentSession().access_token}:{})},
