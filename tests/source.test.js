@@ -447,16 +447,16 @@ test('Owner sandbox storefront renders clickable test cards without exposing the
  const end=source.indexOf('/** An Owner-supplied',start);
  const shopSource=source.slice(start,end);
  assert.ok(start>=0&&end>start);
- assert.match(shopSource,/demoStorePreview\\(mode\\|\\|'all',category\\?\\.name\\|\\|null\\)/);
- assert.match(shopSource,/department!=='homestand'/);
- assert.match(shopSource,/bindDemoStore\\(\\)/);
- assert.match(source,/const showPublicSamples=false/);
- assert.match(source,/const staff=\\['owner','admin'\\]\\.includes\\(verifiedBackOfficeRole\\)&&all\\.settings\\.demo_store_enabled===true/);
- assert.match(source,/data-demo-checkout/);
- assert.match(source,/Authorization:'Bearer '\\+token/);
+ assert.ok(shopSource.includes("demoStorePreview(mode||'all',category?.name||null)"));
+ assert.ok(shopSource.includes("department!=='homestand'"));
+ assert.ok(shopSource.includes('bindDemoStore();'));
+ assert.ok(source.includes('const showPublicSamples=false'));
+ assert.ok(source.includes("const staff=['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true"));
+ assert.ok(source.includes('data-demo-checkout'));
+ assert.ok(source.includes("Authorization:'Bearer '+token"));
  const endpoint=read('functions/api/admin/demo-checkout.js');
- assert.match(endpoint,/requireBakeryManager\\(env,request\\)/);
- assert.match(endpoint,/allowed_payment_method_types\\[0\\]/);
+ assert.ok(endpoint.includes('requireBakeryManager(env,request)'));
+ assert.ok(endpoint.includes("'allowed_payment_method_types[0]':'card'"));
 });
 
 test('sandbox checkout uses exactly the six created Stripe prices, never live prices',()=>{
