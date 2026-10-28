@@ -1790,3 +1790,30 @@ test('sitewide content and signed-in account become narrower without changing th
  assert.match(section,/\.field\{margin-block:/);
  assert.doesNotMatch(section,/min-height:[\s\S]*?\d+px/);
 });
+
+
+test('responsive storefront widths and uniform product cards do not alter carousel logic',()=>{
+ const css=read('site/country-home-v2.css');
+ const block=css.slice(css.indexOf('/* MBB-UI-056'));
+ assert.ok(block.startsWith('/* MBB-UI-056'));
+ assert.match(block,/max-width:min\(100%,calc\(var\(--website-main-max\) \* \.84\)\)/);
+ assert.match(block,/max-width:min\(100%,calc\(var\(--website-main-max\) \* \.93\)\)/);
+ assert.match(block,/body\[data-page="home"\] #main \.home-carousel\s*\{/);
+ assert.match(block,/max-width:1080px/);
+ for(const selector of ['.home-department-products','.product-results.grid','.showcase-detail-related .grid']){
+  assert.ok(block.includes(selector),'missing product grid '+selector);
+ }
+ assert.match(block,/grid-auto-rows:1fr/);
+ assert.match(block,/height:100%/);
+ assert.match(block,/-webkit-line-clamp:2/);
+ assert.match(block,/\.product-photo/);
+ assert.match(block,/max-width:100%/);
+ assert.match(block,/@media\(max-width:760px\)/);
+ assert.match(block,/@media\(max-width:480px\)/);
+ assert.doesNotMatch(block,/carouselIntervalMilliseconds|home-carousel-slide|home-carousel-controls|--home-product-columns/);
+ const app=read('site/app.js');
+ assert.match(app,/--home-product-columns:/);
+ assert.match(app,/homepageGridLayout\(s\)/);
+ const carousel=read('site/home-carousel.js');
+ assert.match(carousel,/stopHomeCarousel/);
+});

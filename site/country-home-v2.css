@@ -1460,3 +1460,126 @@ body[data-website-size][data-page="admin"] #admin-main>.box{
  }
  body[data-website-size] #main .section{margin-block:calc(20px * var(--website-density))}
 }
+
+
+/* MBB-UI-056 v1.43: narrower responsive pages, compact uniform product tiles.
+   Homepage grid columns, Website Size presets and carousel timing remain controlled separately. */
+/* Preserve each Website Size preset's relative width while reducing long desktop lines. */
+body[data-website-size][data-page] #main.shell,
+body[data-website-size][data-page][data-site-background] #main.shell{
+ max-width:min(100%,calc(var(--website-main-max) * .84));
+ margin-inline:auto;
+}
+/* The Admin center retains additional horizontal space for tables and forms. */
+body[data-website-size][data-page="admin"] #main.shell,
+body[data-website-size][data-page="admin"][data-site-background] #main.shell{
+ max-width:min(100%,calc(var(--website-main-max) * .93));
+ padding-inline:calc(clamp(15px,2.5vw,40px) * var(--website-density));
+}
+body[data-page="admin"] .admin-workspace .admin-layout{
+ grid-template-columns:minmax(210px,255px) minmax(0,1fr);
+ gap:clamp(12px,1.6vw,20px);
+}
+/* Narrow only the carousel's outer frame: slide dimensions, text, controls and timing are untouched. */
+body[data-page="home"] #main .home-carousel{
+ width:100%;
+ max-width:1080px;
+ margin-inline:auto;
+}
+/* Products share equal-width tracks and rows. Keep all information accessible on their detail pages. */
+#main .home-department-products,
+#main .product-results.grid,
+#main .showcase-detail-related .grid,
+#main .home-gallery-preview{
+ align-items:stretch;
+ grid-auto-rows:1fr;
+}
+#main .home-department-products .bakery-product-card,
+#main .product-results .bakery-product-card,
+#main .showcase-detail-related .bakery-product-card{
+ display:flex;
+ flex-direction:column;
+ height:100%;
+ min-height:max(255px,calc(308px * var(--website-density,1)));
+ min-width:0;
+ overflow:hidden;
+}
+#main .home-department-products .bakery-product-card .card-content,
+#main .product-results .bakery-product-card .card-content,
+#main .showcase-detail-related .bakery-product-card .card-content{
+ display:flex;
+ flex:1 1 auto;
+ flex-direction:column;
+ min-height:0;
+}
+body[data-website-size] #main .home-department-products .card-media .product-photo,
+body[data-website-size] #main .product-results .card-media .product-photo,
+body[data-website-size] #main .showcase-detail-related .card-media .product-photo{
+ width:100%;
+ height:calc(clamp(130px,11vw,164px) * var(--website-image-scale));
+ object-fit:cover;
+ object-position:center;
+}
+#main .home-department-products .bakery-product-card .card-content h3,
+#main .product-results .bakery-product-card .card-content h3,
+#main .showcase-detail-related .bakery-product-card .card-content h3{
+ display:-webkit-box;
+ -webkit-box-orient:vertical;
+ -webkit-line-clamp:2;
+ overflow:hidden;
+ line-height:1.28;
+ min-height:2.56em;
+ overflow-wrap:anywhere;
+ margin:4px 0 6px;
+}
+#main .home-department-products .bakery-product-card .eyebrow,
+#main .product-results .bakery-product-card .eyebrow{
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis;
+ max-width:100%;
+}
+#main .home-department-products .bakery-product-card .showcase-card-link,
+#main .product-results .bakery-product-card .showcase-card-link,
+#main .showcase-detail-related .bakery-product-card .showcase-card-link{
+ margin-top:auto;
+ padding-top:8px;
+}
+#main .product-results .bakery-product-card .card-content>p.small{
+ display:-webkit-box;
+ -webkit-box-orient:vertical;
+ -webkit-line-clamp:2;
+ overflow:hidden;
+}
+#main .product-results .bakery-product-card .card-content>.price{
+ margin-top:auto;
+}
+#main .home-gallery-preview .card{
+ display:flex;
+ height:100%;
+ flex-direction:column;
+ overflow:hidden;
+}
+#main .home-gallery-preview .card-content{flex:1 1 auto}
+@media(max-width:1000px){
+ body[data-page="admin"] .admin-workspace .admin-layout{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:760px){
+ body[data-website-size][data-page] #main.shell,
+ body[data-website-size][data-page][data-site-background] #main.shell{
+  max-width:100%;
+ }
+ body[data-page="home"] #main .home-carousel{max-width:100%}
+}
+@media(max-width:480px){
+ #main .home-department-products .bakery-product-card,
+ #main .product-results .bakery-product-card,
+ #main .showcase-detail-related .bakery-product-card{
+  min-height:max(245px,calc(286px * var(--website-density,1)));
+ }
+ body[data-website-size] #main .home-department-products .card-media .product-photo,
+ body[data-website-size] #main .product-results .card-media .product-photo,
+ body[data-website-size] #main .showcase-detail-related .card-media .product-photo{
+  height:calc(122px * var(--website-image-scale));
+ }
+}
