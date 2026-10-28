@@ -488,11 +488,13 @@ test('subcategory migration enforces same-parent consistency and preserves blank
  assert.match(admin,/const updateHierarchy=\(level='department'\)/);
  assert.match(admin,/if\(!el&&\['subcategory_id','variety_id'\]\.includes\(f\.key\)\)/);
 });
-test('terms do not treat an off-schedule inquiry as an accepted order',()=>{
- const store=read('site/app.js');
- assert.match(store,/Special-date requests are not confirmed orders/);
- assert.match(store,/A special-order request is an inquiry only/);
- assert.match(store,/location, product, and fulfillment restrictions required by applicable law/);
+test('FAQ directs special-order inquiries to explicit acceptance and food eligibility policy',()=>{
+ const store=read('site/app.js'),faq=read('site/customer-faq.js'),legal=read('site/legal-policies.js');
+ assert.match(store,/function faq\(\)\{layout\(faqPage\(\)\);\}/);
+ assert.match(faq,/not an accepted order or a capacity reservation/);
+ assert.match(faq,/proposed off-schedule fee must be disclosed and accepted/);
+ assert.match(legal,/production location|production method|operating method/);
+ assert.doesNotMatch(store,/\$\{e\(s\.terms\|\|/);
 });
 
 
@@ -1263,8 +1265,12 @@ test('redundant text removed without losing customer-facing commerce and safety 
   assert.ok(!app.includes(phrase),'redundant copy should not remain: '+phrase);
  }
  assert.doesNotMatch(app,/class="bakery-home-note"/);
- for(const phrase of ['h1>Past Bakes Gallery','Product availability is verified before payment','Cottage-food eligibility and food safety','food_notice','Final availability and pricing','Questions & Bakery Policies']){
+ for(const phrase of ['h1>Past Bakes Gallery','Product availability is verified before payment','food_notice','function faq(){layout(faqPage());}']){
   assert.ok(app.includes(phrase),'critical storefront information missing: '+phrase);
+ }
+ const faq=read('site/customer-faq.js'),legal=read('site/legal-policies.js');
+ for(const phrase of ['Questions & Policies','ready-to-sell','preorder','available fulfillment date','product photos']){
+  assert.ok((faq+' '+legal).toLowerCase().includes(phrase.toLowerCase()),'missing customer FAQ or policy content: '+phrase);
  }
  assert.match(account,/Guest checkout is available/);
  assert.match(checkout,/Full contact and address details are required/);
