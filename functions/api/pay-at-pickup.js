@@ -1,5 +1,6 @@
 import {response,rpc,sha256,randomToken,getVerifiedUser} from '../_lib/db.js';
 import {verifyTurnstile} from '../_lib/turnstile.js';
+import {acceptedOrderNote} from '../_lib/order-legal.js';
 const clean=(value,length=200)=>String(value||'').trim().slice(0,length);
 export async function onRequestPost({request,env}){
  try{
@@ -40,7 +41,7 @@ export async function onRequestPost({request,env}){
    p_items:items,p_date:clean(data.date,10),p_window:clean(data.window,80),
    p_first_name:first,p_last_name:last,p_email:email||null,p_phone:phone||null,
    p_address:address,p_contact_channel:channel,p_user_id:user?.id||null,
-   p_note:clean(data.note,1000),p_guest_hash:await sha256(guestToken)
+   p_note:acceptedOrderNote(data,'pickup'),p_guest_hash:await sha256(guestToken)
   });
   return response({order_id:result.order_id,guest_token:guestToken,
    amount_due_cents:result.amount_due_cents,payment_status:result.payment_status,
