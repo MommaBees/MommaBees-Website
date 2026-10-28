@@ -1,0 +1,26 @@
+.legal-page{max-width:860px;margin:0 auto;padding:26px 0 42px;line-height:1.66}
+.legal-page h1{line-height:1.2;margin:6px 0 12px}
+.legal-page p{max-width:80ch}
+.legal-page .legal-revision,.legal-page .legal-back,.legal-page .legal-related{color:var(--muted)}
+.legal-page .legal-section{padding:12px 0;border-bottom:1px solid var(--line)}
+.legal-page .legal-section h2{font-size:1.12rem;margin:7px 0}
+.legal-page .legal-section p{margin:4px 0 9px}
+.legal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:22px 0}
+.legal-tile{display:flex;flex-direction:column;gap:6px;text-decoration:none;min-height:86px}
+.legal-tile:hover{border-color:var(--brown);text-decoration:underline}
+.legal-tile span{font-size:.86rem;color:var(--muted)}
+.footer-legal{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px 15px;margin-top:18px;padding:16px 0;border-top:1px solid #ffffff35;font-size:.82rem}
+.footer-legal a{color:#fff}
+.footer-cookie-link{background:none;border:0;padding:0;color:#fff;text-decoration:underline;text-underline-offset:3px;font:inherit}
+.footer-cookie-link:focus-visible,.footer-legal a:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.cookie-dialog{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);width:min(780px,calc(100% - 24px));z-index:10000;background:var(--paper);border:1px solid var(--line);border-radius:15px;box-shadow:0 12px 46px #21170c55;padding:16px 20px;color:var(--ink);line-height:1.4}
+.cookie-dialog h2{font-size:1.07rem;margin:0 0 5px}
+.cookie-dialog p{font-size:.87rem;color:var(--muted);margin:0}
+.cookie-dialog a{text-decoration:underline}
+.cookie-options{display:flex;flex-wrap:wrap;gap:9px 18px;margin-top:12px}
+.cookie-options label{font-size:.88rem;display:flex;align-items:center;gap:7px}
+.cookie-options span{font-size:.75rem;color:var(--muted)}
+.cookie-options input{width:17px;height:17px;accent-color:var(--green)}
+.cookie-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:13px}
+.cookie-actions .button{font-size:.83rem;padding:9px 12px;margin:0}
+@media(max-width:600px){.legal-grid{grid-template-columns:1fr}.legal-page{padding:14px 0 28px}.cookie-dialog{bottom:5px;padding:13px;max-height:82vh;overflow:auto}.cookie-options{flex-direction:column;gap:6px}.cookie-actions{justify-content:stretch}.cookie-actions .button{flex:1 1 auto}}
