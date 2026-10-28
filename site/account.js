@@ -73,8 +73,8 @@ async function protect(form){
   const id=api.render(slot,{
    sitekey:config.turnstileSiteKey,theme:'auto',appearance:'interaction-only',execution:'execute',
    callback:()=>verificationStatus(form,'Verification complete.'),
-   'error-callback':()=>{verificationStatus(form,'Verification failed. Select the checkbox to retry.');form.querySelector('[data-verify-human]').checked=false;},
-   'expired-callback':()=>{verificationStatus(form,'Verification expired. Select the checkbox again.');form.querySelector('[data-verify-human]').checked=false;}
+   'error-callback':()=>{verificationStatus(form,'');authError(form,'Verification failed. Select the checkbox to retry.');form.querySelector('[data-verify-human]').checked=false;},
+   'expired-callback':()=>{verificationStatus(form,'');authError(form,'Verification expired. Select the checkbox again.');form.querySelector('[data-verify-human]').checked=false;}
   });
   slot.dataset.widget=String(id);
  }
