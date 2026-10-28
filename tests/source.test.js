@@ -1701,13 +1701,14 @@ test('Shop All follows selected departments and denser cards do not alter the ca
  const app=read('site/app.js');
  const css=read('site/country-home-v2.css');
  const admin=read('site/admin.js');
- assert.match(app,/homepageVisibleDepartments\(s\)\.length===1\?8:4/);
+ assert.match(app,/const homeGrid=homepageGridLayout\(s\)/);
  assert.match(app,/showcaseItemsFor\(all\.showcaseItems,view\.department,null,null,homepageLimit\)/);
  assert.match(app,/Math\.max\(0,homepageLimit-view\.products\.length\)/);
  assert.match(app,/shopVisibleDepartments\(all\.settings,requestedDepartment,category\)/);
  assert.match(app,/visibleDepartments\.includes\(departmentForCategory\(categoryFor\(product\)\)\)/);
  assert.match(app,/visibleDepartments\.flatMap\(d=>showcaseItemsFor/);
- assert.match(admin,/One department: 8 featured items\. Both departments: 4 each/);
+ assert.match(admin,/Both Bakery and Homestand visible/);
+ assert.match(admin,/Only Bakery or only Homestand visible/);
  const compact=css.slice(css.indexOf('/* MBB-UI-051:'));
  assert.match(compact,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
  assert.match(compact,/\.product-results\.grid/);
