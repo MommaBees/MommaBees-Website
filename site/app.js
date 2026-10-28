@@ -10,6 +10,8 @@ import {accountNavigationMarkup,bindAccountNavigation} from './account-navigatio
 import {catalogCarouselSlides} from './catalog-carousel.js';
 import {normalizeIdle,startIdleWatch,stopIdleWatch,isIdle,idleActivityTime} from './idle-session.js';
 import {bindRequiredMarkers} from './required-fields.js';
+import {legalIndexPage,legalPage} from './legal-policies.js';
+import {initCookiePreferences} from './cookie-consent.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
 import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts,homepageVisibleDepartments,homepageGridLayout,shopVisibleDepartments} from './store-departments.js';
 import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
@@ -128,7 +130,7 @@ function layout(content){
  const settings=all.settings||{};
  const routeName=(location.hash||'#home').slice(1).split('/')[0]||'home';
  document.body.dataset.page=routeName;
- const crumbLabels={shop:'Shop All',ready:'Ready to Sell',preorder:'Preorder',category:'Browse Categories',subcategory:'Browse Varieties',product:'Product Details',cart:'Your Cart',checkout:'Checkout',success:'Order Status',track:'Track Your Order',account:'My Account',contact:'Contact & Special Orders',faq:'Questions & Policies',gallery:'Past Bakes',qr:'Bakery QR Code',admin:'Admin Center'};
+ const crumbLabels={shop:'Shop All',ready:'Ready to Sell',preorder:'Preorder',category:'Browse Categories',subcategory:'Browse Varieties',product:'Product Details',cart:'Your Cart',checkout:'Checkout',success:'Order Status',track:'Track Your Order',account:'My Account',contact:'Contact & Special Orders',faq:'Questions & Policies',legal:'Legal & Policies',gallery:'Past Bakes',qr:'Bakery QR Code',admin:'Admin Center'};
  const crumb=routeName!=='home'&&crumbLabels[routeName]
    ?'<nav class="page-crumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span aria-current="page">'+e(crumbLabels[routeName])+'</span></nav>'
    :'';
@@ -151,7 +153,14 @@ function layout(content){
     <a class="footer-qr" href="#qr" aria-label="Open the downloadable bakery homepage QR code">
      ${qrSvg()}<span>Scan to visit our bakery</span></a>
     </div>
-  </div><div class="footer-bottom">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</div>
+  </div><nav class="footer-legal" aria-label="Legal and policies">
+   <a href="#legal">Legal & Policies</a><a href="#legal/terms">Terms of Service</a>
+   <a href="#legal/privacy">Privacy</a><a href="#legal/cookies">Cookies</a>
+   <a href="#legal/pickup">Pickup</a><a href="#legal/delivery">Delivery</a>
+   <a href="#legal/refunds">Refunds</a><a href="#legal/property">Visitor & Animal Safety</a>
+   <a href="#legal/food">Food & Allergens</a>
+   <button type="button" class="footer-cookie-link" data-cookie-settings>Cookie Settings</button>
+  </nav><div class="footer-bottom">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</div>
  </div></footer>`;
  bindHomeCarousel(settings.home_carousel_interval_seconds);
  const toggle=$('#mobile-nav-toggle');
@@ -369,7 +378,7 @@ function faq(){const s=all.settings;layout(`<section class="section"><h1>Questio
 <p>Images identified as representative photographs or pictures of previous bakes show examples only; they may not depict the specific item currently for sale. Only specifically published products with available capacity and approved fulfillment dates can be ordered. Final availability and pricing are determined during checkout and bakery confirmation.</p>
 <h2>Cottage-food eligibility and food safety</h2>
 <p>Online cottage-food sales must meet the location, product, and fulfillment restrictions required by applicable law. Products requiring refrigeration or other special handling may not qualify for cottage-food sales. All food must satisfy the bakery's applicable operating and labeling requirements before being offered.</p>
-<h2>Food and allergens</h2><p>${e(s.food_notice||'Contact us about ingredients, allergens, dietary questions and storage before placing an order.')}</p><h2>Cancellation, refunds and other policies</h2><p>${e(s.terms||'The bakery owner has not published the final cancellation, refund, and fulfillment policies yet. Ordering stays disabled until configured.')}</p></div></section>`);}
+<h2>Food and allergens</h2><p>${e(s.food_notice||'Contact us about ingredients, allergens, dietary questions and storage before placing an order.')}</p><h2>Cancellation, refunds and other policies</h2><p>${e(s.terms||'The bakery owner has not published the final cancellation, refund, and fulfillment policies yet. Ordering stays disabled until configured.')}</p><p>Review our <a href="#legal">complete Legal & Policies directory</a>, including pickup, delivery, privacy, cookies, visitor safety, and food handling.</p></div></section>`);}
 function gallery(){
  const photos=all.pastBakes.filter(x=>x.published&&x.image_url);
  layout('<section class="section"><div class="eyebrow"></div>'+
@@ -429,7 +438,7 @@ async function render(){await watchIdleSession();const [route,pid]=decodeURIComp
    all.products=products;
   }catch(ex){console.warn('Homepage carousel refresh unavailable; retaining last loaded content',ex);}
  }
- all.demoItems=[];if(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true){all.demoItems=await list('demo_catalog_items',{order:'sort_order.asc',limit:100}).catch(()=>[]);}document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"MommaBee Bakery&Farmstand";if(!isConfigured()){layout(`<section class="section"><h1>Welcome to MommaBee Bakery&Farmstand</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in MommaBee Bakery&Farmstand.</p></section>`);return;}
+ all.demoItems=[];if(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true){all.demoItems=await list('demo_catalog_items',{order:'sort_order.asc',limit:100}).catch(()=>[]);}document.title=(route==='admin'&&isBackOfficeRole(verifiedBackOfficeRole)?'Admin | ':'')+"MommaBee Bakery&Farmstand";if(route==='legal'){layout(pid?legalPage(pid,all.settings):legalIndexPage());return;}if(!isConfigured()){layout(`<section class="section"><h1>Welcome to MommaBee Bakery&Farmstand</h1><div class="notice">Our online shop is temporarily unavailable. Please check back soon.</div><p>Thank you for your interest in MommaBee Bakery&Farmstand.</p></section>`);return;}
  try{if(route==='admin'&&!isBackOfficeRole(verifiedBackOfficeRole)){layout('<section class="section box"><h1>Page unavailable</h1><p>This page is not available for your account.</p><a class="button secondary" href="#shop">Return to shop</a></section>');return;}if(route==='admin'){const mod=await import('./admin.js');await mod.admin({layout,load,all,showError,render});return;}if(route==='sandbox-store'){nav('#shop');return;}else if(route==='shop')shop(null,null,null,pid);else if(route==='ready')shop('ready',null,null,pid);else if(route==='preorder')shop('preorder',null,null,pid);else if(route==='category')shop(null,pid);else if(route==='subcategory'){const parts=(location.hash||'').slice(1).split('/');shop(null,parts[1],parts[2]);}else if(route==='product')detail(pid);else if(route==='cart')cartPage();else if(route==='checkout')await checkoutPage();else if(route==='success')success();else if(route==='sandbox-success'&&['owner','admin'].includes(verifiedBackOfficeRole))layout('<section class="section box"><h1>Stripe Sandbox Return</h1><p>This was a TEST transaction only. Open Admin → Sandbox Test Products to check the result after Stripe sends its webhook. No real customer order was created.</p><a class="button secondary" href="#shop">Back to Shop All</a></section>');else if(route==='track')track(pid);else if(route==='account')await account(pid);else if(route==='contact')contact();else if(route==='faq')faq();else if(route==='gallery')gallery();else if(route==='qr')qrPage();else home();}
  catch(ex){layout(`<section class="section"><h1>Something went wrong</h1><div class="notice error">${e(ex.message)}</div><a class="button secondary" href="#home">Return home</a></section>`);}if(route==='account'&&['profile','settings'].includes(pid)){
  const target=document.getElementById(pid==='profile'?'account-profile-section':'account-settings');
@@ -437,4 +446,4 @@ async function render(){await watchIdleSession();const [route,pid]=decodeURIComp
  else window.scrollTo({top:0,behavior:'instant'});
  }else window.scrollTo({top:0,behavior:'instant'});}
 window.addEventListener('hashchange',render);
-(async()=>{bindRequiredMarkers();try{await load();}catch(ex){console.error('Could not load storefront',ex);}await render();})();
+(async()=>{initCookiePreferences();bindRequiredMarkers();try{await load();}catch(ex){console.error('Could not load storefront',ex);}await render();})();
