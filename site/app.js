@@ -655,7 +655,7 @@ function cartPage(){
  $$('[data-remove]').forEach(button=>button.onclick=()=>{
   cart.splice(Number(button.dataset.remove),1);saveCart();cartPage();
  });
- $('[data-cart-qty]').forEach(input=>input.onchange=()=>{
+ $$('[data-cart-qty]').forEach(input=>input.onchange=()=>{
   const index=Number(input.dataset.cartQty),item=cart[index],quantity=Number(input.value);
   if(quantity===0){cart.splice(index,1);saveCart();cartPage();return;}
   const batch=all.batches.find(b=>b.id===item.batch_id&&b.product_id===item.product_id);
