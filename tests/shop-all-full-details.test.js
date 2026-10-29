@@ -31,3 +31,18 @@ test('Showcase-only cards cannot bypass a published, real-stock product for chec
  assert.match(app,/cartHasShowcase\(cart\)/);
  assert.match(read('functions/api/checkout.js'),/reserve_checkout/);
 });
+
+test('Product cards do not stretch into tall blank spaces and Qty controls stay compact',()=>{
+ const css=read('site/country-home-v2.css');
+ const marker=css.lastIndexOf('MBB-UI-061: remove artificial vertical expansion');
+ assert.ok(marker>=0,'Compact card spacing override missing');
+ const compact=css.slice(marker);
+ assert.match(compact,/grid-auto-rows:auto/);
+ assert.match(compact,/align-items:start/);
+ assert.match(compact,/height:auto/);
+ assert.match(compact,/min-height:0/);
+ assert.match(compact,/flex:0 0 auto/);
+ assert.match(compact,/margin-top:2px/);
+ assert.match(compact,/\.card-quick-buy \.required-indicator/);
+ assert.match(compact,/display:none!important/);
+});
