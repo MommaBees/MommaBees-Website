@@ -1,11 +1,11 @@
 import {response,rpc,db,sha256,randomToken,getVerifiedUser,origin,limited} from '../_lib/db.js';
-import {createStripeSession} from '../_lib/stripe.js';
+import {createStripeSession,stripePaymentMode} from '../_lib/stripe.js';
 import {acceptedOrderNote} from '../_lib/order-legal.js';
 export async function onRequestPost({request,env}){
  let orderId=null;
  try{
   const body=await request.json();if(!body||JSON.stringify(body).length>12000)return response({error:'Cart exceeds allowed size'},400);
-  if(!env.STRIPE_SECRET_KEY?.startsWith('sk_test_') && env.LIVE_PAYMENT_ALLOWED!=='yes')return response({error:'Live payments are disabled. Use Stripe TEST keys until live payments are explicitly authorized.'},503);
+  if(stripePaymentMode(env)==='live' && env.LIVE_PAYMENT_ALLOWED!=='yes')return response({error:'Live payments are disabled. Use Stripe TEST keys until live payments are explicitly authorized.'},503);
   if(env.STRIPE_AUTOMATIC_TAX_ENABLED!=='yes')return response({error:'Tax setup is not verified. Configure Stripe Tax and enable STRIPE_AUTOMATIC_TAX_ENABLED only after reviewing applicable bakery tax obligations.'},503);
   const user=await getVerifiedUser(env,request);
   // Guest orders collect a real contact/address even when payment is online.
