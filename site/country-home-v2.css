@@ -1595,3 +1595,20 @@ body[data-website-size] #main .showcase-detail-related .card-media .product-phot
 .admin-inline-create .actions{display:flex;flex-wrap:wrap;gap:.5rem;margin:.55rem 0 0}
 .admin-inline-create .actions button{min-width:0;padding:.45rem .75rem}
 .admin-inline-create [role="status"]{margin:.3rem 0 0}
+
+/* Product sales controls: compact, accessible package quantity and inventory inputs. */
+.product-detail .product-description,.product-detail .product-ingredient-details{margin:1rem 0;border-top:1px solid var(--line,#e2d2be);padding-top:.75rem}
+.product-detail .product-description h2,.product-detail .product-ingredient-details h2{font-size:1.12rem;margin:.6rem 0 .25rem}
+.product-detail .product-ingredient-details p,.product-detail .product-description p{white-space:pre-line;margin:.2rem 0 .65rem;overflow-wrap:anywhere}
+.product-quantity-control{display:flex;gap:.4rem;align-items:center;max-width:240px}
+.product-quantity-control #qty{width:85px;min-width:65px;text-align:center;min-height:40px;padding:.3rem}
+.product-quantity-control button{width:44px;min-width:40px;min-height:40px;padding:.35rem;flex-shrink:0}
+#product-stock-note{margin:.3rem 0}
+#product-line-total{display:block;margin:.25rem 0 .8rem}
+.cart-line input[data-cart-qty]{display:block;width:92px;max-width:100%;min-height:38px;padding:.3rem .45rem;margin:.2rem 0}
+.admin-ready-inventory{margin:.75rem 0;padding:.8rem;border:1px solid var(--line,#e2d2be);border-radius:8px;min-width:0}
+.admin-ready-inventory legend{padding:0 .3rem;font-weight:700}
+.admin-ready-inventory[hidden]{display:none!important}
+.admin-ready-inventory .field{margin:.5rem 0}
+.admin-ready-inventory input{width:100%;max-width:330px}
+@media(max-width:640px){.product-detail .product-quantity-control{max-width:100%}.cart-line{align-items:flex-start;gap:.65rem}}
