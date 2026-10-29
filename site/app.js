@@ -160,7 +160,7 @@ const showcaseCard=(item,showShopDetails=false)=>{
  const imageMarkup=item.photo_url?'<div class="card-media">'+image(item.photo_url,'product-photo',item.name)+'</div>':'';
  const parent=all.categories.find(c=>c.id===item.category_id);
  const linkedPrice=sale?money(sale.price_cents)+' / '+sellingUnitLabel(sale.unit):showcasePrice(item);
- const allergens=knownAllergenStatement((item.allergen_reviewed||item.allergens)?item:sale||item);
+ const allergens=(item.allergen_reviewed||sale?.allergen_reviewed)?knownAllergenStatement(item.allergen_reviewed?item:sale):'Not listed';
  const claims=approvedDietaryClaims((item.dietary_claims_reviewed&&item.dietary_claims?.length)?item:sale||item);
  return '<article class="card bakery-product-card store-showcase-card'+(item.photo_url?'':' is-text-only')+'">'+
   '<a class="showcase-card-main" href="#product/'+encodeURIComponent(item.slug)+'" aria-label="View '+e(item.name)+' details">'+imageMarkup+
@@ -544,9 +544,7 @@ function detail(id){
   if(Number(quantity.value)<1)quantity.value='1';
   if(lineTotal)lineTotal.textContent='Estimated item total: '+money(packageTotal(p.price_cents,Number(quantity.value)||1));
   const note=$('#product-stock-note');
-  if(note)note.textContent=mode.value==='ready'
-   ?max+' '+unit+' package(s) available to add to your cart from this batch.'
-   :'Select the number of '+unit+' packages you want to preorder. Final capacity is checked at checkout.';
+  if(note)note.textContent=mode.value==='ready'?'Available: '+max:'Preorder';
   $('#add-form button[type="submit"]').disabled=max<1;
  };
  $('#add-form').onsubmit=ev=>{
