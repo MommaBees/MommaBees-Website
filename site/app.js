@@ -393,6 +393,7 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
 }
 /** An Owner-supplied catalog item's own page; the existing purchasable product route remains separate. */
 function showcaseDetail(item){
+ const sale=showcaseSaleProduct(item);
  const department=item.department==='homestand'?'homestand':'bakery';
  const category=all.categories.find(c=>c.id===item.category_id);
  const subcategory=all.subcategories.find(c=>c.id===item.subcategory_id);
@@ -401,27 +402,55 @@ function showcaseDetail(item){
  const departmentName=departmentLabel(department);
  const backHref='#shop/'+department;
  const provenance=showcaseOrigin(item);
- const description=showcaseDescription(item);
- const info=showcaseFields(item);
- const photoMarkup=item.photo_url?'<figure class="showcase-detail-photo-wrap">'+image(item.photo_url,'showcase-detail-photo',item.name)+'</figure>':'';
- const crumb=[departmentName,category?.name,subcategory?.name].filter(Boolean).map(e).join(' / ');
+ const description=showcaseDescription(item)||sale?.description||'Contact Momma Bee for item details.';
+ const display={...item,...(sale?{
+   price_cents:sale.price_cents,price_unit:sale.unit,price_kind:'owner',
+   ingredients:sale.ingredients||item.ingredients,
+   allergens:sale.allergens||item.allergens,storage_notes:sale.storage_notes||item.storage_notes
+  }:{})};
+ const info=showcaseFields(display);
+ const photos=[item.photo_url,...(sale?all.photos.filter(x=>x.product_id===sale.id).sort((a,b)=>a.sort_order-b.sort_order).map(x=>x.url):[])].filter(Boolean);
+ const classifications=[departmentName,category?.name,subcategory?.name].filter(Boolean);
+ const photoMarkup='<div class="showcase-detail-gallery">'+
+  (photos.length?'<div id="showcase-primary-photo">'+image(photos[0],'showcase-detail-photo',item.name)+'</div>':
+   '<div class="showcase-detail-no-photo">No product photo available</div>')+
+  (photos.length>1?'<div class="showcase-detail-thumbs">'+photos.map((url,index)=>
+    '<button type="button" class="showcase-detail-thumb" data-showcase-photo-index="'+index+'" aria-label="Show photo '+(index+1)+'">'+image(url,'product-photo',item.name+' image '+(index+1))+'</button>').join('')+'</div>':'')+
+  '</div>';
  layout('<section class="section showcase-item-page">'+
   '<nav class="showcase-detail-breadcrumb" aria-label="Product classification"><a href="'+backHref+'">'+e(departmentName)+'</a>'+
    (category?' <span aria-hidden="true">/</span> <a href="#category/'+encodeURIComponent(category.id)+'">'+e(category.name)+'</a>':'')+
   '</nav>'+
   '<div class="showcase-detail-grid">'+photoMarkup+
-  '<div class="showcase-detail-copy"><p class="eyebrow">'+crumb+'</p><h1>'+e(item.name)+'</h1>'+
+  '<div class="showcase-detail-copy"><p class="eyebrow">'+classifications.map(e).join(' / ')+'</p><h1>'+e(item.name)+'</h1>'+
    '<p class="showcase-detail-provenance">'+e(provenance)+'</p>'+
-   (description?'<p class="showcase-detail-description">'+e(description)+'</p>':'')+
+   '<section class="product-description"><h2>Description</h2><p class="showcase-detail-description">'+e(description)+'</p></section>'+
+   (sale?'<div class="showcase-sale-summary"><p class="price">'+money(sale.price_cents)+' / '+e(sellingUnitLabel(sale.unit))+'</p>'+
+    '<p class="small">'+(productReady(sale)?'Ready to Sell':'')+
+    (productReady(sale)&&productPreorder(sale)?' · ':'')+
+    (productPreorder(sale)?'Preorder available':'')+'</p>'+
+    quickCartMarkup(sale)+
+    '<a class="button secondary" href="#product/'+encodeURIComponent(sale.id)+'">View full ordering options</a></div>':
+    '<p class="small muted">Display listing only. Contact the bakery about ordering and current availability.</p>')+
    '<div class="showcase-details-table">'+
-      info.map(([label,value])=>'<div class="showcase-detail-info"><strong>'+e(label)+'</strong><span>'+e(value)+'</span></div>').join('')+
+    info.map(([label,value])=>'<div class="showcase-detail-info"><strong>'+e(label)+'</strong><span>'+e(value)+'</span></div>').join('')+
    '</div>'+
-   '<div class="actions showcase-detail-actions"><a class="button" href="#contact">Ask about this item</a>'+
-   '<a class="button secondary" href="'+backHref+'">Browse '+e(departmentName)+'</a></div>'+
+   '<section class="product-ingredient-details"><h2>Ingredients</h2><p>'+e(display.ingredients||'Please ask Momma Bee for ingredient details before ordering.')+'</p>'+
+   '<h2>Allergens</h2><p>'+e(display.allergens||'No allergens have been declared in this listing. Ask about ingredients and cross-contact before ordering.')+'</p>'+
+   '<h2>Storage & Handling</h2><p>'+e(display.storage_notes||'Contact Momma Bee for storage and handling information.')+'</p></section>'+
+   '<div class="actions showcase-detail-actions">'+
+    (sale?'<a class="button" href="#cart">View Cart</a>':'<a class="button" href="#contact">Ask about this item</a>')+
+    '<a class="button secondary" href="'+backHref+'">Browse '+e(departmentName)+'</a></div>'+
   '</div></div>'+
+  (sale?'<section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content">Loading reviews…</div></section>':'')+
   (related.length?'<section class="showcase-detail-related" aria-label="More '+e(departmentName)+' items">'+
    '<h2>More '+e(departmentName)+'</h2><div class="grid">'+related.map(showcaseCard).join('')+'</div></section>':'')+
   '</section>');
+ document.querySelectorAll('[data-showcase-photo-index]').forEach(button=>button.onclick=()=>{
+  const index=Number(button.dataset.showcasePhotoIndex);
+  if(photos[index])$('#showcase-primary-photo').innerHTML=image(photos[index],'showcase-detail-photo',item.name);
+ });
+ if(sale)reviewArea(sale.id);
 }
 function detail(id){
  const p=all.products.find(x=>x.id===id||(x.slug===id&&x.published&&available(x)));
