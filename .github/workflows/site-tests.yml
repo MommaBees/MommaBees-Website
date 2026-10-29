@@ -17,8 +17,6 @@ jobs:
           node-version: "22"
       - name: Verify JavaScript and security basics
         run: npm test
-      - name: Verify auth routes syntax
+      - name: Check all frontend and backend JavaScript syntax
         run: |
-          node --check functions/api/auth/login.js
-          node --check functions/api/auth/register.js
-          node --check functions/_lib/turnstile.js
+          find site functions -type f -name '*.js' -print0 | xargs -0 -n1 node --check
