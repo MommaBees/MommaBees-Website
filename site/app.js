@@ -413,7 +413,7 @@ function showcaseDetail(item){
    ingredients:sale.ingredients||item.ingredients,
    allergens:sale.allergens||item.allergens,storage_notes:sale.storage_notes||item.storage_notes
   }:{})};
- const info=showcaseFields(display);
+ const info=showcaseFields(display).filter(([label])=>!['Ingredients','Allergens','Storage & handling'].includes(label));
  const photos=[item.photo_url,...(sale?all.photos.filter(x=>x.product_id===sale.id).sort((a,b)=>a.sort_order-b.sort_order).map(x=>x.url):[])].filter(Boolean);
  const classifications=[departmentName,category?.name,subcategory?.name].filter(Boolean);
  const photoMarkup='<div class="showcase-detail-gallery">'+
