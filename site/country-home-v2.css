@@ -1693,3 +1693,56 @@ body[data-page="account"] .auth-submit-actions .button:disabled{cursor:not-allow
  #main .shop-page .product-results .shop-card-fact{font-size:.72rem}
  #main .shop-page .product-results .shop-card-information summary{font-size:.74rem}
 }
+
+/* MBB-UI-059: Compact, equal-height product cards with the same purchase-control footprint. */
+#main .bakery-product-card .card-content{min-width:0}
+#main .bakery-product-card .card-quick-buy{margin-top:10px}
+#main .store-showcase-card{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+#main .store-showcase-card>.showcase-card-main{display:flex;flex-direction:column;flex:1 1 auto;min-width:0}
+#main .store-showcase-card>.showcase-card-main .card-content{display:flex;flex:1 1 auto;flex-direction:column}
+#main .store-showcase-card>.card-showcase-buy{flex:0 0 auto;margin-top:auto;padding:0 clamp(9px,1.1vw,14px) clamp(10px,1.1vw,14px)}
+#main .store-showcase-card .showcase-card-link{margin-top:auto;display:block;padding-top:8px}
+#main .store-showcase-card .card-quick-buy.is-unavailable .card-quick-add{opacity:.55;cursor:not-allowed}
+#main .store-showcase-card .card-quick-buy.is-unavailable .card-quick-qty input{opacity:.7;cursor:not-allowed}
+#main .store-showcase-card .card-quick-buy.is-unavailable{margin-top:0}
+#main .bakery-product-card .showcase-card-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+/* Remove obsolete Shop All disclosure and contact-link space. */
+#main .product-results .card-showcase-facts,#main .product-results .shop-card-information,#main .product-results .showcase-enquire{display:none!important}
+
+/* MBB-NAV-059: Top-bar utilities and hover/click pinned pop-out navigation. */
+body[data-site-background] .header,body[data-website-size] .header,.header{position:sticky;top:0;z-index:100!important;overflow:visible}
+body[data-website-size] .header .nav,.header .nav{
+ display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;
+ gap:clamp(8px,1.4vw,19px);min-height:67px;padding-block:7px;max-width:var(--website-shell-max,1760px);overflow:visible;
+}
+.header .nav-leading{display:flex;align-items:center;gap:clamp(6px,1.1vw,14px);flex:0 0 auto;min-width:0}
+.header .nav-side-wrapper{position:relative;display:block;z-index:120;flex:0 0 auto}
+.header #mobile-nav-toggle{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;padding:8px 12px;min-height:40px;white-space:nowrap;font-size:.89rem;line-height:1.2;border-radius:6px}
+.header #mobile-nav-toggle span{padding-left:0}
+.header .nav-side-wrapper.is-pinned #mobile-nav-toggle{background:#32251e;color:#fffdf4;box-shadow:inset 0 0 0 1px #e8bc7b}
+.header .nav-home-link,.header .nav-cart-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:7px 11px;text-decoration:none;font-size:.9rem;font-weight:750;white-space:nowrap;color:#291d17;border-radius:5px}
+.header .nav-home-link:hover,.header .nav-cart-link:hover,.header .nav-home-link[aria-current="page"],.header .nav-cart-link[aria-current="page"]{background:rgba(255,250,237,.48)}
+.header .brand{flex:1 1 auto;max-width:none;min-width:0;margin:0;text-align:center;white-space:normal;overflow-wrap:break-word;line-height:1.16;font-size:clamp(1.12rem,1.7vw,1.65rem)}
+.header .nav-utilities{display:flex;align-items:center;justify-content:flex-end;gap:clamp(6px,1.2vw,15px);margin-left:auto;flex:0 0 auto;min-width:0}
+.header .nav-utilities .account-dropdown{flex:0 0 auto}
+.header .nav-utilities .nav-account-signin{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 13px;border:1px solid #694532;background:#fff9ed;border-radius:6px;color:#35231c;text-decoration:none;font-weight:750;font-size:.85rem;white-space:nowrap}
+.header .nav-side-wrapper #primary-navigation.navlinks{position:absolute!important;top:100%;left:0;z-index:130;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;flex-wrap:nowrap;gap:2px!important;width:min(286px,calc(100vw - 24px))!important;min-width:220px;max-height:min(75vh,640px);overflow-y:auto;overflow-x:hidden;box-sizing:border-box;margin:0!important;padding:11px!important;border:1px solid #b88c65;border-radius:0 8px 8px 8px;background:#fffaf2;box-shadow:0 16px 40px rgba(47,31,20,.28)}
+.header .nav-side-wrapper #primary-navigation.navlinks[hidden]{display:none!important}
+body[data-website-size] .header .nav-side-wrapper #primary-navigation a,.header .nav-side-wrapper #primary-navigation.navlinks a,.header .nav-side-wrapper #primary-navigation.navlinks a.current{display:block;position:relative;white-space:normal!important;min-height:40px;padding:10px 13px!important;border-radius:5px!important;color:#3c291d!important;font-size:.86rem;font-weight:700;line-height:1.3;text-decoration:none}
+.header .nav-side-wrapper #primary-navigation.navlinks a:hover,.header .nav-side-wrapper #primary-navigation.navlinks a.current{background:#f1e1cd!important;color:#4b2918!important}
+.header .nav-side-wrapper #primary-navigation.navlinks a.current:after,.header .nav-side-wrapper #primary-navigation.navlinks a[aria-current="page"]:after{left:11px;right:auto;bottom:5px;width:30px}
+.header .nav-side-wrapper #primary-navigation.navlinks a:focus-visible,.header #mobile-nav-toggle:focus-visible,.header .nav-home-link:focus-visible,.header .nav-cart-link:focus-visible{outline:3px solid #624225;outline-offset:2px}
+@media(max-width:870px){
+ body[data-website-size] .header .nav,.header .nav{flex-wrap:wrap;row-gap:5px;padding-block:9px}
+ .header .nav-leading{order:1}
+ .header .nav-utilities{order:2;flex:0 0 auto}
+ .header .brand{order:3;flex:1 0 100%;text-align:center;font-size:clamp(1.13rem,3vw,1.5rem)}
+}
+@media(max-width:480px){
+ .header .nav-home-link,.header .nav-cart-link{padding:6px 5px;font-size:.78rem}
+ .header #mobile-nav-toggle{min-height:38px;padding:7px 9px;font-size:.8rem}
+ .header .nav-utilities{gap:5px}
+ .header .nav-utilities .nav-account-signin{padding:6px 9px;font-size:.79rem;min-height:38px}
+ .header .nav-utilities .account-dropdown-trigger{padding:6px 8px;font-size:.77rem}
+ .header .nav-leading{gap:3px}
+}
