@@ -319,7 +319,8 @@ test('sandbox checkout denies anonymous access and never uses live Stripe creden
  assert.equal((await demoCheckout({request:req,env:emptyEnv})).status,401);
  assert.equal((await demoHistory({request:req,env:emptyEnv})).status,401);
  const src=read('functions/api/admin/demo-checkout.js');
- assert.match(src,/!\/\^sk_test_\/\.test\(env\.STRIPE_SECRET_KEY/);
+ assert.match(src,/!\/\^sk_test_\/\.test\(key/);
+ assert.match(src,/runtimeCredential\(env,'STRIPE_SECRET_KEY','test'\)/);
  assert.match(src,/demo_store_enabled!==true/);
  assert.match(src,/checkout\.livemode!==false/);
  assert.doesNotMatch(src,/automatic_tax\[enabled\]/);
@@ -1096,7 +1097,10 @@ test('managed carousel keeps the original hero, accepts owner slides and is acce
 test('Admin Center organizes all panels into navigable role-aware groups',()=>{
  const admin=read('site/admin.js'),css=read('site/country-home-v2.css');
  const owner=adminGroupsForRole('owner'),moderator=adminGroupsForRole('moderator');
- assert.deepEqual(owner,ADMIN_GROUPS);
+ assert.deepEqual(owner.slice(0,ADMIN_GROUPS.length),ADMIN_GROUPS);
+ assert.deepEqual(owner.at(-1),['Security & Credentials',['owner_credentials']]);
+ assert.deepEqual(adminGroupsForRole('admin'),ADMIN_GROUPS);
+ assert.ok(!adminGroupsForRole('moderator').some(([,ids])=>ids.includes('owner_credentials')));
  assert.ok(owner.length>=6);
  assert.ok(owner.some(([name,ids])=>name==='Website & Design'&&ids.includes('home_carousel_slides')));
  assert.deepEqual(moderator,[['Customer Moderation',['messages','reviews']]]);
