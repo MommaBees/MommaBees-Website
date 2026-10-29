@@ -62,7 +62,7 @@ test('End-to-end mocked guest checkout validates CAPTCHA, reserves server price,
   assert.equal(params.get('line_items[0][price_data][unit_amount]'),'1750');
   assert.equal(params.get('automatic_tax[enabled]'),'true');
   assert.equal(params.get('metadata[terms_version]'),'2026-10-29-v3');
-  assert.equal(stripe.body.includes('sk_live'),false);
+  assert.equal(new URLSearchParams(stripe.body).toString().includes('sk_live'),false);
   assert.equal(paths.some(x=>x.includes('/refunds')),false);
  }finally{globalThis.fetch=old;}
 });
