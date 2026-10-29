@@ -1,6 +1,7 @@
 import {config,currentUser,currentSession,money,escapeHtml as e,currentDate,futureDate,fmt} from './api.js';
 import {mountPickupCalendar} from './pickup-calendar.js';
 import {LEGAL_VERSION} from './legal-policies.js';
+import {sellingUnitLabel,packageTotal} from './selling-units.js';
 const dollars=n=>money(Math.max(0,Number(n)||0));
 export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
  if(!cart.length){nav('#cart');return;}
@@ -11,7 +12,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   if(item.mode==='preorder')return date>=futureDate(product.lead_days)&&product.mode!=='ready';
   if(item.mode==='ready')return product.mode!=='preorder'&&
    all.batches.some(batch=>batch.id===item.batch_id&&batch.product_id===product.id&&
-    !batch.disabled&&batch.baked_on<=currentDate()&&batch.best_before>=date&&batch.quantity_available>=item.quantity);
+    !batch.disabled&&batch.baked_on<=currentDate()&&batch.best_before>=date&&batch.quantity_available>=cart.filter(other=>other.mode==='ready'&&other.batch_id===item.batch_id).reduce((sum,other)=>sum+other.quantity,0));
   return false;
  });
  const days=(all.days||[]).filter(d=>d.enabled&&d.cutoff_at&&new Date(d.cutoff_at)>new Date()&&
@@ -21,7 +22,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
  const payAtPickup=settings.pay_at_pickup_enabled===true&&
      settings.pay_at_pickup_tax_reviewed===true&&Number.isInteger(settings.pay_at_pickup_tax_rate_bps);
  const anyAvailable=stripeAvailable||payAtPickup;
- const subtotal=cart.reduce((n,i)=>n+i.price_cents*i.quantity,0);
+ const subtotal=cart.reduce((n,i)=>n+packageTotal(all.products.find(p=>p.id===i.product_id)?.price_cents??i.price_cents,i.quantity),0);
  layout('<section class="section"><h1>Choose Your Pickup Day</h1>'+
   ''+
   '<form id="checkout-form" class="cols"><div class="box"><h2>Pickup / delivery schedule</h2>'+
@@ -52,7 +53,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   '<div class="field"><label>Promotion code (online payment only)<input name="promo" maxlength="60" autocomplete="off"></label></div>'+
   (!currentUser()&&config.turnstileSiteKey?'<div id="pickup-captcha" class="cf-turnstile" data-sitekey="'+e(config.turnstileSiteKey)+'"></div>':'')+
   '</div><div class="box"><h2>Order summary</h2>'+
-  cart.map(i=>'<div class="lineitem"><span>'+e(i.name)+' × '+i.quantity+'</span><strong>'+dollars(i.price_cents*i.quantity)+'</strong></div>').join('')+
+  cart.map(i=>{const product=all.products.find(p=>p.id===i.product_id);const unit=sellingUnitLabel(product?.unit||i.unit);const price=product?.price_cents??i.price_cents;return '<div class="lineitem"><span>'+e(i.name)+' · '+e(unit)+' × Qty '+i.quantity+'</span><strong>'+dollars(packageTotal(price,i.quantity))+'</strong></div>';}).join('')+
   '<p class="total">Item subtotal: '+dollars(subtotal)+'</p>'+
   '<fieldset class="payment-choices"><legend>How would you like to pay?</legend>'+
   '<label><input type="radio" name="payment_choice" value="stripe"'+(stripeAvailable?' checked':' disabled')+'> Pay securely online with Stripe'+(!stripeAvailable?' (not available yet)':'')+'</label>'+
