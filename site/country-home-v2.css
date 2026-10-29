@@ -1628,3 +1628,42 @@ body[data-page="account"] .auth-submit-actions .button:disabled{cursor:not-allow
 .sandbox-cart-page .lineitem{gap:12px;align-items:flex-start}
 .sandbox-cart-page input[data-sandbox-cart-qty]{display:block;width:92px;max-width:100%;padding:8px;margin:5px 0}
 .sandbox-cart-page .total{margin:20px 0 12px}
+
+/* MBB-SHOP-058 — compact inline Qty + Add to Cart, equal-height storefront tiles. */
+#main .bakery-product-card{display:flex;flex-direction:column;min-width:0}
+#main .bakery-product-card>.card-content{display:flex;flex:1 1 auto;flex-direction:column;min-width:0}
+#main .bakery-product-card>.card-content>.card-quick-buy{margin-top:auto}
+#main .store-showcase-card>.showcase-card-main{display:flex;flex-direction:column;text-decoration:none;color:inherit;min-width:0;flex:1 1 auto}
+#main .store-showcase-card>.showcase-card-main .card-content{flex:1 1 auto}
+#main .store-showcase-card>.card-showcase-buy{padding:0 clamp(9px,1.1vw,14px) clamp(10px,1.1vw,14px)}
+#main .store-showcase-card.is-text-only{display:flex;align-items:stretch;min-height:160px;flex-direction:column}
+#main .store-showcase-card.is-text-only .showcase-card-main{width:100%}
+#main .store-showcase-card.is-text-only .card-content{width:100%;padding:clamp(12px,1.5vw,19px)}
+#main .store-showcase-card .showcase-card-main:hover .showcase-card-link{text-decoration-thickness:2px}
+#main .store-showcase-card .showcase-card-main:focus-visible{outline:3px solid #5a462d;outline-offset:-3px}
+#main .bakery-product-card .card-quick-buy{min-width:0;margin-top:10px;padding-top:8px;border-top:1px solid rgba(89,61,41,.19)}
+#main .bakery-product-card .card-quick-actions{display:flex;align-items:end;gap:6px;min-width:0}
+#main .bakery-product-card .card-quick-qty{display:flex;flex-direction:column;gap:2px;flex:0 0 57px;font-size:.76rem;font-weight:700}
+#main .bakery-product-card .card-quick-qty input{min-width:0;width:100%;height:36px;box-sizing:border-box;margin:0;padding:4px 5px;text-align:center;font:inherit;font-size:.89rem}
+#main .bakery-product-card .card-quick-add{display:inline-flex;flex:1 1 auto;min-width:0;justify-content:center;align-items:center;min-height:36px;padding:5px 8px;margin:0;font-size:.79rem;line-height:1.2;white-space:normal}
+#main .bakery-product-card .card-quick-add:disabled{opacity:.55;cursor:not-allowed}
+#main .bakery-product-card .card-quick-status{font-size:.72rem;margin:4px 0 0;color:#65432c;line-height:1.3}
+#main .bakery-product-card .card-quick-status:empty{display:none}
+#main .bakery-product-card .card-sale-method{display:flex;flex-direction:column;gap:3px;font-size:.76rem;font-weight:700;margin:0 0 5px}
+#main .bakery-product-card .card-sale-method select{min-width:0;width:100%;min-height:32px;margin:0;padding:3px 5px;font-size:.79rem}
+.showcase-detail-gallery{min-width:0}
+.showcase-detail-thumbs{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.showcase-detail-thumb{width:64px;height:64px;min-width:0;padding:2px;border:1px solid #d5b89e;border-radius:5px;background:#fff;cursor:pointer}
+.showcase-detail-thumb img{width:100%;height:100%;object-fit:cover}
+.showcase-detail-thumb:focus-visible{outline:3px solid #765338}
+.showcase-detail-no-photo{display:grid;place-items:center;min-height:240px;background:#f4eadd;color:#755b44}
+.showcase-item-page .product-description,.showcase-item-page .product-ingredient-details{border-top:1px solid #e0ccb4;margin:12px 0;padding-top:8px}
+.showcase-item-page .product-description h2,.showcase-item-page .product-ingredient-details h2{font-size:1.07rem;margin:5px 0}
+.showcase-item-page .product-description p,.showcase-item-page .product-ingredient-details p{white-space:pre-line;overflow-wrap:anywhere}
+.showcase-sale-summary .card-quick-buy{margin:12px 0}
+.showcase-sale-summary .card-quick-actions{display:flex;gap:8px;align-items:end}
+.showcase-sale-summary .card-quick-qty{display:flex;flex-direction:column;gap:3px;min-width:62px}
+.showcase-sale-summary .card-quick-qty input{width:72px;padding:7px;text-align:center;min-height:40px}
+.showcase-sale-summary .card-quick-add{min-height:40px}
+.showcase-sale-summary .card-quick-status{font-size:.81rem;color:#563d2b;margin:4px 0}
+@media(max-width:480px){#main .bakery-product-card .card-quick-qty{flex-basis:50px}#main .bakery-product-card .card-quick-add{font-size:.74rem;padding:5px 4px}}
