@@ -36,7 +36,7 @@ test('Admin can enter packaged selling unit and publish a dated ready-to-sell ba
 });
 test('Product page displays Description, Ingredients, Allergens, Qty and Add to Cart with package checks',()=>{
  const app=source('site/app.js');
- for(const s of ['Product description','<h2>Description</h2>','<h2>Ingredients</h2>','<h2>Allergens</h2>','Qty (number of','Add to Cart','data-qty-step','data-cart-qty','availablePackages','validCartQuantity','packageTotal','saveCart()'])
+ for(const s of ['Product description','<h2>Description</h2>','<h2>Ingredients</h2>','<h2>Allergens</h2>','# Qty','Add to Cart','data-qty-arrow','data-cart-qty','availablePackages','validCartQuantity','packageTotal','saveCart()'])
   assert.ok(app.includes(s),'Missing customer product sales element '+s);
  assert.match(app,/reviewArea\(p\.id\)/);
  const checkout=source('site/checkout-form.js');
