@@ -1746,3 +1746,18 @@ body[data-website-size] .header .nav-side-wrapper #primary-navigation a,.header 
  .header .nav-utilities .account-dropdown-trigger{padding:6px 8px;font-size:.77rem}
  .header .nav-leading{gap:3px}
 }
+
+/* Preserve the existing account dropdown after moving it to the top-right utility rail. */
+.header .nav-utilities .account-dropdown{position:relative;display:flex;align-items:center;isolation:isolate;z-index:140}
+.header .nav-utilities .account-dropdown-trigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:41px;padding:5px 11px;color:#3a261b;background:#fff8ec;border:1px solid #7f553e;border-radius:6px;font-weight:750;font-size:.85rem;line-height:1.25;cursor:pointer;white-space:nowrap}
+.header .nav-utilities .account-dropdown-trigger:hover,.header .nav-utilities .account-dropdown-trigger[aria-expanded="true"]{background:#f2e0ca;border-color:#765034}
+.header .nav-utilities .account-avatar{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#69432d;color:#fff8eb;font:700 1rem Georgia,serif;flex:none}
+.header .nav-utilities .account-chevron{color:#684e38;font-size:1.05rem;line-height:1}
+.header .nav-utilities .account-dropdown-panel{position:absolute;right:0;top:100%;min-width:230px;width:max-content;max-width:min(290px,calc(100vw - 18px));padding:9px;background:#fffaf1;border:1px solid #cfae87;border-radius:6px;box-shadow:0 13px 34px rgba(57,33,17,.2);z-index:150}
+.header .nav-utilities .account-dropdown-panel[hidden]{display:none!important}
+.header .nav-utilities .account-dropdown-heading{font:italic .88rem Georgia,serif;color:#77563e;padding:9px 11px;border-bottom:1px solid #e6d3b9;margin-bottom:3px}
+.header .nav-utilities .account-dropdown-panel a,.header .nav-utilities .account-dropdown-panel button{display:block;width:100%;text-align:left;border:0;border-radius:4px;background:transparent;color:#4e3321!important;padding:11px 12px!important;min-height:40px;font-size:.87rem;font-weight:650;text-decoration:none;white-space:normal}
+.header .nav-utilities .account-dropdown-panel a:hover,.header .nav-utilities .account-dropdown-panel button:hover{background:#f0e2ce!important}
+.header .nav-utilities .account-dropdown-divider{border-top:1px solid #e3ceb0;margin:6px}
+.header .nav-utilities .account-dropdown-panel .account-signout{color:#7f352d!important}
+@media(max-width:480px){.header .nav-utilities .account-avatar{width:24px;height:24px}.header .nav-utilities .account-dropdown-trigger{min-height:38px;gap:4px}}
