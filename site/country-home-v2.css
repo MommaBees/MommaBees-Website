@@ -1586,3 +1586,12 @@ body[data-website-size] #main .showcase-detail-related .card-media .product-phot
   height:calc(122px * var(--website-image-scale));
  }
 }
+
+/* Inline taxonomy creation stays contained within the product field. */
+.admin-inline-create{margin-top:.45rem;padding:.75rem;border:1px solid var(--line,#e2d2be);border-radius:8px;background:var(--paper,#fffaf2)}
+.admin-inline-create[hidden]{display:none!important}
+.admin-inline-create label{display:block;font-weight:600;margin-bottom:.45rem}
+.admin-inline-create input,.admin-inline-create select{display:block;width:100%;max-width:100%;min-height:2.35rem;margin-top:.2rem}
+.admin-inline-create .actions{display:flex;flex-wrap:wrap;gap:.5rem;margin:.55rem 0 0}
+.admin-inline-create .actions button{min-width:0;padding:.45rem .75rem}
+.admin-inline-create [role="status"]{margin:.3rem 0 0}
