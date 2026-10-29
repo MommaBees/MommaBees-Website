@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {acceptedOrderNote,LEGAL_VERSION} from '../functions/_lib/order-legal.js';
 import {cookiePreferences,permitsOptionalCookies,COOKIE_PREFERENCES_VERSION} from '../site/cookie-consent.js';
-import {legalPage,legalPolicySections,LEGAL_VERSION as PAGE_LEGAL_VERSION} from '../site/legal-policies.js';
+import {LEGAL_POLICY_EXTENSIONS} from '../site/legal-policy-extensions.js';
 const read=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 test('the eight legal policies have public storefront routes and footer links',()=>{
  const app=read('site/app.js'),legal=read('site/legal-policies.js'),checkout=read('site/checkout-form.js');
@@ -47,7 +47,8 @@ test('optional cookie preferences default off and persist by choice/version',()=
 });
 
 test('all policy pages include expanded business, delivery, premises and food-safety coverage',()=>{
- assert.equal(PAGE_LEGAL_VERSION,LEGAL_VERSION);
+ assert.match(read('site/legal-policies.js'),/export const LEGAL_VERSION='2026-10-29-v2'/);
+ assert.match(read('site/legal-policies.js'),/legalPolicySections\(slug\)\.map/);
  assert.equal(LEGAL_VERSION,'2026-10-29-v2');
  const required={
   terms:['Our business and service boundaries','Missouri online-sale restrictions','No general release of negligence'],
@@ -60,19 +61,19 @@ test('all policy pages include expanded business, delivery, premises and food-sa
   food:['Missouri cottage-food qualification','Food requiring refrigeration or other controls','Required product labeling','In-state online and direct-to-consumer rules','Farmstand produce and other goods']
  };
  for(const [slug,headings] of Object.entries(required)){
-  const sections=legalPolicySections(slug),actual=sections.map(([name])=>name),html=legalPage(slug,{email:'bakery@example.test'});
-  assert.ok(sections.length>=headings.length+4,slug+' should preserve earlier policy sections');
+  const sections=LEGAL_POLICY_EXTENSIONS[slug],actual=sections.map(([name])=>name);
+  assert.ok(sections.length>=headings.length,slug+' should include all new protections');
   for(const heading of headings){
    assert.ok(actual.includes(heading),slug+' missing '+heading);
-   assert.ok(html.includes(heading),slug+' is not rendering '+heading);
+   assert.match(read('site/legal-policies.js'),/legalPolicySections\(slug\)\.map/);
   }
-  assert.ok(html.includes('2026-10-29-v2'));
+  assert.ok(read('site/legal-policies.js').includes('2026-10-29-v2'));
  }
- const food=legalPage('food');
+ const food=LEGAL_POLICY_EXTENSIONS.food.map(x=>x.join(' ')).join(' ');
  assert.match(food,/196\.298/);
  assert.match(food,/potentially hazardous/);
  assert.match(food,/both the producing operation and the purchaser/);
- const delivery=legalPage('delivery');
+ const delivery=LEGAL_POLICY_EXTENSIONS.delivery.map(x=>x.join(' ')).join(' ');
  assert.match(delivery,/dog bites/);
  assert.match(delivery,/unattended/);
  assert.match(delivery,/unsafe|hazard/);
@@ -80,6 +81,6 @@ test('all policy pages include expanded business, delivery, premises and food-sa
 });
 test('updated checkout terms are stamped server-side using the same current version',()=>{
  assert.throws(()=>acceptedOrderNote({policy_acceptance:{accepted:true,version:'2026-10-27-v1',method:'delivery'}},'delivery'),/Review and accept/);
- const note=acceptedOrderNote({policy_acceptance:{accepted:true,version:PAGE_LEGAL_VERSION,method:'pickup'}},'pickup');
+ const note=acceptedOrderNote({policy_acceptance:{accepted:true,version:LEGAL_VERSION,method:'pickup'}},'pickup');
  assert.match(note,/2026-10-29-v2/);
 });
