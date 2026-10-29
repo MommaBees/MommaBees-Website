@@ -29,9 +29,9 @@ test('Store layout Cards/Open is configurable in Website Settings and applies vi
  assert.match(css,/background:transparent!important;border:0!important/);
 });
 
-test('Showcase preview Add to Cart works for Owner/Admin and cannot enter real checkout',()=>{
+test('Showcase preview Add to Cart works for guests and cannot enter real checkout',()=>{
  const app=read('site/app.js'),checkout=read('site/checkout-form.js'),migration=read('supabase/migrations/20261029_storefront_open_layout_preview_qty_v147.sql');
- assert.match(app,/const canTestShowcase=\(\)=>\['owner','admin'\]/);
+ assert.match(app,/const canTestShowcase=\(\)=>showcaseEnabled\(all\.settings\)/);
  assert.match(app,/data-showcase-test/);
  assert.match(app,/validPreviewQty\(item,cart,quantity\)/);
  assert.match(app,/mode:'showcase'/);
