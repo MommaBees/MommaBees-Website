@@ -603,7 +603,8 @@ test('mobile and tablet layouts take usable width and have accessible menu contr
  assert.match(app,/id="mobile-nav-toggle"/);
  assert.match(app,/aria-expanded="false"/);
  assert.match(app,/id="primary-navigation"/);
- assert.match(app,/toggle\.setAttribute\('aria-expanded'/);
+ assert.match(app,/bindSideNavigation\(\)/);
+ assert.match(read('site/side-navigation.js'),/trigger\.setAttribute\('aria-expanded'/);
  assert.match(css,/@media\(max-width:760px\)/);
  assert.match(css,/@media\(max-width:460px\)/);
  assert.match(css,/max-width:1760px/);
