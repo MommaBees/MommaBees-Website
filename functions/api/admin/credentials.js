@@ -83,16 +83,17 @@ export async function onRequestPost({request,env}){
    return done?{...step,state:done.state}:step;
   });
   const staged=await stageCredential(env,name,environment,value,a.user.id,plan);
-  let state='pending',result={id:staged.id,state:'pending'};
+  let state='pending',result={id:staged.id,state:'pending'},completed=plan;
   if(name==='STRIPE_SECRET_KEY'){
-   const finished=plan.map(x=>x.name==='website_runtime'?{...x,state:'verified'}:x);
-   result=await promoteWithReadback(env,staged.id,name,environment,value,finished);
+   const verified=plan.map(x=>x.name==='website_runtime'?{...x,state:'verified'}:x);
+   result=await promoteWithReadback(env,staged.id,name,environment,value,verified);
    state=result.state;
+   completed=state==='activated'?verified:verified.map(x=>x.name==='website_runtime'?{...x,state:'failed'}:x);
   }
   await auditAccount(env,a.user.id,null,'owner_credential_rotation',
    {credential_name:name,environment,rotation_id:staged.id,state}).catch(()=>{});
   return response({ok:state==='activated'||state==='pending',name,environment,id:staged.id,state,
-   dependencies:plan,required_actions:plan.filter(x=>x.state==='provider_action'),
+   dependencies:completed,required_actions:completed.filter(x=>x.state==='provider_action'),
    message:state==='activated'
     ?'Replacement passed available checks and is active. Provider-side retirement and checkout validation may still be required.'
     :state==='pending'
