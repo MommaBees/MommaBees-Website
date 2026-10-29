@@ -1,4 +1,5 @@
 // MBB-CATALOG-039: HTTPS-only Stripe TEST product catalog adapter.
+import {runtimeCredential} from './runtime-credentials.js';
 // Hard account binding prevents accidental use of any stock-market Stripe account.
 export const MOMMABEES_STRIPE_TEST_ACCOUNT='acct_1UUtoDJF02bajTTM';
 export function testStripeKeyAllowed(key){
@@ -8,7 +9,7 @@ function idempotency(s){
  return 'mbee-'+String(s).replace(/[^a-zA-Z0-9_-]/g,'').slice(0,210);
 }
 export async function stripeTestCall(env,method,path,fields=null,idempotencySuffix=null){
- const key=env.STRIPE_SECRET_KEY;
+ const key=await runtimeCredential(env,'STRIPE_SECRET_KEY','test');
  if(!testStripeKeyAllowed(key))throw new Error('MommaBees Stripe TEST key is not configured. LIVE keys are prohibited for catalog sync.');
  const form=new URLSearchParams();
  if(fields)for(const [k,v] of Object.entries(fields))if(v!==null&&v!==undefined)form.append(k,String(v));
