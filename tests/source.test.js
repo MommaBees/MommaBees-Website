@@ -1856,9 +1856,10 @@ test('responsive storefront widths and uniform product cards do not alter carous
 test('Owner can create types, categories, and subcategories from the product editor',()=>{
  const admin=read('site/admin.js'),types=read('site/product-types.js');
  const migration=read('supabase/migrations/20261029_owner_inline_catalog_taxonomy_v141.sql');
- for(const text of ['Create Product Type','Create Category','Create Subcategory','admin-inline-create','catalog_product_types','category_id','__create__']){
+ for(const text of ['Create Product Type','admin-inline-create','catalog_product_types','category_id','__create__']){
   assert.ok(admin.includes(text),'Missing inline catalog creation: '+text);
  }
+ assert.match(admin,/f\.table==='categories'\?'Category':'Subcategory'/);
  assert.match(migration,/create table if not exists public\.catalog_product_types/);
  assert.match(migration,/products_nonfood_unpublished_check|Non-food products are held from publication/);
  assert.match(migration,/owner admin manage product types/);
