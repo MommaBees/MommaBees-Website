@@ -1667,3 +1667,29 @@ body[data-page="account"] .auth-submit-actions .button:disabled{cursor:not-allow
 .showcase-sale-summary .card-quick-add{min-height:40px}
 .showcase-sale-summary .card-quick-status{font-size:.81rem;color:#563d2b;margin:4px 0}
 @media(max-width:480px){#main .bakery-product-card .card-quick-qty{flex-basis:50px}#main .bakery-product-card .card-quick-add{font-size:.74rem;padding:5px 4px}}
+
+/* Shop All product-complete cards: same fields as detail, compact enough for the grid. */
+#main .shop-page .product-results .shop-card-information,
+#main .shop-page .product-results .card-showcase-facts{margin-top:8px;min-width:0}
+#main .shop-page .product-results .shop-card-information{border-top:1px solid rgba(89,61,41,.20);padding-top:7px}
+#main .shop-page .product-results .shop-card-information summary{
+ font-size:.77rem;font-weight:700;cursor:pointer;color:#583d2b;padding:4px 0;list-style:revert;line-height:1.3;
+}
+#main .shop-page .product-results .shop-card-information summary:focus-visible{outline:2px solid #79553c;outline-offset:3px}
+#main .shop-page .product-results .shop-card-information dl{display:grid;gap:6px;margin:6px 0 0}
+#main .shop-page .product-results .shop-card-fact{font-size:.75rem;min-width:0;overflow-wrap:anywhere}
+#main .shop-page .product-results .shop-card-fact dt{font-weight:750;color:#503321}
+#main .shop-page .product-results .shop-card-fact dd{margin:1px 0 0;line-height:1.38;white-space:pre-line}
+#main .shop-page .product-results .store-showcase-card>.card-showcase-facts{padding:0 clamp(9px,1.1vw,14px)}
+#main .shop-page .product-results .store-showcase-card>.showcase-card-main{flex:1 0 auto}
+#main .shop-page .product-results .store-showcase-card .card-showcase-buy{margin-top:auto;padding-top:6px}
+#main .shop-page .product-results .card-quick-buy.is-unavailable .card-quick-add{cursor:not-allowed;opacity:.5}
+#main .shop-page .product-results .showcase-enquire{display:inline-block;margin-top:7px;font-size:.75rem}
+#main .shop-page .product-results .store-showcase-card .showcase-card-description{
+ font-size:.78rem;line-height:1.36;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden
+}
+#main .shop-page .product-results .shop-card-information[open]{padding-bottom:4px}
+@media(max-width:500px){
+ #main .shop-page .product-results .shop-card-fact{font-size:.72rem}
+ #main .shop-page .product-results .shop-card-information summary{font-size:.74rem}
+}
