@@ -1,6 +1,6 @@
 // Shared Product Showcase display helpers — never authorize checkout.
 import {formatShowcaseDate} from './showcase-date.js';
-export const SHOWCASE_PRICE_UNITS=Object.freeze(['each','dozen','box','tray','bag','bunch','basket','pint','quart','pound','loaf','slice']);
+export const SHOWCASE_PRICE_UNITS=Object.freeze(['each','single','half-dozen','dozen','box','tray','bag','bunch','basket','pint','quart','pound','loaf','slice']);
 export const showcaseEnabled=settings=>settings?.product_showcase_enabled!==false;
 export const showcaseDescription=item=>String(item?.description||'').trim();
 export function showcasePrice(item){
@@ -14,11 +14,15 @@ export const showcaseOrigin=item=>item?.department==='homestand'
  :'Homemade in Nixa, Missouri.';
 export const showcaseAvailability=item=>formatShowcaseDate(item?.availability_date);
 export function showcaseFields(item){
+ const raw=Number(item?.variety_count);
+ const varieties=item?.variety_count!==null&&item?.variety_count!==undefined&&Number.isInteger(raw)&&raw>=0?String(raw):null;
  return [
   ['Price',showcasePrice(item)],
   ['Availability',showcaseAvailability(item)],
-  ['Ingredients',item?.department==='bakery'?item?.ingredients:null],
-  ['Allergens',item?.department==='bakery'?item?.allergens:null],
+  ['Selling unit',item?.price_unit||null],
+  ['Number of varieties',varieties],
+  ['Ingredients',item?.ingredients],
+  ['Allergens',item?.allergens],
   ['Storage & handling',item?.storage_notes],
   ['Pickup & delivery',item?.fulfillment_note]
  ].filter(([,value])=>typeof value==='string'&&value.trim().length>0);
