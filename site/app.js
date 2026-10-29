@@ -22,6 +22,7 @@ import {sellingUnitLabel,validCartQuantity,availablePackages,packageTotal} from 
 import {availableReadyBatches,validQuickQty,publicShowcaseSaleProduct} from './quick-cart.js';
 import {approvedDietaryClaims,knownAllergenStatement} from './dietary-labels.js';
 import {capturePasswordRecoveryRedirect} from './password-recovery.js';
+import {showcasePreviewLimit,previewRemaining,validPreviewQty,cartHasShowcase} from './showcase-preview-cart.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],showcaseItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -116,6 +117,17 @@ const productVisual=p=>{
 
 const availableQuickBatches=p=>availableReadyBatches(p,all.batches,all.days,cart,currentDate());
 const showcaseSaleProduct=item=>publicShowcaseSaleProduct(item,all.products,categoryFor,available);
+const canTestShowcase=()=>['owner','admin'].includes(verifiedBackOfficeRole);
+const showcaseQuickCartMarkup=item=>{
+ const count=canTestShowcase()?previewRemaining(item,cart):0;
+ const max=Math.min(30,count);
+ return '<form class="card-quick-buy showcase-quick-buy" data-showcase-test="'+e(item.id)+'">'+
+  '<p class="showcase-available" aria-live="polite">Available: '+count+'</p>'+
+  '<div class="card-quick-actions"><label class="card-quick-qty">Qty<input name="qty" type="number" min="1" max="'+max+
+  '" value="1" step="1" inputmode="numeric" '+(max>0?'':'disabled')+' required></label>'+
+  '<button type="submit" class="button card-quick-add" '+(max>0?'':'disabled')+'>Add to Cart</button></div>'+
+  '<p class="card-quick-status" aria-live="polite"></p></form>';
+};
 const quickCartMarkup=p=>{
  if(!p?.published||!available(p))return '';
  const ready=productReady(p),preorder=productPreorder(p);
@@ -162,8 +174,7 @@ const showcaseCard=(item,showShopDetails=false)=>{
    '<p class="showcase-card-allergens"><strong>Allergens:</strong> '+e(allergens)+'</p>'+
    (claims.length?'<p class="showcase-card-dietary">'+e(claims.join(' · '))+'</p>':'')+
    '<span class="showcase-card-link">View details</span></div></a>'+
-  (sale?'<div class="card-showcase-buy">'+quickCartMarkup(sale)+'</div>':
-    '<div class="card-showcase-buy"><div class="card-quick-buy is-unavailable"><div class="card-quick-actions"><label class="card-quick-qty">Qty<input type="number" value="1" min="1" disabled aria-label="Quantity unavailable until published inventory is added"></label><button class="button card-quick-add" type="button" disabled>Add to Cart</button></div></div></div>')+'</article>';
+  '<div class="card-showcase-buy">'+(sale?quickCartMarkup(sale):showcaseQuickCartMarkup(item))+'</div></article>';
 };
 function bindQuickCart(){
  // Delegation covers cards across homepage, Bakery, Homestand, featured and linked Showcase collections.
@@ -189,6 +200,35 @@ function bindQuickCart(){
  document.addEventListener('change',event=>{
   const form=event.target.closest?.('form[data-quick-buy]');
   if(form&&event.target.name==='mode')refresh(form);
+ });
+ document.addEventListener('submit',event=>{
+  const form=event.target.closest?.('form[data-showcase-test]');
+  if(!form)return;
+  event.preventDefault();
+  const item=all.showcaseItems.find(x=>x.id===form.dataset.showcaseTest&&x.active!==false);
+  const quantity=Number(form.elements.qty.value),status=form.querySelector('.card-quick-status');
+  if(!canTestShowcase()||!item||!validPreviewQty(item,cart,quantity)){
+   if(status)status.textContent='Quantity unavailable.';return;
+  }
+  const key='showcase:'+item.id;
+  const existing=cart.find(line=>line.key===key);
+  const price=Number.isInteger(item.price_cents)&&item.price_cents>=0?item.price_cents:0;
+  if(existing){
+   if(!validCartQuantity(existing.quantity+quantity)){if(status)status.textContent='Maximum 30 per cart line.';return;}
+   existing.quantity+=quantity;
+  }else cart.push({key,mode:'showcase',showcase_id:item.id,quantity,name:item.name,unit:item.price_unit||'each',price_cents:price});
+  saveCart();
+  document.querySelectorAll('.nav-cart-link').forEach(link=>{link.textContent='Cart ('+cart.reduce((n,x)=>n+x.quantity,0)+')';});
+  if(status)status.textContent='Added to cart.';
+  document.querySelectorAll('[data-showcase-test]').forEach(other=>{
+   const rec=all.showcaseItems.find(x=>x.id===other.dataset.showcaseTest);
+   if(!rec)return;
+   const remaining=previewRemaining(rec,cart),max=Math.min(30,remaining);
+   other.querySelector('.showcase-available').textContent='Available: '+remaining;
+   const input=other.elements.qty;
+   input.max=String(max);input.disabled=max===0;other.querySelector('button[type="submit"]').disabled=max===0;
+   if(max>0&&Number(input.value)>max)input.value=String(max);
+  });
  });
  document.addEventListener('submit',event=>{
   const form=event.target.closest?.('form[data-quick-buy]');
@@ -220,6 +260,7 @@ function layout(content){
  const settings=all.settings||{};
  const routeName=(location.hash||'#home').slice(1).split('/')[0]||'home';
  document.body.dataset.page=routeName;
+ document.body.dataset.cardStyle=settings.site_card_style==='open'?'open':'cards';
  const crumbLabels={shop:'Shop All',ready:'Ready to Sell',preorder:'Preorder',category:'Browse Categories',subcategory:'Browse Varieties',product:'Product Details',cart:'Your Cart',checkout:'Checkout',success:'Order Status',track:'Track Your Order',account:'My Account',contact:'Contact & Special Orders',faq:'Questions & Policies',legal:'Legal & Policies',gallery:'Past Bakes',qr:'Bakery QR Code',admin:'Admin Center'};
  const crumb=routeName!=='home'&&crumbLabels[routeName]
    ?'<nav class="page-crumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span aria-current="page">'+e(crumbLabels[routeName])+'</span></nav>'
