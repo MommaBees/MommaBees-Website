@@ -9,6 +9,7 @@ import {STORE_DEPARTMENTS,departmentForCategory,departmentLabel,taxonomyPaths,se
 import {WEBSITE_SIZE_OPTIONS,normalizeWebsiteSize,applyWebsiteSize} from './website-size.js';
 import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from './home-carousel.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
+import {DIETARY_CLAIMS} from './dietary-labels.js';
 import {SELLING_UNITS,sellingUnitLabel} from './selling-units.js';
 import {currentDate} from './api.js';
 import {pastBakeName} from './past-bakes.js';
@@ -1055,6 +1056,60 @@ async function openEditor(record){const c=configs[selected];
   }
  }
 
+ // Bakery dietary declarations and Showcase major-allergen classification are separately verified.
+ if(['products','store_showcase_items'].includes(selected)){
+  const isShowcase=selected==='store_showcase_items';
+  const bakery=()=>$('#field_department')?.value==='bakery'&&
+   (isShowcase||$('#field_product_type')?.value==='food');
+  const current=Array.isArray(record?.dietary_claims)?record.dietary_claims:[];
+  const dietary=document.createElement('fieldset');
+  dietary.className='dietary-claim-panel';
+  dietary.innerHTML='<legend>Bakery dietary claims (optional)</legend>'+
+   '<p class="small">Select only claims verified against the complete recipe, ingredients, suppliers, and cross-contact. '+
+   'Gluten-free is a regulated claim (FDA 21 CFR 101.91, including unavoidable gluten below 20 ppm). Do not claim certification without certification.</p>'+
+   '<div class="dietary-claim-choices">'+DIETARY_CLAIMS.map(([code,label])=>
+    '<label class="allergen-choice"><input type="checkbox" class="dietary-claim" value="'+e(code)+'"'+
+    (current.includes(code)?' checked':'')+'> '+e(label)+'</label>').join('')+'</div>'+
+   '<label class="allergen-confirm"><input type="checkbox" id="dietary-reviewed"'+
+   (record?.dietary_claims_reviewed?' checked':'')+
+   '> I verified every selected claim against this specific product, recipe, and preparation environment.</label>';
+  $('#editor-fields').append(dietary);
+  const checked=[...dietary.querySelectorAll('.dietary-claim')],approval=dietary.querySelector('#dietary-reviewed');
+  const sync=()=>{dietary.hidden=!bakery();};
+  $('#field_department')?.addEventListener('change',sync);
+  $('#field_product_type')?.addEventListener('change',sync);sync();
+  checked.forEach(box=>box.addEventListener('change',()=>{approval.checked=false;}));
+  for(const id of ['#field_name','#field_ingredients']){
+   $(id)?.addEventListener('input',()=>{approval.checked=false;});
+  }
+  if(isShowcase){
+   const original=Array.isArray(record?.major_allergens)?record.major_allergens:[];
+   const panel=document.createElement('fieldset');
+   panel.className='allergen-panel showcase-allergen-panel';
+   panel.innerHTML='<legend>Showcase allergens — nine major FDA groups</legend>'+
+    '<p class="small">Check confirmed allergens from the complete ingredient list and supplier labels. '+
+    'An unchecked allergen is not a promise that cross-contact cannot occur.</p>'+
+    '<div class="showcase-allergen-choices">'+MAJOR_ALLERGENS.map(name=>
+     '<label class="allergen-choice"><input type="checkbox" class="showcase-allergen" value="'+e(name)+'"'+
+     (original.includes(name)?' checked':'')+'> '+e(name)+'</label>').join('')+'</div>'+
+    '<button type="button" class="button secondary" id="suggest-showcase-allergens">Suggest from ingredients</button>'+
+    '<label class="allergen-confirm"><input type="checkbox" id="showcase-allergens-reviewed"'+
+    (record?.allergen_reviewed?' checked':'')+
+    '> I reviewed the complete recipe or supplied ingredient details for these allergens.</label>';
+   $('#editor-fields').append(panel);
+   const reviews=panel.querySelector('#showcase-allergens-reviewed');
+   const choices=[...panel.querySelectorAll('.showcase-allergen')];
+   $('#suggest-showcase-allergens').onclick=()=>{
+    const groups=suggestMajorAllergens({name:$('#field_name')?.value,ingredients:$('#field_ingredients')?.value});
+    choices.forEach(box=>{box.checked=groups.includes(box.value);});reviews.checked=false;
+   };
+   choices.forEach(box=>box.addEventListener('change',()=>{reviews.checked=false;}));
+   $('#field_name')?.addEventListener('input',()=>{reviews.checked=false;});
+   $('#field_ingredients')?.addEventListener('input',()=>{reviews.checked=false;});
+   const show=()=>{panel.hidden=$('#field_department')?.value!=='bakery';};
+   $('#field_department')?.addEventListener('change',show);show();
+  }
+ }
  if(selected==='products'){
   const typeSelect=$('#field_product_type');
   const category=$('#field_category_id');
@@ -1118,6 +1173,23 @@ async function openEditor(record){const c=configs[selected];
   const linkedProduct=refs.products?.find(p=>p.id===body.product_id);
   if(!linkedProduct||linkedProduct.department!==body.department||linkedProduct.category_id!==body.category_id)
    throw Error('Choose a linked sale product in the same department and category.');
+ }
+ if(['products','store_showcase_items'].includes(selected)){
+  const bakery=body.department==='bakery'&&(selected==='store_showcase_items'||body.product_type==='food');
+  const chosen=bakery?DIETARY_CLAIMS.filter(([code])=>
+   [...document.querySelectorAll('.dietary-claim')].some(input=>input.value===code&&input.checked)).map(([code])=>code):[];
+  const reviewed=bakery&&$('#dietary-reviewed')?.checked===true;
+  if(chosen.length&&!reviewed)throw Error('Review and approve the dietary claims before saving them.');
+  body.dietary_claims=chosen;body.dietary_claims_reviewed=reviewed;
+  if(selected==='store_showcase_items'){
+   const checked=bakery?MAJOR_ALLERGENS.filter(name=>
+    [...document.querySelectorAll('.showcase-allergen')].some(input=>input.value===name&&input.checked)):[];
+   const allergenReviewed=bakery&&$('#showcase-allergens-reviewed')?.checked===true;
+   if(checked.length&&!allergenReviewed)throw Error('Confirm the selected Showcase allergens before saving.');
+   body.major_allergens=checked;body.allergen_reviewed=allergenReviewed;
+   if(allergenReviewed)body.allergens=publicAllergenStatement(checked);
+   // Unreviewed free-text allergen details remain visibly unverified on customer cards.
+  }
  }
  if(selected==='store_showcase_items'&&(!record||record._unsaved)&&!body.availability_date)
   throw Error('Select an availability date for this item.');
