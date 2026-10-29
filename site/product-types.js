@@ -5,7 +5,10 @@ export const FOOD_CATEGORY_SLUGS=Object.freeze([
  'cookies','cakes','pies','cheesecakes','pastries','bars-brownies','breads',
  'cake-pops','candies','fruits','vegetables'
 ]);
-export function productTypeForCategory(slug){
+export function productTypeForCategory(category){
+ // New categories carry an explicit product class; legacy categories retain their mappings.
+ if(category&&typeof category==='object'&&category.product_type)return category.product_type;
+ const slug=category&&typeof category==='object'?category.slug:category;
  if(slug==='natural-homemade-products')return 'regulated';
  if(slug==='handmade'||slug==='signs-decor')return 'handmade';
  if(slug==='seasonal')return null; // Seasonal can describe food or handmade goods.
@@ -17,5 +20,5 @@ export function nonfoodHoldMessage(type){
   ?'Regulated personal-care products are draft-only pending a documented product-specific compliance review and a later checkout release.'
   :type==='handmade'
    ?'Handmade goods are draft-only until non-food fulfillment, inventory, and checkout handling are accepted.'
-   :'';
+   :type&&type!=='food'?'Custom product types remain draft-only pending product-specific sales and regulatory review.':'';
 }
