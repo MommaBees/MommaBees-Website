@@ -148,7 +148,8 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
    const body=choice==='pickup'?payload:{
     items,date:payload.date,window:payload.window,method:payload.method,
     name:payload.first_name+' '+payload.last_name,first_name:payload.first_name,last_name:payload.last_name,email:payload.email,phone:payload.phone,
-    address,guest_address:address,contact_channel:payload.contact_channel,promo_code:f.get('promo'),note:payload.note,policy_acceptance:payload.policy_acceptance
+    address,guest_address:address,contact_channel:payload.contact_channel,promo_code:f.get('promo'),note:payload.note,policy_acceptance:payload.policy_acceptance,
+    captcha_token:payload.captcha_token
    };
    const response=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json',
     ...(currentSession()?.access_token?{Authorization:'Bearer '+currentSession().access_token}:{})},
