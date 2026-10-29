@@ -20,6 +20,7 @@ import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
 import {showcaseEnabled,showcaseDescription,showcasePrice,showcaseOrigin,showcaseFields,showcaseAvailability} from './product-showcase-details.js';
 import {sellingUnitLabel,validCartQuantity,availablePackages,packageTotal} from './selling-units.js';
 import {availableReadyBatches,validQuickQty,publicShowcaseSaleProduct} from './quick-cart.js';
+import {approvedDietaryClaims,knownAllergenStatement} from './dietary-labels.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],showcaseItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -146,6 +147,8 @@ const showcaseCard=(item,showShopDetails=false)=>{
  const imageMarkup=item.photo_url?'<div class="card-media">'+image(item.photo_url,'product-photo',item.name)+'</div>':'';
  const parent=all.categories.find(c=>c.id===item.category_id);
  const linkedPrice=sale?money(sale.price_cents)+' / '+sellingUnitLabel(sale.unit):showcasePrice(item);
+ const allergens=knownAllergenStatement((item.allergen_reviewed||item.allergens)?item:sale||item);
+ const claims=approvedDietaryClaims((item.dietary_claims_reviewed&&item.dietary_claims?.length)?item:sale||item);
  return '<article class="card bakery-product-card store-showcase-card'+(item.photo_url?'':' is-text-only')+'">'+
   '<a class="showcase-card-main" href="#product/'+encodeURIComponent(item.slug)+'" aria-label="View '+e(item.name)+' details">'+imageMarkup+
   '<div class="card-content"><div class="actions">'+
@@ -155,6 +158,8 @@ const showcaseCard=(item,showShopDetails=false)=>{
    '<h3>'+e(item.name)+'</h3>'+
    ((item.description||sale?.description)?'<p class="small showcase-card-description">'+e((item.description||sale?.description||'').slice(0,120))+'</p>':'')+
    (linkedPrice?'<p class="showcase-card-price">'+e(linkedPrice)+'</p>':'')+
+   '<p class="showcase-card-allergens"><strong>Allergens:</strong> '+e(allergens)+'</p>'+
+   (claims.length?'<p class="showcase-card-dietary">'+e(claims.join(' · '))+'</p>':'')+
    '<span class="showcase-card-link">View details</span></div></a>'+
   (sale?'<div class="card-showcase-buy">'+quickCartMarkup(sale)+'</div>':
     '<div class="card-showcase-buy"><div class="card-quick-buy is-unavailable"><div class="card-quick-actions"><label class="card-quick-qty">Qty<input type="number" value="1" min="1" disabled aria-label="Quantity unavailable until published inventory is added"></label><button class="button card-quick-add" type="button" disabled>Add to Cart</button></div></div></div>')+'</article>';
@@ -431,6 +436,8 @@ function showcaseDetail(item){
    allergens:sale.allergens||item.allergens,storage_notes:sale.storage_notes||item.storage_notes
   }:{})};
  const info=showcaseFields(display).filter(([label])=>!['Ingredients','Allergens','Storage & handling'].includes(label));
+ const dietaryClaims=approvedDietaryClaims((item.dietary_claims_reviewed&&item.dietary_claims?.length)?item:sale||item);
+ const allergensKnown=knownAllergenStatement((item.allergen_reviewed||item.allergens)?item:sale||item);
  const photos=[item.photo_url,...(sale?all.photos.filter(x=>x.product_id===sale.id).sort((a,b)=>a.sort_order-b.sort_order).map(x=>x.url):[])].filter(Boolean);
  const classifications=[departmentName,category?.name,subcategory?.name].filter(Boolean);
  const photoMarkup='<div class="showcase-detail-gallery">'+
@@ -458,7 +465,8 @@ function showcaseDetail(item){
     info.map(([label,value])=>'<div class="showcase-detail-info"><strong>'+e(label)+'</strong><span>'+e(value)+'</span></div>').join('')+
    '</div>'+
    '<section class="product-ingredient-details"><h2>Ingredients</h2><p>'+e(display.ingredients||'Please ask Momma Bee for ingredient details before ordering.')+'</p>'+
-   '<h2>Allergens</h2><p>'+e(display.allergens||'No allergens have been declared in this listing. Ask about ingredients and cross-contact before ordering.')+'</p>'+
+   '<h2>Allergens</h2><p>'+e(allergensKnown)+'</p>'+ 
+   (dietaryClaims.length?'<h2>Dietary information</h2><p>'+e(dietaryClaims.join(' · '))+'</p>':'')+
    '<h2>Storage & Handling</h2><p>'+e(display.storage_notes||'Contact Momma Bee for storage and handling information.')+'</p></section>'+
    '<div class="actions showcase-detail-actions">'+
     (sale?'<a class="button" href="#cart">View Cart</a>':'')+
@@ -489,8 +497,8 @@ function detail(id){
  const showReady=productReady(p),showPreorder=productPreorder(p);
  const allergens=Array.isArray(p.major_allergens)&&p.major_allergens.length
   ?'Contains: '+p.major_allergens.join(', ')+'.'
-  :(p.allergens||'No major allergens declared. Ask about all ingredients and possible cross-contact before ordering.');
- layout(`<div class="detail product-detail"><div><div id="primary-photo">${image(gallery[0],'detail-photo',p.name)}</div>${visual.credit}${gallery.length>1?`<div class="thumbs">${gallery.map((u,i)=>`<img src="${photo(u)}" alt="View image ${i+1}" data-primary="${i}">`).join('')}</div>`:''}</div><div><a href="#shop" class="muted">← Back to shop</a><h1>${e(p.name)}</h1><p class="price">${money(p.price_cents)} / ${e(unit)}</p><section class="product-description" aria-label="Product description"><h2>Description</h2><p>${e(p.description||'Contact Momma Bee for product details.')}</p></section><form id="add-form"><div class="field"><label for="mode">Ordering method</label><select id="mode" name="mode">${showReady?'<option value="ready">Ready to Sell (already prepared)</option>':''}${showPreorder?'<option value="preorder">Preorder for a baking day</option>':''}</select></div>${batches.length?`<div class="field" id="batch-section"><label for="batch">Available finished batch</label><select id="batch" name="batch">${batches.map(b=>`<option value="${e(b.id)}">Prepared ${e(b.baked_on)} · ${e(b.quantity_available)} packages available</option>`).join('')}</select></div>`:''}<div class="field"><label for="qty">Qty (number of ${e(unit)} packages)</label><div class="product-quantity-control"><button type="button" class="button secondary" data-qty-step="-1" aria-label="Decrease quantity">−</button><input type="number" min="1" max="30" step="1" value="1" id="qty" inputmode="numeric" required><button type="button" class="button secondary" data-qty-step="1" aria-label="Increase quantity">+</button></div><p class="small muted" id="product-stock-note"></p><strong id="product-line-total" aria-live="polite"></strong></div><button class="button" type="submit">Add to Cart</button><a class="button secondary" href="#cart">View Cart</a></form><section class="product-ingredient-details"><h2>Ingredients</h2><p>${e(p.ingredients||'Please contact the bakery for the confirmed ingredient list before ordering.')}</p><h2>Allergens</h2><p>${e(allergens)}</p>${p.storage_notes?'<h2>Storage &amp; Handling</h2><p>'+e(p.storage_notes)+'</p>':''}</section></div></div><section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content">Loading reviews…</div></section>`); 
+  :knownAllergenStatement(p);
+ layout(`<div class="detail product-detail"><div><div id="primary-photo">${image(gallery[0],'detail-photo',p.name)}</div>${visual.credit}${gallery.length>1?`<div class="thumbs">${gallery.map((u,i)=>`<img src="${photo(u)}" alt="View image ${i+1}" data-primary="${i}">`).join('')}</div>`:''}</div><div><a href="#shop" class="muted">← Back to shop</a><h1>${e(p.name)}</h1><p class="price">${money(p.price_cents)} / ${e(unit)}</p><section class="product-description" aria-label="Product description"><h2>Description</h2><p>${e(p.description||'Contact Momma Bee for product details.')}</p></section><form id="add-form"><div class="field"><label for="mode">Ordering method</label><select id="mode" name="mode">${showReady?'<option value="ready">Ready to Sell (already prepared)</option>':''}${showPreorder?'<option value="preorder">Preorder for a baking day</option>':''}</select></div>${batches.length?`<div class="field" id="batch-section"><label for="batch">Available finished batch</label><select id="batch" name="batch">${batches.map(b=>`<option value="${e(b.id)}">Prepared ${e(b.baked_on)} · ${e(b.quantity_available)} packages available</option>`).join('')}</select></div>`:''}<div class="field"><label for="qty">Qty (number of ${e(unit)} packages)</label><div class="product-quantity-control"><button type="button" class="button secondary" data-qty-step="-1" aria-label="Decrease quantity">−</button><input type="number" min="1" max="30" step="1" value="1" id="qty" inputmode="numeric" required><button type="button" class="button secondary" data-qty-step="1" aria-label="Increase quantity">+</button></div><p class="small muted" id="product-stock-note"></p><strong id="product-line-total" aria-live="polite"></strong></div><button class="button" type="submit">Add to Cart</button><a class="button secondary" href="#cart">View Cart</a></form><section class="product-ingredient-details"><h2>Ingredients</h2><p>${e(p.ingredients||'Please contact the bakery for the confirmed ingredient list before ordering.')}</p><h2>Allergens</h2><p>${e(allergens)}</p>${p.storage_notes?'<h2>Storage &amp; Handling</h2><p>'+e(p.storage_notes)+'</p>':''}${approvedDietaryClaims(p).length?'<h2>Dietary information</h2><p>'+e(approvedDietaryClaims(p).join(' · '))+'</p>':''}</section></div></div><section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content">Loading reviews…</div></section>`); 
  const mode=$('#mode'),batch=$('#batch'),quantity=$('#qty'),lineTotal=$('#product-line-total');
  const existingForBatch=(id)=>cart.filter(i=>i.product_id===p.id&&i.mode==='ready'&&i.batch_id===id)
   .reduce((sum,i)=>sum+i.quantity,0);
