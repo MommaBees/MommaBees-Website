@@ -1,6 +1,7 @@
 import {db,response,origin} from '../../_lib/db.js';
 import {requireBakeryManager,asUuid} from '../../_lib/bakery-admin.js';
 import {createStripeSession} from '../../_lib/stripe.js';
+import {runtimeCredential} from '../../_lib/runtime-credentials.js';
 import {TEST_PRICES} from '../../_lib/demo-prices.js';
 const denied=()=>response({error:'Sandbox-only checkout is unavailable until a Stripe TEST secret key is installed. Live payments remain disabled.'},503);
 export async function onRequestGet({request,env}){
@@ -14,7 +15,8 @@ export async function onRequestPost({request,env}){
  try{
   const auth=await requireBakeryManager(env,request);if(auth.error)return auth.error;
   // Never pass a live key to Stripe, even when the site checkout switches on.
-  if(!/^sk_test_/.test(env.STRIPE_SECRET_KEY||''))return denied();
+  const key=await runtimeCredential(env,'STRIPE_SECRET_KEY','test');
+  if(!/^sk_test_/.test(key||''))return denied();
   const settings=await db(env,'/rest/v1/site_settings?select=demo_store_enabled&id=eq.1');
   if(settings[0]?.demo_store_enabled!==true)return response({error:'Enable the Owner/Admin Demo Store in Website Settings first'},409);
   const input=await request.json();
@@ -59,7 +61,7 @@ export async function onRequestPost({request,env}){
     checkoutFields['line_items['+index+'][price]']=line.catalog.stripePrice;
     checkoutFields['line_items['+index+'][quantity]']=String(line.quantity);
    }
-   const checkout=await createStripeSession(env,checkoutFields);
+   const checkout=await createStripeSession(env,checkoutFields,{environment:'test'});
    if(!checkout?.id||!checkout?.url||checkout.livemode!==false)throw Error('Stripe did not return a verified sandbox Checkout session');
    await db(env,'/rest/v1/demo_checkout_tests?id=eq.'+testId,{method:'PATCH',
     body:{stripe_session_id:checkout.id,updated_at:new Date().toISOString()}});
