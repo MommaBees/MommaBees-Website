@@ -2,9 +2,10 @@ import {config,currentUser,currentSession,money,escapeHtml as e,currentDate,futu
 import {mountPickupCalendar} from './pickup-calendar.js';
 import {LEGAL_VERSION} from './legal-policies.js';
 import {sellingUnitLabel,packageTotal} from './selling-units.js';
+import {cartHasShowcase} from './showcase-preview-cart.js';
 const dollars=n=>money(Math.max(0,Number(n)||0));
 export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
- if(!cart.length){nav('#cart');return;}
+ if(!cart.length||cartHasShowcase(cart)){nav('#cart');return;}
  const settings=all.settings||{};
  const canFulfillCartOn=date=>cart.every(item=>{
   const product=all.products.find(p=>p.id===item.product_id);
