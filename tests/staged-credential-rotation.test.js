@@ -44,7 +44,7 @@ test('Active readback failure restores prior Vault value; never reports success'
   assert.ok(calls.some(x=>x.includes('credential_revert')));
  }finally{globalThis.fetch=prev;}
 });
-test('Genuine signed webhook proves candidate before activation',async()=>{
+test('Automatic rotation OFF by default: signed webhook proves candidate but awaits manual activation',async()=>{
  const previous=globalThis.fetch,calls=[],ts=Math.floor(Date.now()/1000);
  const raw=JSON.stringify({id:'evt_rot_proof',livemode:false,type:'rotation.unhandled',data:{object:{}}});
  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
@@ -53,6 +53,8 @@ test('Genuine signed webhook proves candidate before activation',async()=>{
  globalThis.fetch=async(url)=>{
   calls.push(String(url));
   if(String(url).includes('credential_pending'))return reply({id,secret});
+  if(String(url).includes('mommabees_rotation_control'))return reply({enabled:false});
+  if(String(url).includes('credential_mark_proven'))return reply({state:'pending',proof_verified:true});
   if(String(url).includes('credential_promote'))return reply({state:'activated'});
   if(String(url).includes('credential_read'))return reply(secret);
   throw Error('Unexpected network access');
@@ -60,8 +62,9 @@ test('Genuine signed webhook proves candidate before activation',async()=>{
  try{
   const req=new Request('https://mommabees-website.pages.dev/api/stripe-webhook',{method:'POST',headers:{'Stripe-Signature':'t='+ts+',v1='+hex},body:raw});
   const result=await webhook({request:req,env});
-  assert.equal(result.status,200);
-  assert.ok(calls.some(x=>x.includes('credential_promote')));
+  assert.equal(result.status,503);
+  assert.ok(calls.some(x=>x.includes('credential_mark_proven')));
+  assert.equal(calls.some(x=>x.includes('credential_promote')),false);
  }finally{globalThis.fetch=previous;}
 });
 test('No user role can call Vault rotation functions; Owner UI shows pending dependencies',()=>{
@@ -74,4 +77,18 @@ test('No user role can call Vault rotation functions; Owner UI shows pending dep
  assert.match(ui,/credential-rotation-history/);
  assert.match(ui,/owner-turnstile-proof/);
  assert.match(ui,/proof_token/);
+});
+
+test('Owner rotation setting defaults OFF and manual key update remains available',()=>{
+ const sql=readFileSync(new URL('../supabase/migrations/20261029_owner_rotation_switch_v152.sql',import.meta.url),'utf8');
+ assert.match(sql,/automatic_activation_enabled boolean not null default false/);
+ assert.match(sql,/values\(true,false\) on conflict/);
+ assert.match(sql,/revoke all on function public\.mommabees_rotation_control/);
+ const api=readFileSync(new URL('../functions/api/admin/rotation-settings.js',import.meta.url),'utf8');
+ assert.match(api,/confirmOwnerPassword/);
+ assert.match(api,/typeof data\.enabled!=='boolean'/);
+ const editor=readFileSync(new URL('../site/credential-management.js',import.meta.url),'utf8');
+ assert.match(editor,/id="owner-auto-rotation"/);
+ assert.match(editor,/id="owner-save-rotation"/);
+ assert.match(editor,/manual(?:ly)? replace/);
 });
