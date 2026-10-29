@@ -3,6 +3,7 @@
 import {db,response} from '../../_lib/db.js';
 import {requireBakeryManager,auditAccount} from '../../_lib/bakery-admin.js';
 import {validCredentialSlot,RUNTIME_CREDENTIALS} from '../../_lib/runtime-credentials.js';
+import {dependenciesFor,stageCredential,credentialHistory,verifyStripeKey,promoteWithReadback,rejectCredential} from '../../_lib/credential-rotation.js';
 const EXTERNAL=Object.freeze([
  {provider:'Cloudflare',label:'Cloudflare Pages/API tokens, Workers secrets, Turnstile site key',mode:'provider',details:'Rotate tokens in the MommaBees Cloudflare account. Pages bindings and Turnstile site-key rotation require corresponding provider changes.'},
  {provider:'GitHub',label:'GitHub access tokens, Actions secrets, Deploy keys, webhooks',mode:'provider',details:'Rotate in the MommaBees GitHub repository or organization. Reauthorize the Cloudflare GitHub connection there.'},
@@ -32,7 +33,8 @@ export async function onRequestGet({request,env}){
  try{
   const a=await owner(env,request);if(a.error)return a.error;
   const rows=await db(env,'/rest/v1/rpc/mommabees_credential_status',{method:'POST',body:{}});
-  return response({managed:metadata(env,rows),external:EXTERNAL});
+  const history=await credentialHistory(env);
+  return response({managed:metadata(env,rows),external:EXTERNAL,history});
  }catch{ return response({error:'Credential inventory is unavailable'},503);}
 }
 async function confirmOwnerPassword(env,user,password,captcha){
@@ -46,18 +48,12 @@ async function confirmOwnerPassword(env,user,password,captcha){
  return signed.user?.id===user.id&&signed.user?.email?.toLowerCase()===user.email?.toLowerCase()&&Boolean(signed.access_token);
 }
 async function validateNewSecret(name,environment,value){
- if(name==='STRIPE_SECRET_KEY'){
-  const prefix=environment==='test'?'sk_test_':'sk_live_';
-  if(!value.startsWith(prefix))throw Error('Stripe key does not match the selected TEST/LIVE environment.');
-  const verified=await fetch('https://api.stripe.com/v1/account',{method:'GET',headers:{Authorization:'Bearer '+value}});
-  if(!verified.ok)throw Error('Stripe declined this key.');
-  const account=await verified.json().catch(()=>({}));
-  if(account.id!=='acct_1UUtoDJF02bajTTM')throw Error('Stripe account mismatch: this must be the MommaBeesBakery account.');
- }else if(name==='STRIPE_WEBHOOK_SECRET'){
-  if(!/^whsec_[A-Za-z0-9]+$/.test(value))throw Error('Enter the matching Stripe webhook signing secret.');
- }else if(name==='TURNSTILE_SECRET_KEY'){
-  if(!/^0x[A-Za-z0-9_-]{15,100}$/.test(value))throw Error('Invalid Cloudflare Turnstile secret-key format.');
- }
+ if(name==='STRIPE_SECRET_KEY')return verifyStripeKey(value,environment);
+ if(name==='STRIPE_WEBHOOK_SECRET'&&/^whsec_[A-Za-z0-9]+$/.test(value))
+  return {ok:true,checks:[{name:'secret_format',state:'verified'}]};
+ if(name==='TURNSTILE_SECRET_KEY'&&/^0x[A-Za-z0-9_-]{15,100}$/.test(value))
+  return {ok:true,checks:[{name:'secret_format',state:'verified'}]};
+ return {ok:false,checks:[{name:'secret_format',state:'failed'}]};
 }
 export async function onRequestPost({request,env}){
  try{
@@ -79,16 +75,52 @@ export async function onRequestPost({request,env}){
   // Password + a NEW one-time human verification token must be supplied for every write.
   const confirmed=await confirmOwnerPassword(env,a.user,input.owner_password,input.captcha_token);
   if(!confirmed)return response({error:'Owner password or human verification was not accepted'},403);
-  await validateNewSecret(name,environment,value);
-  const result=await db(env,'/rest/v1/rpc/mommabees_credential_save',{method:'POST',
-   body:{p_name:name,p_environment:environment,p_secret:value,p_actor:a.user.id}});
-  await auditAccount(env,a.user.id,null,'owner_credential_updated',
-   {credential_name:name,environment,changed_at:result?.changed_at||null}).catch(()=>{});
-  return response({ok:true,name,environment,changed_at:result?.changed_at||null,
-   message:'The website runtime credential was updated. Rotate or verify the matching credential at its provider before ending the change window.'});
+  const checked=await validateNewSecret(name,environment,value);
+  if(!checked.ok)return response({ok:false,state:'failed',checks:checked.checks,
+   error:'Replacement failed provider verification. The existing website credential is unchanged.'},422);
+  const plan=dependenciesFor(name,environment).map(step=>{
+   const done=checked.checks.find(x=>x.name===step.name);
+   return done?{...step,state:done.state}:step;
+  });
+  const staged=await stageCredential(env,name,environment,value,a.user.id,plan);
+  let state='pending',result={id:staged.id,state:'pending'};
+  if(name==='STRIPE_SECRET_KEY'){
+   const finished=plan.map(x=>x.name==='website_runtime'?{...x,state:'verified'}:x);
+   result=await promoteWithReadback(env,staged.id,name,environment,value,finished);
+   state=result.state;
+  }
+  await auditAccount(env,a.user.id,null,'owner_credential_rotation',
+   {credential_name:name,environment,rotation_id:staged.id,state}).catch(()=>{});
+  return response({ok:state==='activated'||state==='pending',name,environment,id:staged.id,state,
+   dependencies:plan,required_actions:plan.filter(x=>x.state==='provider_action'),
+   message:state==='activated'
+    ?'Replacement passed available checks and is active. Provider-side retirement and checkout validation may still be required.'
+    :state==='pending'
+    ?'Replacement staged securely; the existing key stays active pending verified provider delivery or challenge.'
+    :'Post-activation check failed; the prior website credential was restored.'},state==='rolled_back'?409:200);
  }catch(error){
   // NO error.message from provider responses: may reflect token fragments.
   console.error('Owner credential request rejected');
   return response({error:'Credential update failed. Check the provider, environment and Owner verification.'},503);
+ }
+}
+
+export async function onRequestDelete({request,env}){
+ try{
+  if(new URL(request.url).origin!==new URL(env.SITE_URL).origin||
+   request.headers.get('Origin')!==new URL(env.SITE_URL).origin)
+   return response({error:'Credential update origin mismatch'},403);
+  const a=await owner(env,request);if(a.error)return a.error;
+  const input=await request.json();
+  if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(input.rotation_id||'')))
+   return response({error:'Invalid rotation identifier'},400);
+  if(!await confirmOwnerPassword(env,a.user,input.owner_password,input.captcha_token))
+   return response({error:'Owner confirmation failed'},403);
+  const result=await rejectCredential(env,input.rotation_id);
+  await auditAccount(env,a.user.id,null,'owner_credential_rotation_cancelled',
+   {rotation_id:input.rotation_id,state:result.state}).catch(()=>{});
+  return response({ok:true,id:input.rotation_id,state:result.state});
+ }catch{
+  return response({error:'Unable to cancel pending rotation'},409);
  }
 }
