@@ -16,7 +16,7 @@ import {faqPage} from './customer-faq.js';
 import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel} from './home-carousel.js';
 import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts,homepageVisibleDepartments,homepageGridLayout,shopVisibleDepartments} from './store-departments.js';
 import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
-import {showcaseEnabled,showcaseDescription,showcasePrice,showcaseOrigin,showcaseFields} from './product-showcase-details.js';
+import {showcaseEnabled,showcaseDescription,showcasePrice,showcaseOrigin,showcaseFields,showcaseAvailability} from './product-showcase-details.js';
 import {sellingUnitLabel,validCartQuantity,availablePackages,packageTotal} from './selling-units.js';
 import {availableReadyBatches,validQuickQty,publicShowcaseSaleProduct} from './quick-cart.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
