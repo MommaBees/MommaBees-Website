@@ -1901,3 +1901,113 @@ body[data-card-style="open"] #main .lineitem{background:transparent}
  #main .showcase-photo-information{order:2}
  body .footer{width:calc(100% - 16px)}
 }
+
+/* MBB-UI-061: remove artificial vertical expansion from storefront cards.
+   Earlier equal-height rows, flex:1 card bodies and margin-top:auto links created
+   the large blank bands visible between the title, description, price and Qty. */
+#main .home-department-products,
+#main .product-results.grid,
+#main .showcase-detail-related .grid{
+  align-items:start;
+  grid-auto-rows:auto;
+}
+#main .home-department-products .bakery-product-card,
+#main .product-results .bakery-product-card,
+#main .showcase-detail-related .bakery-product-card{
+  height:auto;
+  min-height:0;
+  align-self:start;
+}
+#main .bakery-product-card,
+#main .store-showcase-card{
+  gap:0;
+}
+#main .bakery-product-card>.showcase-card-main{
+  flex:0 0 auto;
+}
+#main .bakery-product-card .card-content,
+#main .store-showcase-card>.showcase-card-main .card-content,
+#main .product-results .bakery-product-card .card-content,
+#main .home-department-products .bakery-product-card .card-content,
+#main .showcase-detail-related .bakery-product-card .card-content{
+  flex:0 0 auto;
+  gap:3px;
+  min-height:0;
+}
+#main .bakery-product-card .card-content .actions{
+  margin:0;
+  padding:0;
+  min-height:0;
+}
+#main .bakery-product-card .card-content h3,
+#main .product-results .bakery-product-card .card-content h3,
+#main .home-department-products .bakery-product-card .card-content h3,
+#main .showcase-detail-related .bakery-product-card .card-content h3{
+  min-height:0;
+  margin:1px 0 2px;
+  line-height:1.22;
+}
+#main .bakery-product-card .card-content>p,
+#main .bakery-product-card .card-content>p.small,
+#main .bakery-product-card .card-content>.price,
+#main .store-showcase-card .showcase-card-price,
+#main .store-showcase-card .showcase-card-allergens,
+#main .store-showcase-card .showcase-card-dietary{
+  margin:2px 0;
+  line-height:1.34;
+}
+#main .bakery-product-card .card-content>p.small,
+#main .bakery-product-card .showcase-card-description{
+  -webkit-line-clamp:2;
+}
+#main .bakery-product-card .card-content>.price{
+  margin-top:3px;
+}
+#main .bakery-product-card .card-content .button{
+  margin-top:3px;
+}
+#main .bakery-product-card .showcase-card-link,
+#main .store-showcase-card .showcase-card-link,
+#main .home-department-products .bakery-product-card .showcase-card-link,
+#main .product-results .bakery-product-card .showcase-card-link,
+#main .showcase-detail-related .bakery-product-card .showcase-card-link{
+  margin-top:2px;
+  padding-top:1px;
+  display:block;
+}
+#main .store-showcase-card>.card-showcase-buy,
+#main .shop-page .product-results .store-showcase-card .card-showcase-buy{
+  flex:0 0 auto;
+  margin-top:3px;
+  padding:0 10px 8px;
+}
+#main .bakery-product-card .card-quick-buy,
+#main .bakery-product-card>.card-content>.card-quick-buy{
+  margin-top:4px!important;
+  padding-top:4px!important;
+}
+#main .bakery-product-card .card-quick-buy .showcase-available{
+  margin:1px 0 4px;
+  font-size:.74rem;
+  line-height:1.25;
+}
+#main .bakery-product-card .card-quick-buy .card-quick-actions{
+  gap:5px;
+}
+#main .bakery-product-card .card-quick-buy .card-quick-qty{
+  gap:1px;
+  line-height:1.15;
+}
+/* Qty stays a required numeric field; the global form-label marker is unnecessary on each tile. */
+#main .bakery-product-card .card-quick-buy .required-indicator{
+  display:none!important;
+}
+#main .bakery-product-card .card-quick-buy .card-quick-status:empty{
+  display:none;
+}
+@media(max-width:600px){
+  #main .home-department-products .bakery-product-card,
+  #main .product-results .bakery-product-card{
+    min-height:0;
+  }
+}
