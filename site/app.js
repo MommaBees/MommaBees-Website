@@ -295,6 +295,7 @@ function layout(content){
  <div class="nav-utilities">
   <a href="#cart" class="nav-cart-link" ${routeName==='cart'?'aria-current="page"':''}>Cart (${cart.reduce((sum,item)=>sum+item.quantity,0)})</a>
   ${accountNavigationMarkup(Boolean(currentUser()),verifiedBackOfficeRole)}
+  ${routeName==='home'&&!currentUser()?'<a href="#account/register" class="nav-account-register">Register</a>':''}
  </div></div>
  <div class="header-offerings" aria-label="Products and services"><div class="shell">${e(settings.brand_subtitle||HEADER_OFFERINGS)}</div></div></header>
  <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${crumb}${content}</main><footer class="footer"><div class="shell">
