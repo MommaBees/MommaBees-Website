@@ -20,8 +20,11 @@ async function owner(env,request){
 function metadata(env,rows){
  return Object.entries(RUNTIME_CREDENTIALS).flatMap(([name,modes])=>modes.map(environment=>{
   const item=(Array.isArray(rows)?rows:[]).find(x=>x.name===name&&x.environment===environment);
-  const legacy=name==='STRIPE_SECRET_KEY'?(environment==='test'?env.STRIPE_TEST_SECRET_KEY||env.STRIPE_SECRET_KEY:env.STRIPE_LIVE_SECRET_KEY||env.STRIPE_SECRET_KEY):
-   name==='STRIPE_WEBHOOK_SECRET'?(environment==='test'?env.STRIPE_TEST_WEBHOOK_SECRET||env.STRIPE_WEBHOOK_SECRET:env.STRIPE_LIVE_WEBHOOK_SECRET||env.STRIPE_WEBHOOK_SECRET):env.TURNSTILE_SECRET_KEY;
+  const currentMode=env.STRIPE_PAYMENT_MODE==='live'||(!env.STRIPE_PAYMENT_MODE&&/^sk_live_/.test(env.STRIPE_SECRET_KEY||''))?'live':'test';
+  const legacy=name==='STRIPE_SECRET_KEY'?(environment==='test'?env.STRIPE_TEST_SECRET_KEY:env.STRIPE_LIVE_SECRET_KEY)||
+   (currentMode===environment?env.STRIPE_SECRET_KEY:null):
+   name==='STRIPE_WEBHOOK_SECRET'?(environment==='test'?env.STRIPE_TEST_WEBHOOK_SECRET:env.STRIPE_LIVE_WEBHOOK_SECRET)||
+   (currentMode===environment?env.STRIPE_WEBHOOK_SECRET:null):env.TURNSTILE_SECRET_KEY;
   return {name,environment,status:item?.configured?'vault-managed':legacy?'environment-binding':'not-configured',changed_at:item?.changed_at||null};
  }));
 }
