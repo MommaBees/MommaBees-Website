@@ -9,6 +9,8 @@ import {STORE_DEPARTMENTS,departmentForCategory,departmentLabel,taxonomyPaths,se
 import {WEBSITE_SIZE_OPTIONS,normalizeWebsiteSize,applyWebsiteSize} from './website-size.js';
 import {homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel,DEFAULT_CAROUSEL_INTERVAL_SECONDS,CAROUSEL_SIZE_OPTIONS,normalizeCarouselSize} from './home-carousel.js';
 import {MAJOR_ALLERGENS,suggestMajorAllergens,publicAllergenStatement} from './allergens.js';
+import {SELLING_UNITS,sellingUnitLabel} from './selling-units.js';
+import {currentDate} from './api.js';
 import {pastBakeName} from './past-bakes.js';
 import {harvestUploadMatches} from './harvest-photo-import.js';
 import {BUILTIN_PHOTO_PRESETS,photoByUrl} from './photo-library.js';
@@ -53,7 +55,7 @@ const cols=(...x)=>x;
 const field=(key,label,type='text',extra={})=>({key,label,type,...extra});
 const configs={
  categories:{label:'Categories',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('name','Category name'),field('slug','URL slug (example: cookies)'),field('description','Description','textarea'),field('photo_url','Category image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
- products:{label:'Products',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('category_id','Category','ref',{table:'categories'}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('variety_id','Variety classification (optional)','ref',{table:'catalog_varieties'}),field('variety_count','Number of varieties','number'),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Sold by','select',{options:['each','dozen','tray','box','slice','bag','bunch','basket','pint','quart','pound']}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
+ products:{label:'Products',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('category_id','Category','ref',{table:'categories'}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('variety_id','Variety classification (optional)','ref',{table:'catalog_varieties'}),field('variety_count','Number of varieties','number'),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Selling unit (price per selected package)','select',{options:SELLING_UNITS.map(([id])=>id)}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
  store_showcase_items:{label:'Product Showcase',fields:cols(
   field('department','Department','select',{options:STORE_DEPARTMENTS}),
   field('category_id','Category','ref',{table:'categories'}),
@@ -696,7 +698,7 @@ function fieldInput(f,r){const val=r?.[f.key], id='field_'+f.key;let raw='';cons
  else if(f.type==='textarea')raw=`<textarea id="${id}" rows="4"${req}>${e(value)}</textarea>`;
  else if(f.type==='select'){
  const types=f.key==='product_type'?(refs.catalog_product_types||[]).filter(t=>t.active!==false):[];
- const options=types.length?types.map(t=>({value:t.code,label:t.name})):(f.options||[]).map(t=>({value:t,label:pretty(t)}));
+ const options=types.length?types.map(t=>({value:t.code,label:t.name})):f.key==='unit'?SELLING_UNITS.map(([value,label])=>({value,label})):(f.options||[]).map(t=>({value:t,label:pretty(t)}));
  const canCreate=f.key==='product_type'&&['products','categories'].includes(selected);
  raw=`<select id="${id}"${req}>${selected==='categories'&&f.key==='product_type'?'<option value="">Choose product type</option>':''}${options.map(t=>`<option value="${e(t.value)}" ${String(value)===String(t.value)?'selected':''}>${e(t.label)}</option>`).join('')}${canCreate?'<option value="__create__">+ Create Product Type</option>':''}</select>`;
  }
@@ -780,6 +782,32 @@ async function openEditor(record){const c=configs[selected];
 
 
 
+ if(selected==='products'){
+  const mode=$('#field_mode'),unit=$('#field_unit'),slot=mode?.closest('.field');
+  if(slot){
+   const block=document.createElement('fieldset');
+   block.className='admin-ready-inventory';
+   block.id='new-ready-batch';
+   block.innerHTML='<legend>Add Ready-to-Sell inventory</legend>'+
+    '<p class="small">Enter the number of sellable packages available for pickup. A single, half-dozen, or dozen counts as ONE package. For additional stock later, use Ready-to-Sell Inventory.</p>'+
+    '<div class="field"><label for="new-batch-quantity">Packages available to sell</label><input type="number" id="new-batch-quantity" min="0" max="100000" step="1" value="0" required></div>'+
+    '<div class="field"><label for="new-batch-baked">Prepared / harvested date</label><input type="date" id="new-batch-baked" value="'+currentDate()+'"></div>'+
+    '<div class="field"><label for="new-batch-best-before">Last eligible pickup date</label><input type="date" id="new-batch-best-before" value="'+currentDate()+'"></div>'+
+    '<p class="small" id="new-ready-unit-note"></p>';
+   slot.insertAdjacentElement('afterend',block);
+   const sync=()=>{
+    block.hidden=!['ready','both'].includes(mode?.value);
+    const count=$('#new-batch-quantity');
+    block.querySelector('#new-ready-unit-note').textContent='Each package contains '+sellingUnitLabel(unit?.value||'each')+'. Price is for one package.';
+    const needsDates=!block.hidden&&Number(count?.value)>0;
+    block.querySelector('#new-batch-baked').required=needsDates;
+    block.querySelector('#new-batch-best-before').required=needsDates;
+   };
+   mode?.addEventListener('change',sync);unit?.addEventListener('change',sync);
+   block.querySelector('#new-batch-quantity').addEventListener('input',sync);
+   sync();
+  }
+ }
  if(selected==='products'){
   const form=$('#editor-fields');
   const dep=$('#field_department'),category=$('#field_category_id'),
@@ -1110,12 +1138,32 @@ async function openEditor(record){const c=configs[selected];
    if(body.published && !String(body.ingredients||'').trim())throw Error('Enter a complete ingredient list before publishing.');
   }
  }
+ let batchToCreate=null;
+ if(selected==='products'){
+  const quantity=Number($('#new-batch-quantity')?.value||0);
+  if(!Number.isInteger(quantity)||quantity<0||quantity>100000)throw Error('Enter a whole number of available packages between 0 and 100,000.');
+  if(quantity>0){
+   if(!['ready','both'].includes(body.mode))throw Error('Ready-to-Sell inventory requires Ready or Both selling method.');
+   const baked_on=$('#new-batch-baked')?.value,best_before=$('#new-batch-best-before')?.value,today=currentDate();
+   if(!baked_on||!best_before||baked_on>today||best_before<today||best_before<baked_on)
+    throw Error('Enter a prepared date on or before today, and a last eligible pickup date on or after today.');
+   batchToCreate={quantity_available:quantity,baked_on,best_before,batch_label:'Product editor · '+sellingUnitLabel(body.unit)};
+  }
+ }
  const key=c.key||'id';let saved=null;
  if(c.single){saved=await update(c.table||selected,1,body);}
  else if(record&&!record._unsaved){
   if(Array.isArray(key))throw Error('Editing records with two-part keys requires deleting/recreating from SQL Editor.');
   saved=await update(selected,record[key],body,key);
  }else saved=await add(selected,body);
+ // A new stock batch is a separate inventory record. A failure must not duplicate the saved product.
+ let batchError=null;
+ if(selected==='products'&&batchToCreate){
+  try{
+   if(!saved?.id)throw Error('Saved product identifier is unavailable.');
+   await add('stock_batches',{...batchToCreate,product_id:saved.id,disabled:false,clearance_approved:false});
+  }catch(error){batchError=error.message||'Inventory creation failed';}
+ }
  // Save succeeds in Supabase first. Stripe TEST errors never cause a duplicate product.
  let syncError=null;
  if(selected==='products'){
@@ -1127,6 +1175,7 @@ async function openEditor(record){const c=configs[selected];
  }
  dialog.close();await ctx.load();await renderPanel();
  if(syncError)ctx.showError('Product saved in Supabase and available to Cloudflare. Stripe TEST sync needs attention: '+syncError);
+ if(batchError)ctx.showError('Product saved, but the Ready-to-Sell inventory batch was not added. Open Ready-to-Sell Inventory to add it: '+batchError);
  }catch(x){ctx.showError(x);}};
 }
 async function reply(message){const text=prompt('Write your response. It will be saved to the secure account inbox. Email delivery is not enabled by this action:');if(!text)return;try{if(!message.customer_id)throw Error('Guest email replies require a configured email provider; do not mark as replied yet.');await add('messages',{customer_id:message.customer_id,customer_email:message.customer_email,order_id:message.order_id,kind:'reply',subject:'Re: '+message.subject,body:text,parent_id:message.id,is_staff_reply:true,status:'replied'});await update('messages',message.id,{status:'replied'});await renderPanel();}catch(x){ctx.showError(x);}}
