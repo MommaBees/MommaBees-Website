@@ -1267,9 +1267,10 @@ test('redundant text removed without losing customer-facing commerce and safety 
   assert.ok(!app.includes(phrase),'redundant copy should not remain: '+phrase);
  }
  assert.doesNotMatch(app,/class="bakery-home-note"/);
- for(const phrase of ['h1>Past Bakes Gallery','Product availability is verified before payment','food_notice','function faq(){layout(faqPage());}']){
+ for(const phrase of ['h1>Past Bakes Gallery','food_notice','function faq(){layout(faqPage());}']){
   assert.ok(app.includes(phrase),'critical storefront information missing: '+phrase);
  }
+ assert.match(checkout,/canFulfillCartOn/);
  const faq=read('site/customer-faq.js'),legal=read('site/legal-policies.js');
  for(const phrase of ['Questions & Policies','ready-to-sell','preorder','available fulfillment date','product photos']){
   assert.ok((faq+' '+legal).toLowerCase().includes(phrase.toLowerCase()),'missing customer FAQ or policy content: '+phrase);
@@ -1608,8 +1609,8 @@ test('owner showcase detail pages expose complete information and checkout only 
  assert.match(read('site/product-showcase-details.js'),/Homemade in Nixa, Missouri/);
  const showcase=app.slice(app.indexOf('function showcaseDetail(item)'),app.indexOf('function detail(id)'));
  assert.match(showcase,/quickCartMarkup\(sale\)/);
- assert.match(showcase,/showcaseFields\(display\)/);
- assert.match(showcase,/product-ingredient-details/);
+ assert.match(showcase,/showcaseFields\(info\)/);
+ assert.match(showcase,/showcase-photo-information/);
  assert.doesNotMatch(showcase,/\$0\.00|certified organic/i);
  assert.match(css,/\.showcase-detail-grid/);
  assert.match(css,/\.showcase-detail-photo/);
@@ -1661,7 +1662,7 @@ test('Product Showcase visibility is enforced across Admin, site, detail and car
  assert.match(site,/showcaseEnabled\(all\.settings\)/);
  assert.match(site,/showcaseEnabled\(s\)/);
  assert.match(site,/showcasePrice\(item\)/);
- assert.match(site,/showcaseFields\(display\)/);
+ assert.match(site,/showcaseFields\(info\)/);
  assert.match(carousel,/showcaseEnabled\(settings\)/);
  assert.match(sql,/product_showcase_enabled boolean not null default true/);
  assert.match(sql,/price_cents integer/);
@@ -1684,7 +1685,7 @@ test('Product Showcase uses selected calendar dates with Aug. 23, 2026 format',(
  const helper=read('site/product-showcase-details.js');
  const app=read('site/app.js'),admin=read('site/admin.js');
  assert.match(helper,/formatShowcaseDate\(item\?\.availability_date\)/);
- assert.match(app,/showcaseFields\(display\)/);
+ assert.match(app,/showcaseFields\(info\)/);
  assert.match(admin,/field\('availability_date','Availability date','date'\)/);
  assert.match(admin,/date\.required=true/);
  assert.match(admin,/formatShowcaseDate\(val\)/);
