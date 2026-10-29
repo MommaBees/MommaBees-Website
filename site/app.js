@@ -129,39 +129,6 @@ const quickCartMarkup=p=>{
   '<button class="button card-quick-add" type="submit" '+(max<1?'disabled':'')+'>Add to Cart</button></div>'+
   '<p class="card-quick-status" role="status" aria-live="polite"></p></form>';
 };
-// Shop All includes the same product facts as individual pages; keep the home tiles compact.
-const shopInformation=(fields)=>'<details class="shop-card-information">'+
- '<summary>Product information</summary>'+
- '<dl>'+fields.filter(([,value])=>value!==null&&value!==undefined&&String(value).trim())
- .map(([label,value])=>'<div class="shop-card-fact"><dt>'+e(label)+'</dt><dd>'+e(String(value))+'</dd></div>').join('')+
- '</dl></details>';
-const productShopInformation=p=>{
- const allergens=Array.isArray(p.major_allergens)&&p.major_allergens.length?'Contains: '+p.major_allergens.join(', ')+'.':
-  (p.allergens||'Not listed; ask Momma Bee about ingredients and cross-contact.');
- const batches=availableQuickBatches(p);
- const ready=productReady(p),preorder=productPreorder(p);
- return shopInformation([
-  ['Description',p.description||'Contact Momma Bee for a description.'],
-  ['Ingredients',p.ingredients||'Confirm the ingredient list with the bakery.'],
-  ['Allergens',allergens],
-  ['Storage & handling',p.storage_notes||'Ask the bakery for storage instructions.'],
-  ['Ordering',[(ready?'Ready to Sell':''),(preorder?'Preorder':'')].filter(Boolean).join(' and ')],
-  ['Ready packages',ready?String(batches.reduce((n,b)=>n+b.remaining,0))+' currently unreserved':null],
-  ['Fulfillment','Available checkout dates and pickup/delivery options are confirmed at checkout.']
- ]);
-};
-const showcaseShopInformation=item=>{
- const sale=showcaseSaleProduct(item);
- return shopInformation([
-  ['Description',item.description||sale?.description||'Contact Momma Bee for item details.'],
-  ['Ingredients',item.ingredients||sale?.ingredients||'Ask Momma Bee for the confirmed ingredient list.'],
-  ['Allergens',item.allergens||sale?.allergens||'Not listed; ask about ingredients and cross-contact.'],
-  ['Storage & handling',item.storage_notes||sale?.storage_notes||'Ask Momma Bee for storage instructions.'],
-  ['Availability',showcaseAvailability(item)||'Contact Momma Bee for a date.'],
-  ['Varieties',Number.isInteger(item.variety_count)&&item.variety_count>=0?item.variety_count:null],
-  ['Pickup & delivery',item.fulfillment_note||'Confirmed during ordering or by request.']
- ]);
-};
 const card=(p,showShopDetails=false)=>{
  const visual=productVisual(p),cat=categoryFor(p),sub=subcategoryFor(p);
  return '<article class="card bakery-product-card"><div class="card-media">'+image(visual.src,'product-photo',p.name)+visual.credit+'</div>'+
@@ -172,7 +139,6 @@ const card=(p,showShopDetails=false)=>{
   '<h3>'+e(p.name)+'</h3><p class="small">'+e((p.description||'').slice(0,120))+'</p>'+
   '<p class="price">'+money(p.price_cents)+' <small>/ '+e(sellingUnitLabel(p.unit))+'</small></p>'+
   '<a class="button secondary" href="#product/'+encodeURIComponent(p.id)+'">View details</a>'+
-  (showShopDetails?productShopInformation(p):'')+
   quickCartMarkup(p)+'</div></article>';
 };
 const showcaseCard=(item,showShopDetails=false)=>{
@@ -190,9 +156,8 @@ const showcaseCard=(item,showShopDetails=false)=>{
    ((item.description||sale?.description)?'<p class="small showcase-card-description">'+e((item.description||sale?.description||'').slice(0,120))+'</p>':'')+
    (linkedPrice?'<p class="showcase-card-price">'+e(linkedPrice)+'</p>':'')+
    '<span class="showcase-card-link">View details</span></div></a>'+
-  (showShopDetails?'<div class="card-showcase-facts">'+showcaseShopInformation(item)+'</div>':'')+
   (sale?'<div class="card-showcase-buy">'+quickCartMarkup(sale)+'</div>':
-   (showShopDetails?'<div class="card-showcase-buy"><div class="card-quick-buy is-unavailable"><div class="card-quick-actions"><label class="card-quick-qty">Qty<input type="number" value="1" min="1" disabled aria-label="Quantity unavailable until product is ready for sale"></label><button class="button card-quick-add" type="button" disabled>Add to Cart</button></div><a class="showcase-enquire" href="#contact">Ask about ordering</a></div></div>':''))+'</article>';
+    '<div class="card-showcase-buy"><div class="card-quick-buy is-unavailable"><div class="card-quick-actions"><label class="card-quick-qty">Qty<input type="number" value="1" min="1" disabled aria-label="Quantity unavailable until published inventory is added"></label><button class="button card-quick-add" type="button" disabled>Add to Cart</button></div></div></div>')+'</article>';
 };
 function bindQuickCart(){
  // Delegation covers cards across homepage, Bakery, Homestand, featured and linked Showcase collections.
@@ -496,7 +461,7 @@ function showcaseDetail(item){
    '<h2>Allergens</h2><p>'+e(display.allergens||'No allergens have been declared in this listing. Ask about ingredients and cross-contact before ordering.')+'</p>'+
    '<h2>Storage & Handling</h2><p>'+e(display.storage_notes||'Contact Momma Bee for storage and handling information.')+'</p></section>'+
    '<div class="actions showcase-detail-actions">'+
-    (sale?'<a class="button" href="#cart">View Cart</a>':'<a class="button" href="#contact">Ask about this item</a>')+
+    (sale?'<a class="button" href="#cart">View Cart</a>':'')+
     '<a class="button secondary" href="'+backHref+'">Browse '+e(departmentName)+'</a></div>'+
   '</div></div>'+
   (sale?'<section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content">Loading reviews…</div></section>':'')+
