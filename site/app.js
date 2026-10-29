@@ -117,14 +117,14 @@ const productVisual=p=>{
 
 const availableQuickBatches=p=>availableReadyBatches(p,all.batches,all.days,cart,currentDate());
 const showcaseSaleProduct=item=>publicShowcaseSaleProduct(item,all.products,categoryFor,available);
-const canTestShowcase=()=>['owner','admin'].includes(verifiedBackOfficeRole);
+const canTestShowcase=()=>showcaseEnabled(all.settings);
 const showcaseQuickCartMarkup=item=>{
- const count=canTestShowcase()?previewRemaining(item,cart):0;
+ const count=canTestShowcase()&&item.active!==false?previewRemaining(item,cart):0;
  const max=Math.min(30,count);
  return '<form class="card-quick-buy showcase-quick-buy" data-showcase-test="'+e(item.id)+'">'+
   '<p class="showcase-available" aria-live="polite">Available: '+count+'</p>'+
-  '<div class="card-quick-actions"><label class="card-quick-qty">Qty<input name="qty" type="number" min="1" max="'+max+
-  '" value="1" step="1" inputmode="numeric" '+(max>0?'':'disabled')+' required></label>'+
+  '<div class="card-quick-actions"><label class="card-quick-qty"># Qty<span class="qty-input-wrap"><input name="qty" type="number" min="1" max="'+max+
+  '" value="1" step="1" inputmode="numeric" '+(max>0?'':'disabled')+' required><span class="qty-arrows"><button type="button" data-qty-arrow="1" aria-label="Increase quantity" '+(max>0?'':'disabled')+'>▲</button><button type="button" data-qty-arrow="-1" aria-label="Decrease quantity" '+(max>0?'':'disabled')+'>▼</button></span></span></label>'+
   '<button type="submit" class="button card-quick-add" '+(max>0?'':'disabled')+'>Add to Cart</button></div>'+
   '<p class="card-quick-status" aria-live="polite"></p></form>';
 };
@@ -139,7 +139,7 @@ const quickCartMarkup=p=>{
   (ready&&preorder?'<label class="card-sale-method">Order as<select name="mode" aria-label="Order type for '+e(p.name)+'">'+
    '<option value="ready" '+(mode==='ready'?'selected':'')+'>Ready to Sell</option>'+
    '<option value="preorder" '+(mode==='preorder'?'selected':'')+'>Preorder</option></select></label>':'<input type="hidden" name="mode" value="'+mode+'">')+
-  '<div class="card-quick-actions"><label class="card-quick-qty">Qty<input name="qty" type="number" min="1" max="'+max+'" step="1" value="1" inputmode="numeric" aria-label="Quantity of '+e(p.name)+' ('+e(unit)+')" required></label>'+
+  '<div class="card-quick-actions"><label class="card-quick-qty"># Qty<span class="qty-input-wrap"><input name="qty" type="number" min="1" max="'+max+'" step="1" value="1" inputmode="numeric" aria-label="Quantity of '+e(p.name)+' ('+e(unit)+')" required><span class="qty-arrows"><button type="button" data-qty-arrow="1" aria-label="Increase quantity">▲</button><button type="button" data-qty-arrow="-1" aria-label="Decrease quantity">▼</button></span></span></label>'+
   '<button class="button card-quick-add" type="submit" '+(max<1?'disabled':'')+'>Add to Cart</button></div>'+
   '<p class="card-quick-status" role="status" aria-live="polite"></p></form>';
 };
@@ -160,8 +160,6 @@ const showcaseCard=(item,showShopDetails=false)=>{
  const imageMarkup=item.photo_url?'<div class="card-media">'+image(item.photo_url,'product-photo',item.name)+'</div>':'';
  const parent=all.categories.find(c=>c.id===item.category_id);
  const linkedPrice=sale?money(sale.price_cents)+' / '+sellingUnitLabel(sale.unit):showcasePrice(item);
- const allergens=(item.allergen_reviewed||sale?.allergen_reviewed)?knownAllergenStatement(item.allergen_reviewed?item:sale):'Not listed';
- const claims=approvedDietaryClaims((item.dietary_claims_reviewed&&item.dietary_claims?.length)?item:sale||item);
  return '<article class="card bakery-product-card store-showcase-card'+(item.photo_url?'':' is-text-only')+'">'+
   '<a class="showcase-card-main" href="#product/'+encodeURIComponent(item.slug)+'" aria-label="View '+e(item.name)+' details">'+imageMarkup+
   '<div class="card-content"><div class="actions">'+
@@ -171,8 +169,6 @@ const showcaseCard=(item,showShopDetails=false)=>{
    '<h3>'+e(item.name)+'</h3>'+
    ((item.description||sale?.description)?'<p class="small showcase-card-description">'+e((item.description||sale?.description||'').slice(0,120))+'</p>':'')+
    (linkedPrice?'<p class="showcase-card-price">'+e(linkedPrice)+'</p>':'')+
-   '<p class="showcase-card-allergens"><strong>Allergens:</strong> '+e(allergens)+'</p>'+
-   (claims.length?'<p class="showcase-card-dietary">'+e(claims.join(' · '))+'</p>':'')+
    '<span class="showcase-card-link">View details</span></div></a>'+
   '<div class="card-showcase-buy">'+(sale?quickCartMarkup(sale):showcaseQuickCartMarkup(item))+'</div></article>';
 };
@@ -197,6 +193,19 @@ function bindQuickCart(){
   const status=form.querySelector('.card-quick-status');
   if(status&&mode==='ready'&&max===0)status.textContent='All available packages are already in your cart.';
  };
+ document.addEventListener('click',event=>{
+  const arrow=event.target.closest?.('[data-qty-arrow]');
+  if(!arrow||arrow.disabled)return;
+  const input=arrow.closest('.qty-input-wrap')?.querySelector('input[type="number"]');
+  if(!input||input.disabled)return;
+  const min=Number(input.min||0),max=input.max===''?30:Number(input.max);
+  const value=Number(input.value),current=Number.isFinite(value)?value:min;
+  const next=Math.max(min,Math.min(max,current+Number(arrow.dataset.qtyArrow)));
+  if(next===current)return;
+  input.value=String(next);
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+  input.dispatchEvent(new Event('change',{bubbles:true}));
+ });
  document.addEventListener('change',event=>{
   const form=event.target.closest?.('form[data-quick-buy]');
   if(form&&event.target.name==='mode')refresh(form);
@@ -220,6 +229,7 @@ function bindQuickCart(){
   saveCart();
   document.querySelectorAll('.nav-cart-link').forEach(link=>{link.textContent='Cart ('+cart.reduce((n,x)=>n+x.quantity,0)+')';});
   if(status)status.textContent='Added to cart.';
+  nav('#cart');
   document.querySelectorAll('[data-showcase-test]').forEach(other=>{
    const rec=all.showcaseItems.find(x=>x.id===other.dataset.showcaseTest);
    if(!rec)return;
@@ -252,6 +262,7 @@ function bindQuickCart(){
   const count=cart.reduce((total,row)=>total+row.quantity,0);
   for(const link of document.querySelectorAll('.nav-cart-link'))link.textContent='Cart ('+count+')';
   if(status)status.textContent='Added '+qty+' '+sellingUnitLabel(p.unit)+' package(s) to your cart.';
+  nav('#cart');
   document.querySelectorAll('form[data-quick-buy]').forEach(refresh);
  });
 }
