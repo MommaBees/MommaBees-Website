@@ -19,7 +19,7 @@ test('Selected Qty equal to cart amount shows Checkout, any changed amount shows
 test('Cart Qty control uses a collection and supports zero for removal',()=>{
  const app=read('site/app.js');
  assert.match(app,/\$\$\('\[data-cart-qty\]'\)\.forEach\(/);
- assert.ok(app.split('\n').some(line=>line.trimStart().startsWith("$('[data-cart-qty]').forEach(")));
+ assert.ok(app.split('\n').some(line=>line.trimStart().startsWith("$$('[data-cart-qty]').forEach(")));
  assert.match(app,/if\(quantity===0\)\{cart\.splice\(index,1\);saveCart\(\);cartPage\(\);return;\}/);
 });
 test('Adding storefront items does not force navigation and changes checkout button state',()=>{
