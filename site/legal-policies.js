@@ -1,8 +1,9 @@
 // MommaBees customer-facing legal notice registry. Version 1 owner-directed drafting baseline.
 // These notices describe operational rules; they do not waive nonwaivable statutory rights.
 import {escapeHtml as escape} from './api.js';
-export const LEGAL_VERSION='2026-10-27-v1';
-export const LEGAL_UPDATED='October 27, 2026';
+import {LEGAL_POLICY_EXTENSIONS} from './legal-policy-extensions.js';
+export const LEGAL_VERSION='2026-10-29-v2';
+export const LEGAL_UPDATED='October 29, 2026';
 export const LEGAL_PAGES=Object.freeze([
  ['terms','Terms of Service'],
  ['privacy','Privacy Policy'],
@@ -86,6 +87,13 @@ const sections={
   ['Concerns and recalls','If you suspect contamination, mislabeling, or illness, do not consume the product. Seek medical assistance when appropriate and '+contact()+' promptly with the order details. A reported safety issue will be reviewed under the bakery’s food-safety and recall procedures.']
  ]
 };
+// Keep established customer terms and add detailed operational requirements before the closing section.
+export const legalPolicySections=slug=>{
+ const base=sections[slug]?.();
+ if(!base)return [];
+ const detail=LEGAL_POLICY_EXTENSIONS[slug]||[];
+ return [...base.slice(0,-1),...detail,base[base.length-1]];
+};
 export function legalIndexPage(){
  return '<section class="section legal-page"><div class="eyebrow">MommaBees · Legal & Policies</div><h1>Legal & Customer Policies</h1><p>Review the rules governing website use, ordering, fulfillment, and visits to the farmstand.</p><div class="legal-grid">'+LEGAL_PAGES.map(([slug,title])=>'<a class="box legal-tile" href="#legal/'+slug+'"><strong>'+escape(title)+'</strong><span>Read policy</span></a>').join('')+'</div><p class="small">Policy revision '+escape(LEGAL_VERSION)+'. For questions, '+contact()+'.</p></section>';
 }
@@ -96,7 +104,7 @@ export function legalPage(slug,settings={}){
  const emailBlock=email?'<p class="small">Business contact: <a href="mailto:'+escape(email)+'">'+escape(email)+'</a></p>':'';
  return '<article class="section legal-page"><nav class="legal-back"><a href="#legal">All legal policies</a></nav><h1>'+escape(title)+'</h1>'+
  '<p class="small legal-revision">Last revised: '+escape(LEGAL_UPDATED)+' · Version '+escape(LEGAL_VERSION)+'</p>'+
- sections[slug]().map(([heading,body])=>'<section class="legal-section"><h2>'+escape(heading)+'</h2><p>'+body+'</p></section>').join('')+
+ legalPolicySections(slug).map(([heading,body])=>'<section class="legal-section"><h2>'+escape(heading)+'</h2><p>'+body+'</p></section>').join('')+
  (slug==='cookies'?'<button type="button" class="button secondary" data-cookie-settings>Manage cookie preferences</button>':'')+
  emailBlock+'<p class="small legal-related">Related: '+LEGAL_PAGES.filter(x=>x[0]!==slug).map(x=>link(x[0],x[1])).join(' · ')+'</p></article>';
 }
