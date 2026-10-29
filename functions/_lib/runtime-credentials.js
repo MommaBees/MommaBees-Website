@@ -19,6 +19,10 @@ export async function runtimeCredential(env,name,environment){
   const fallback=environment==='test'?env.STRIPE_TEST_SECRET_KEY||env.STRIPE_SECRET_KEY:env.STRIPE_LIVE_SECRET_KEY||env.STRIPE_SECRET_KEY;
   return (environment==='test'?/^sk_test_/.test(fallback||''):/^sk_live_/.test(fallback||''))?fallback:null;
  }
- if(name==='STRIPE_WEBHOOK_SECRET')return (environment==='test'?env.STRIPE_TEST_WEBHOOK_SECRET:env.STRIPE_LIVE_WEBHOOK_SECRET)||env.STRIPE_WEBHOOK_SECRET||null;
+ if(name==='STRIPE_WEBHOOK_SECRET'){
+  const current=env.STRIPE_PAYMENT_MODE==='live'||(!env.STRIPE_PAYMENT_MODE&&/^sk_live_/.test(env.STRIPE_SECRET_KEY||''))?'live':'test';
+  return (environment==='test'?env.STRIPE_TEST_WEBHOOK_SECRET:env.STRIPE_LIVE_WEBHOOK_SECRET)||
+   (current===environment?env.STRIPE_WEBHOOK_SECRET:null)||null;
+ }
  return env.TURNSTILE_SECRET_KEY||null;
 }
