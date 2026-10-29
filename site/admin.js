@@ -345,7 +345,7 @@ function listPanel(){if(configs[selected]?.table==='site_settings')return siteSe
    await remove(selected,record[key],key);await ctx.load();await renderPanel();
   }catch(error){ctx.showError(error);}
  });
- document.querySelectorAll('[data-deliver]').forEach(b=>b.onclick=async()=>{const p=rows[Number(b.dataset.deliver)];if(!confirm('Send this ACTIVE promotion as an in-app notification to eligible, opted-in customer accounts?'))return;try{const count=await rpc('deliver_promotion',{p_promo_id:p.id});alert('Delivered to '+count+' eligible account(s). No marketing emails or text messages were sent.');}catch(x){ctx.showError(x);}});
+ document.querySelectorAll('[data-deliver]').forEach(b=>b.onclick=async()=>{const p=rows[Number(b.dataset.deliver)];if(!confirm('Send this ACTIVE promotion as an in-app notification to eligible, opted-in customer accounts?'))return;try{const response=await fetch('/api/admin/deliver-promotion',{method:'POST',headers:{'Content-Type':'application/json','Origin':location.origin,Authorization:'Bearer '+(currentSession()?.access_token||'')},body:JSON.stringify({promotion_id:p.id})});const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||'Promotion delivery failed');alert('Delivered to '+result.delivered+' eligible account(s). No marketing emails or text messages were sent.');}catch(x){ctx.showError(x);}});
  document.querySelectorAll('[data-reply]').forEach(b=>b.onclick=()=>reply(rows[Number(b.dataset.reply)]));
  document.querySelectorAll('[data-reviewpics]').forEach(b=>b.onclick=()=>reviewPhotos(rows[Number(b.dataset.reviewpics)]));
 
