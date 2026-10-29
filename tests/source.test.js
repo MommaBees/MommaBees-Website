@@ -423,7 +423,7 @@ test('available pickup dates respect cart product lead times and ready-stock lim
  assert.match(checkout,/canFulfillCartOn/);
  assert.match(checkout,/futureDate\(product\.lead_days\)/);
  assert.match(checkout,/batch\.best_before>=date/);
- assert.match(checkout,/batch\.quantity_available>=item\.quantity/);
+ assert.match(checkout,/batch\.quantity_available>=cart\.filter\(other=>other\.mode==='ready'/);
  assert.match(checkout,/new Date\(d\.cutoff_at\)>new Date\(\)/);
 });
 
