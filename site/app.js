@@ -539,7 +539,7 @@ function detail(id){
  const allergens=Array.isArray(p.major_allergens)&&p.major_allergens.length
   ?'Contains: '+p.major_allergens.join(', ')+'.'
   :knownAllergenStatement(p);
- layout(`<div class="detail product-detail"><div><div id="primary-photo">${image(gallery[0],'detail-photo',p.name)}</div>${visual.credit}${gallery.length>1?`<div class="thumbs">${gallery.map((u,i)=>`<img src="${photo(u)}" alt="View image ${i+1}" data-primary="${i}">`).join('')}</div>`:''}<section class="product-ingredient-details"><h2>Ingredients</h2><p>${e(p.ingredients||'Not listed')}</p><h2>Allergens</h2><p>${e(allergens)}</p>${p.storage_notes?'<h2>Storage &amp; Handling</h2><p>'+e(p.storage_notes)+'</p>':''}${approvedDietaryClaims(p).length?'<h2>Dietary information</h2><p>'+e(approvedDietaryClaims(p).join(' · '))+'</p>':''}</section></div><div><a href="#shop" class="muted">← Back to shop</a><h1>${e(p.name)}</h1><p class="price">${money(p.price_cents)} / ${e(unit)}</p><section class="product-description" aria-label="Product description"><h2>Description</h2><p>${e(p.description||'Contact Momma Bee for product details.')}</p></section><form id="add-form"><div class="field"><label for="mode">Ordering method</label><select id="mode" name="mode">${showReady?'<option value="ready">Ready to Sell (already prepared)</option>':''}${showPreorder?'<option value="preorder">Preorder for a baking day</option>':''}</select></div>${batches.length?`<div class="field" id="batch-section"><label for="batch">Available finished batch</label><select id="batch" name="batch">${batches.map(b=>`<option value="${e(b.id)}">Prepared ${e(b.baked_on)} · ${e(b.quantity_available)} packages available</option>`).join('')}</select></div>`:''}<div class="field"><label for="qty">Qty (number of ${e(unit)} packages)</label><div class="product-quantity-control"><button type="button" class="button secondary" data-qty-step="-1" aria-label="Decrease quantity">−</button><input type="number" min="1" max="30" step="1" value="1" id="qty" inputmode="numeric" required><button type="button" class="button secondary" data-qty-step="1" aria-label="Increase quantity">+</button></div><p class="small muted" id="product-stock-note"></p><strong id="product-line-total" aria-live="polite"></strong></div><button class="button" type="submit">Add to Cart</button><a class="button secondary" href="#cart">View Cart</a></form></div></div><section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content">Loading reviews…</div></section>`); 
+ layout(`<div class="detail product-detail"><div><div id="primary-photo">${image(gallery[0],'detail-photo',p.name)}</div>${visual.credit}${gallery.length>1?`<div class="thumbs">${gallery.map((u,i)=>`<img src="${photo(u)}" alt="View image ${i+1}" data-primary="${i}">`).join('')}</div>`:''}<section class="product-ingredient-details"><h2>Ingredients</h2><p>${e(p.ingredients||'Not listed')}</p><h2>Allergens</h2><p>${e(allergens)}</p>${p.storage_notes?'<h2>Storage &amp; Handling</h2><p>'+e(p.storage_notes)+'</p>':''}${approvedDietaryClaims(p).length?'<h2>Dietary information</h2><p>'+e(approvedDietaryClaims(p).join(' · '))+'</p>':''}</section></div><div><a href="#shop" class="muted">← Back to shop</a><h1>${e(p.name)}</h1><p class="price">${money(p.price_cents)} / ${e(unit)}</p><section class="product-description" aria-label="Product description"><h2>Description</h2><p>${e(p.description||'Contact Momma Bee for product details.')}</p></section><form id="add-form"><div class="field"><label for="mode">Ordering method</label><select id="mode" name="mode">${showReady?'<option value="ready">Ready to Sell (already prepared)</option>':''}${showPreorder?'<option value="preorder">Preorder for a baking day</option>':''}</select></div>${batches.length?`<div class="field" id="batch-section"><label for="batch">Available finished batch</label><select id="batch" name="batch">${batches.map(b=>`<option value="${e(b.id)}">Prepared ${e(b.baked_on)} · ${e(b.quantity_available)} packages available</option>`).join('')}</select></div>`:''}<div class="field"><label for="qty"># Qty (${e(unit)} packages)</label><div class="product-quantity-control"><span class="qty-input-wrap"><input type="number" min="1" max="30" step="1" value="1" id="qty" inputmode="numeric" required><span class="qty-arrows"><button type="button" data-qty-arrow="1" aria-label="Increase quantity">▲</button><button type="button" data-qty-arrow="-1" aria-label="Decrease quantity">▼</button></span></span></div><p class="small muted" id="product-stock-note"></p><strong id="product-line-total" aria-live="polite"></strong></div><button class="button" type="submit">Add to Cart</button><a class="button secondary" href="#cart">View Cart</a></form></div></div><section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content">Loading reviews…</div></section>`); 
  const mode=$('#mode'),batch=$('#batch'),quantity=$('#qty'),lineTotal=$('#product-line-total');
  const existingForBatch=(id)=>cart.filter(i=>i.product_id===p.id&&i.mode==='ready'&&i.batch_id===id)
   .reduce((sum,i)=>sum+i.quantity,0);
@@ -574,10 +574,6 @@ function detail(id){
  };
  mode.addEventListener('change',refreshQuantity);batch?.addEventListener('change',refreshQuantity);
  quantity.addEventListener('input',refreshQuantity);
- $$('[data-qty-step]').forEach(button=>button.onclick=()=>{
-  quantity.value=String(Math.max(1,Math.min(capacity(),(Number(quantity.value)||1)+Number(button.dataset.qtyStep))));
-  refreshQuantity();
- });
  refreshQuantity();
  $$('[data-primary]').forEach(el=>el.onclick=()=>{$('#primary-photo').innerHTML=image(gallery[Number(el.dataset.primary)],'detail-photo',p.name);});
  reviewArea(p.id);
@@ -601,8 +597,8 @@ function cartPage(){
    item.mode==='ready'?Math.min(30,Number(batch?.quantity_available||0)):30;
   return '<div class="lineitem cart-line"><div><strong>'+e(item.name)+'</strong>'+
    '<p class="small">'+(preview?'Cart preview':item.mode==='ready'?'Ready to Sell':'Preorder')+' · '+e(unit)+' · '+money(price)+'</p>'+
-   '<label for="cart-qty-'+i+'">Qty</label><input id="cart-qty-'+i+'" data-cart-qty="'+i+'" type="number" min="1" max="'+max+
-   '" step="1" value="'+item.quantity+'" inputmode="numeric"></div><div><strong>'+money(packageTotal(price,item.quantity))+
+   '<label for="cart-qty-'+i+'"># Qty</label><span class="qty-input-wrap"><input id="cart-qty-'+i+'" data-cart-qty="'+i+'" type="number" min="0" max="'+max+
+   '" step="1" value="'+item.quantity+'" inputmode="numeric"><span class="qty-arrows"><button type="button" data-qty-arrow="1" aria-label="Increase quantity">▲</button><button type="button" data-qty-arrow="-1" aria-label="Decrease quantity">▼</button></span></span></div><div><strong>'+money(packageTotal(price,item.quantity))+
    '</strong><button type="button" class="button ghost" data-remove="'+i+'">Remove</button></div></div>';
  }).join('');
  layout('<section class="section bakery-cart-section"><h1>Your Cart</h1>'+
@@ -615,8 +611,9 @@ function cartPage(){
  $$('[data-remove]').forEach(button=>button.onclick=()=>{
   cart.splice(Number(button.dataset.remove),1);saveCart();cartPage();
  });
- $$('[data-cart-qty]').forEach(input=>input.onchange=()=>{
-  const item=cart[Number(input.dataset.cartQty)],quantity=Number(input.value);
+ $('[data-cart-qty]').forEach(input=>input.onchange=()=>{
+  const index=Number(input.dataset.cartQty),item=cart[index],quantity=Number(input.value);
+  if(quantity===0){cart.splice(index,1);saveCart();cartPage();return;}
   const batch=all.batches.find(b=>b.id===item.batch_id&&b.product_id===item.product_id);
   const preview=item.mode==='showcase';
   const showcase=preview?all.showcaseItems.find(x=>x.id===item.showcase_id):null;
