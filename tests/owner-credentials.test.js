@@ -20,11 +20,16 @@ const fakeFetch=(role='owner',passwordOK=true)=>{
   else if(target.includes('/rest/v1/staff_roles?'))body=[{role}];
   else if(target.includes('/rest/v1/customer_profiles?'))body=[{banned_at:null}];
   else if(target.includes('/rpc/mommabees_credential_status'))body=[];
+  else if(target.includes('/rpc/mommabees_credential_history'))body=[];
   else if(target.includes('/auth/v1/token?grant_type=password')){
    if(passwordOK)body={user:{id:user,email:'owner@example.com'},access_token:'reauth'};
    else{body={error:'invalid'};code=400;}
   }else if(target==='https://api.stripe.com/v1/account')body={id:'acct_1UUtoDJF02bajTTM'};
-  else if(target.includes('/rpc/mommabees_credential_save'))body={stored:true,name:'STRIPE_SECRET_KEY',environment:'test',changed_at:'2026-10-29T18:00:00Z'};
+  else if(target==='https://api.stripe.com/v1/products?limit=1')body={data:[]};
+  else if(target.includes('/rpc/mommabees_credential_stage'))body={id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',state:'pending'};
+  else if(target.includes('/rpc/mommabees_credential_promote'))body={id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',state:'activated'};
+  else if(target.includes('/rpc/mommabees_credential_read'))body='sk_test_example_replacement_dummy_token';
+  else if(target.includes('/rpc/mommabees_credential_revert'))body={state:'rolled_back'};
   else if(target.includes('/rest/v1/account_admin_audit'))body=[];
   else throw Error('Unexpected network request '+target);
   return new Response(JSON.stringify(body),{status:code,headers:{'content-type':'application/json'}});
@@ -73,7 +78,7 @@ test('Owner password failure cannot write a Vault secret, and LIVE requires expl
   assert.equal((await onRequestPost({request:make({...payload,environment:'live'}),env})).status,400);
  }finally{globalThis.fetch=original;}
 });
-test('Owner valid password and CAPTCHA may rotate a TEST key, never getting key back in response',async()=>{
+test('Owner valid password and CAPTCHA stage, validate, and promote TEST key with readback; no raw secret in response',async()=>{
  const original=globalThis.fetch,{fn,seen}=fakeFetch('owner',true);
  globalThis.fetch=fn;
  const secret='sk_test_example_replacement_dummy_token';
@@ -83,9 +88,12 @@ test('Owner valid password and CAPTCHA may rotate a TEST key, never getting key 
   assert.equal(r.status,200);
   const text=await r.text();
   assert.doesNotMatch(text,/sk_test_example|owner-secret-confirmation|captcha/);
-  const save=seen.find(x=>x.url.includes('/rpc/mommabees_credential_save'));
+  const save=seen.find(x=>x.url.includes('/rpc/mommabees_credential_stage'));
   assert.ok(save);
   assert.equal(JSON.parse(save.options.body).p_secret,secret);
+  assert.ok(seen.find(x=>x.url.includes('/rpc/mommabees_credential_promote')));
+  assert.ok(seen.find(x=>x.url.includes('/rpc/mommabees_credential_read')));
+  assert.ok(seen.find(x=>x.url.includes('/v1/products?limit=1')));
   assert.equal(seen.some(x=>x.url==='https://api.stripe.com/v1/account'),true);
   const logged=seen.find(x=>x.url.includes('account_admin_audit'));
   assert.equal(JSON.stringify(logged.options.body).includes(secret),false);
