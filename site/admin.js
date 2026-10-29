@@ -52,7 +52,7 @@ const $=s=>document.querySelector(s);
 const cols=(...x)=>x;
 const field=(key,label,type='text',extra={})=>({key,label,type,...extra});
 const configs={
- categories:{label:'Categories',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('name','Category name'),field('slug','URL slug (example: cookies)'),field('description','Description','textarea'),field('photo_url','Category image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
+ categories:{label:'Categories',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('name','Category name'),field('slug','URL slug (example: cookies)'),field('description','Description','textarea'),field('photo_url','Category image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
  products:{label:'Products',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('category_id','Category','ref',{table:'categories'}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('variety_id','Variety','ref',{table:'catalog_varieties'}),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Sold by','select',{options:['each','dozen','tray','box','slice','bag','bunch','basket','pint','quart','pound']}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
  store_showcase_items:{label:'Product Showcase',fields:cols(
   field('department','Department','select',{options:STORE_DEPARTMENTS}),
@@ -679,7 +679,7 @@ function siteSettingsSummary(){
  '</section>';
  $('#edit-site-settings').onclick=()=>openEditor(row);
 }
-function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.length)return '';const val=r?.[f.key], id='field_'+f.key;let raw='';const value=val??'';
+function fieldInput(f,r){const val=r?.[f.key], id='field_'+f.key;let raw='';const value=val??'';
  const mandatory=adminFieldIsRequired(selected,f.key),req=mandatory?' required':'';
  if(f.type==='bool')return `<div class="field admin-boolean-field">
  <span class="admin-field-label" id="${id}_label">${e(f.label)}</span>
@@ -693,7 +693,12 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
   <input type="file" data-carousel-photo-for="${id}" accept="image/jpeg,image/png,image/webp" aria-label="Upload carousel photograph">
   <small>Upload a JPG, PNG or WebP photograph (maximum 5 MB). The current image stays until you save a replacement.</small>`;
  else if(f.type==='textarea')raw=`<textarea id="${id}" rows="4"${req}>${e(value)}</textarea>`;
- else if(f.type==='select')raw=`<select id="${id}"${req}>${f.options.map(x=>`<option value="${e(x)}" ${value===x?'selected':''}>${e(pretty(x))}</option>`).join('')}</select>`;
+ else if(f.type==='select'){
+ const types=f.key==='product_type'?(refs.catalog_product_types||[]).filter(t=>t.active!==false):[];
+ const options=types.length?types.map(t=>({value:t.code,label:t.name})):(f.options||[]).map(t=>({value:t,label:pretty(t)}));
+ const canCreate=f.key==='product_type'&&['products','categories'].includes(selected);
+ raw=`<select id="${id}"${req}>${selected==='categories'&&f.key==='product_type'?'<option value="">Choose product type</option>':''}${options.map(t=>`<option value="${e(t.value)}" ${String(value)===String(t.value)?'selected':''}>${e(t.label)}</option>`).join('')}${canCreate?'<option value="__create__">+ Create Product Type</option>':''}</select>`;
+ }
  else if(f.type==='ref'){
   const rowKey=referenceKeyFor(f.table);
   const options=(refs[f.table]||[]).flatMap(x=>{
@@ -703,12 +708,13 @@ function fieldInput(f,r){if(f.key==='subcategory_id'&&!refs.subcategories?.lengt
    const suffix=['categories','subcategories','catalog_varieties'].includes(f.table)||f.table==='baking_days'?'':' ('+String(refValue).slice(0,8)+')';
    return [`<option value="${e(String(refValue))}" ${String(value)===String(refValue)?'selected':''}>${e(label+suffix)}</option>`];
   }).join('');
+  const canCreate=['categories','subcategories'].includes(f.table)&&['products','store_showcase_items','catalog_varieties','subcategories'].includes(selected);
   const none=!(refs[f.table]||[]).length;
   const emptyMessage=f.table==='products'?'No products have been created. Add a real product in Catalog → Products first.'
    :f.table==='baking_days'?'No baking dates are available. Add a date in Baking & Fulfillment Calendar first.'
    :'No '+f.table.replaceAll('_',' ')+' records are available. Create the related record first.';
-  raw=`<select id="${id}" ${none?'disabled':''}${req}>
-   <option value="">${none?'No entries available':'Choose…'}</option>${options}</select>${none?'<p class="admin-reference-note" role="status">'+e(emptyMessage)+'</p>':''}`;
+  raw=`<select id="${id}" ${none&&!canCreate?'disabled':''}${req}>
+   <option value="">${none?'No entries available':'Choose…'}</option>${options}${canCreate?'<option value="__create__">+ Create '+(f.table==='categories'?'Category':'Subcategory')+'</option>':''}</select>${none&&!canCreate?'<p class="admin-reference-note" role="status">'+e(emptyMessage)+'</p>':''}`;
  }
  else if(f.type==='csv'||f.type==='uuids')raw=`<input id="${id}" value="${e(Array.isArray(value)?value.join(', '):value)}"${req}>`;
  else if(f.type==='image')raw=`<input id="${id}" value="${e(value)}" placeholder="Select a real photograph or upload your own" readonly>
@@ -730,7 +736,7 @@ async function openEditor(record){const c=configs[selected];
    published:false,_unsaved:true};
  }
  editing=record;
- const tables=[...new Set(c.fields.filter(f=>f.type==='ref').map(f=>f.table))];await Promise.all(tables.map(async t=>{refs[t]=await list(t,{limit:500}).catch(()=>[]);}));
+ const tables=[...new Set(c.fields.filter(f=>f.type==='ref').map(f=>f.table))];if(['products','categories','subcategories','store_showcase_items','catalog_varieties'].includes(selected))tables.push('catalog_product_types');await Promise.all(tables.map(async t=>{refs[t]=await list(t,{limit:500}).catch(()=>[]);}));
  $('#editor-title').textContent=record&&!record._unsaved?'Edit '+c.label:'Add '+c.label;
  $('#editor-fields').innerHTML=c.fields.map(f=>fieldInput(f,record)).join('');
  if(selected==='store_showcase_items'){
@@ -742,7 +748,7 @@ async function openEditor(record){const c=configs[selected];
   }
   if(price&&kind)price.addEventListener('input',()=>{if(price.value!=='')kind.value='owner';});
  }
- const missingRequired=c.fields.filter(f=>f.type==='ref'&&!['subcategory_id','variety_id'].includes(f.key)&&!(refs[f.table]||[]).length);
+ const missingRequired=c.fields.filter(f=>f.type==='ref'&&!['subcategory_id','variety_id'].includes(f.key)&&!(refs[f.table]||[]).length&&!['categories','subcategories'].includes(f.table));
  if(missingRequired.length){
   const warning=document.createElement('p');
   warning.className='admin-reference-warning';
@@ -784,7 +790,7 @@ async function openEditor(record){const c=configs[selected];
    '<div id="product-taxonomy-results" role="listbox" aria-label="Matching catalog paths"></div>'+
    '<p class="small muted">Select a path to fill the dropdowns. A variety is a classification, not an active product.</p>';
   form.prepend(searchPanel);
-  const paths=taxonomyPaths(refs.categories||[],refs.subcategories||[],refs.catalog_varieties||[]);
+  const paths=()=>taxonomyPaths(refs.categories||[],refs.subcategories||[],refs.catalog_varieties||[]);
   const updateHierarchy=(level='department')=>{
    if(level==='department'){
     for(const opt of [...category.options]){if(!opt.value)continue;
@@ -807,7 +813,7 @@ async function openEditor(record){const c=configs[selected];
     if(variety.selectedOptions[0]?.disabled)variety.value='';
    }
    const item=refs.categories.find(c=>c.id===category.value);
-   const suggested=productTypeForCategory(item?.slug);
+   const suggested=productTypeForCategory(item);
    const kind=$('#field_product_type');
    if(kind&&suggested&&suggested!=='unclassified'&&suggested!==null)kind.value=suggested;
   };
@@ -822,7 +828,7 @@ async function openEditor(record){const c=configs[selected];
   const showMatches=()=>{
    const query=search.value.trim();results.innerHTML='';
    if(!query)return;
-   for(const path of searchTaxonomyPaths(paths,query,20)){
+   for(const path of searchTaxonomyPaths(paths(),query,20)){
     const button=document.createElement('button');
     button.type='button';button.className='admin-taxonomy-result';button.setAttribute('role','option');
     button.textContent=path.path;
@@ -883,6 +889,65 @@ async function openEditor(record){const c=configs[selected];
    if(sub.selectedOptions[0]?.disabled)sub.value='';
   };
   cat?.addEventListener('change',()=>{if(sub)sub.value='';filter();});filter();
+ }
+
+ // Add new catalog options without leaving or losing the unsaved product.
+ if(['products','store_showcase_items','subcategories','catalog_varieties','categories'].includes(selected)){
+  const selectors=[...$('#editor-fields').querySelectorAll('select')].filter(el=>
+   ['field_category_id','field_subcategory_id','field_product_type'].includes(el.id)&&
+   [...el.options].some(opt=>opt.value==='__create__'));
+  for(const select of selectors){
+   const table=select.id==='field_category_id'?'categories':select.id==='field_subcategory_id'?'subcategories':'catalog_product_types';
+   const label=table==='categories'?'Category':table==='subcategories'?'Subcategory':'Product Type';
+   const panel=document.createElement('div');panel.className='admin-inline-create';panel.hidden=true;
+   const productTypes=(refs.catalog_product_types||[]).filter(t=>t.active!==false);
+   panel.innerHTML='<label>New '+label+' name<input type="text" class="admin-inline-name" maxlength="100" autocomplete="off" placeholder="Enter name"></label>'+
+    (table==='categories'?'<label>Product type<select class="admin-inline-type">'+productTypes.map(t=>'<option value="'+e(t.code)+'">'+e(t.name)+'</option>').join('')+'</select></label>':'')+
+    '<div class="actions"><button type="button" class="button admin-inline-save">Save '+label+'</button><button type="button" class="button secondary admin-inline-cancel">Cancel</button></div>'+
+    '<p class="small" role="status" aria-live="polite"></p>';
+   select.closest('.field').append(panel);
+   const nameInput=panel.querySelector('.admin-inline-name'),save=panel.querySelector('.admin-inline-save'),
+    status=panel.querySelector('[role="status"]');let previous='';
+   select.addEventListener('change',()=>{
+    if(select.value==='__create__'){panel.hidden=false;nameInput.value='';status.textContent='';nameInput.focus();}
+    else {previous=select.value;panel.hidden=true;}
+   });
+   panel.querySelector('.admin-inline-cancel').onclick=()=>{
+    select.value=previous;panel.hidden=true;select.dispatchEvent(new Event('change',{bubbles:true}));
+   };
+   nameInput.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();save.click();}});
+   save.onclick=async()=>{
+    const name=nameInput.value.trim().replace(/\s+/g,' ');
+    const slug=name.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    if(name.length<2||name.length>100||slug.length<2){status.textContent='Enter a name of at least two letters or numbers.';return;}
+    let payload;
+    if(table==='categories'){
+     const department=$('#field_department')?.value||'bakery',product_type=panel.querySelector('.admin-inline-type')?.value;
+     if(!STORE_DEPARTMENTS.includes(department)||!product_type){status.textContent='Select a department and product type.';return;}
+     payload={name,slug,department,product_type,sort_order:100,active:true};
+    }else if(table==='subcategories'){
+     const category_id=$('#field_category_id')?.value;
+     if(!category_id||category_id==='__create__'){status.textContent='Choose a parent category first.';return;}
+     payload={name,slug,category_id,sort_order:100,active:true};
+    }else payload={name,code:slug,active:true};
+    const duplicate=(refs[table]||[]).find(row=>
+     (table==='catalog_product_types'?row.code:row.slug)===slug&&
+     (table!=='subcategories'||row.category_id===payload.category_id));
+    if(duplicate){status.textContent='Already exists. Choose the existing '+label.toLowerCase()+'.';return;}
+    save.disabled=true;status.textContent='Saving…';
+    try{
+     const created=await add(table,payload);
+     if(!created)throw Error('No saved '+label.toLowerCase()+' was returned.');
+     refs[table]=[...(refs[table]||[]),created];
+     const option=document.createElement('option');
+     option.value=table==='catalog_product_types'?created.code:created.id;
+     option.textContent=table==='categories'?departmentLabel(departmentForCategory(created))+' → '+created.name:created.name;
+     select.insertBefore(option,select.querySelector('option[value="__create__"]'));
+     select.value=option.value;panel.hidden=true;select.dispatchEvent(new Event('change',{bubbles:true}));
+    }catch(error){status.textContent=error.message||'Unable to save.';ctx.showError(error);}
+    finally{save.disabled=false;}
+   };
+  }
  }
  if(selected==='orders'&&record){
   const details=record.guest_contact_address||record.delivery_address||{};
@@ -957,7 +1022,7 @@ async function openEditor(record){const c=configs[selected];
   typeSelect.closest('.field').append(note);
   const updateTypeControls=(categoryChanged=false)=>{
    const cat=refs.categories?.find(c=>c.id===category.value);
-   const categoryType=productTypeForCategory(cat?.slug);
+   const categoryType=productTypeForCategory(cat);
    if(categoryChanged&&categoryType&&categoryType!=='unclassified')typeSelect.value=categoryType;
    const isFood=typeSelect.value==='food';
    if(panel)panel.hidden=!isFood;
@@ -982,6 +1047,7 @@ async function openEditor(record){const c=configs[selected];
  $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);if(!el&&['subcategory_id','variety_id'].includes(f.key)){body[f.key]=null;continue;}let v=f.type==='bool'?el.checked:el.value;
  if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload(selected==='past_bakes'?'past-bakes':'product-photos',inp.files[0]);v=photo.url;} }
  if(f.type==='carousel_image'){const inp=document.querySelector('[data-carousel-photo-for="field_'+f.key+'"]');if(inp?.files?.[0]){const uploaded=await upload('carousel-photos',inp.files[0]);v=uploaded.url;}if(!v)throw Error('Upload a real photograph before saving this slide.');}
+ if(v==='__create__')throw Error('Save or cancel the new '+f.label+' before saving this record.');
  if(f.type==='money')v=v===''?null:Math.round(Number(v)*100);
  if(f.type==='number')v=v===''?null:Number(v);
  if(f.type==='csv'||f.type==='uuids')v=v.split(',').map(x=>x.trim()).filter(Boolean);
@@ -1011,7 +1077,7 @@ async function openEditor(record){const c=configs[selected];
  throw Error('Pay at Pickup is not yet available with automatic tax handling. Stripe Tax calculates Stripe payments only; cash collection needs its own verified tax calculation.');
  if(selected==='products'){
   const cat=refs.categories?.find(c=>c.id===body.category_id);
-  const expected=productTypeForCategory(cat?.slug);
+  const expected=productTypeForCategory(cat);
   if(expected==='unclassified')throw Error('Choose a classified product category before saving.');
   if(body.department!==departmentForCategory(cat))throw Error('Product department must match its category.');
   if(expected!==null&&body.product_type!==expected)throw Error('The product type must match its category.');
