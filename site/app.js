@@ -147,9 +147,14 @@ const showcaseCard=item=>{
  const linkedPrice=sale?money(sale.price_cents)+' / '+sellingUnitLabel(sale.unit):showcasePrice(item);
  return '<article class="card bakery-product-card store-showcase-card'+(item.photo_url?'':' is-text-only')+'">'+
   '<a class="showcase-card-main" href="#product/'+encodeURIComponent(item.slug)+'" aria-label="View '+e(item.name)+' details">'+imageMarkup+
-  '<div class="card-content"><p class="eyebrow">'+e(parent?.name||departmentLabel(item.department))+'</p>'+
-  '<h3>'+e(item.name)+'</h3>'+(linkedPrice?'<p class="showcase-card-price">'+e(linkedPrice)+'</p>':'')+
-  '<span class="showcase-card-link">View details</span></div></a>'+
+  '<div class="card-content"><div class="actions">'+
+   (sale&&productReady(sale)?'<span class="badge">Ready to sell</span>':'')+
+   (sale&&productPreorder(sale)?'<span class="badge">Preorder</span>':'')+'</div>'+
+   '<p class="eyebrow">'+e(parent?.name||departmentLabel(item.department))+'</p>'+
+   '<h3>'+e(item.name)+'</h3>'+
+   ((item.description||sale?.description)?'<p class="small showcase-card-description">'+e((item.description||sale?.description||'').slice(0,120))+'</p>':'')+
+   (linkedPrice?'<p class="showcase-card-price">'+e(linkedPrice)+'</p>':'')+
+   '<span class="showcase-card-link">View details</span></div></a>'+
   (sale?'<div class="card-showcase-buy">'+quickCartMarkup(sale)+'</div>':'')+'</article>';
 };
 function bindQuickCart(){
