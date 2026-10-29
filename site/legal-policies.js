@@ -2,7 +2,7 @@
 // These notices describe operational rules; they do not waive nonwaivable statutory rights.
 import {escapeHtml as escape} from './api.js';
 import {LEGAL_POLICY_EXTENSIONS} from './legal-policy-extensions.js';
-export const LEGAL_VERSION='2026-10-29-v2';
+export const LEGAL_VERSION='2026-10-29-v3';
 export const LEGAL_UPDATED='October 29, 2026';
 export const LEGAL_PAGES=Object.freeze([
  ['terms','Terms of Service'],
