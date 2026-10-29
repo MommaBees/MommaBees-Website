@@ -462,65 +462,54 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
 }
 /** An Owner-supplied catalog item's own page; the existing purchasable product route remains separate. */
 function showcaseDetail(item){
- const sale=showcaseSaleProduct(item);
- const department=item.department==='homestand'?'homestand':'bakery';
- const category=all.categories.find(c=>c.id===item.category_id);
- const subcategory=all.subcategories.find(c=>c.id===item.subcategory_id);
- const allDepartment=showcaseItemsFor(all.showcaseItems,department,null,null,40);
- const related=allDepartment.filter(x=>x.id!==item.id).slice(0,4);
- const departmentName=departmentLabel(department);
- const backHref='#shop/'+department;
- const provenance=showcaseOrigin(item);
- const description=showcaseDescription(item)||sale?.description||'Contact Momma Bee for item details.';
- const display={...item,...(sale?{
-   price_cents:sale.price_cents,price_unit:sale.unit,price_kind:'owner',
-   ingredients:sale.ingredients||item.ingredients,
-   allergens:sale.allergens||item.allergens,storage_notes:sale.storage_notes||item.storage_notes
-  }:{})};
- const info=showcaseFields(display).filter(([label])=>!['Ingredients','Allergens','Storage & handling'].includes(label));
- const dietaryClaims=approvedDietaryClaims((item.dietary_claims_reviewed&&item.dietary_claims?.length)?item:sale||item);
- const allergensKnown=knownAllergenStatement((item.allergen_reviewed||item.allergens)?item:sale||item);
- const photos=[item.photo_url,...(sale?all.photos.filter(x=>x.product_id===sale.id).sort((a,b)=>a.sort_order-b.sort_order).map(x=>x.url):[])].filter(Boolean);
- const classifications=[departmentName,category?.name,subcategory?.name].filter(Boolean);
- const photoMarkup='<div class="showcase-detail-gallery">'+
-  (photos.length?'<div id="showcase-primary-photo">'+image(photos[0],'showcase-detail-photo',item.name)+'</div>':
-   '<div class="showcase-detail-no-photo">No product photo available</div>')+
-  (photos.length>1?'<div class="showcase-detail-thumbs">'+photos.map((url,index)=>
-    '<button type="button" class="showcase-detail-thumb" data-showcase-photo-index="'+index+'" aria-label="Show photo '+(index+1)+'">'+image(url,'product-photo',item.name+' image '+(index+1))+'</button>').join('')+'</div>':'')+
-  '</div>';
+ const sale=showcaseSaleProduct(item),dept=item.department==='homestand'?'homestand':'bakery';
+ const category=all.categories.find(x=>x.id===item.category_id);
+ const sub=all.subcategories.find(x=>x.id===item.subcategory_id);
+ const departmentName=departmentLabel(dept);
+ const backHref='#shop/'+dept;
+ const info={...item,...(sale?{price_cents:sale.price_cents,price_unit:sale.unit,price_kind:'owner',
+  ingredients:sale.ingredients||item.ingredients,allergens:sale.allergens||item.allergens,
+  storage_notes:sale.storage_notes||item.storage_notes}:{})};
+ const allergens=(item.allergen_reviewed||sale?.allergen_reviewed)?
+  knownAllergenStatement(item.allergen_reviewed?item:sale):
+  (item.allergens||sale?.allergens||'Not listed');
+ const dietary=approvedDietaryClaims((item.dietary_claims_reviewed&&item.dietary_claims?.length)?item:sale||item);
+ const photoList=[item.photo_url,...(sale?all.photos.filter(x=>x.product_id===sale.id).sort((a,b)=>a.sort_order-b.sort_order).map(x=>x.url):[])].filter(Boolean);
+ const gallery='<div class="showcase-detail-gallery">'+
+  (photoList.length?'<div id="showcase-primary-photo">'+image(photoList[0],'showcase-detail-photo',item.name)+'</div>':
+   '<div class="showcase-detail-no-photo"></div>')+
+  (photoList.length>1?'<div class="showcase-detail-thumbs">'+photoList.map((url,index)=>
+   '<button type="button" class="showcase-detail-thumb" data-showcase-photo-index="'+index+'" aria-label="Photo '+(index+1)+'">'+image(url,'product-photo',item.name)+'</button>').join('')+'</div>':'')+'</div>';
+ const underPhoto='<section class="showcase-photo-information">'+
+  '<h2>Ingredients</h2><p>'+e(info.ingredients||'Not listed')+'</p>'+
+  '<h2>Allergens</h2><p>'+e(allergens)+'</p>'+
+  '<h2>Storage & Handling</h2><p>'+e(info.storage_notes||'Not listed')+'</p>'+
+  (dietary.length?'<h2>Dietary information</h2><p>'+e(dietary.join(' · '))+'</p>':'')+'</section>';
+ const listedPrice=sale?money(sale.price_cents)+' / '+sellingUnitLabel(sale.unit):showcasePrice(item);
+ const facts=showcaseFields(info).filter(([label])=>!['Price','Ingredients','Allergens','Storage & handling'].includes(label));
+ const left='<div class="showcase-photo-column">'+gallery+underPhoto+'</div>';
+ const copy='<div class="showcase-detail-copy"><p class="eyebrow">'+[departmentName,category?.name,sub?.name].filter(Boolean).map(e).join(' / ')+'</p>'+
+  '<h1>'+e(item.name)+'</h1>'+
+  (item.description||sale?.description?'<section class="product-description"><h2>Description</h2><p class="showcase-detail-description">'+e(item.description||sale.description)+'</p></section>':'')+
+  (listedPrice?'<p class="price">'+e(listedPrice)+'</p>':'')+
+  '<section class="showcase-sale-summary">'+
+  (sale?'<p class="showcase-detail-stock">Available: '+availableQuickBatches(sale).reduce((n,b)=>n+b.remaining,0)+'</p>'+quickCartMarkup(sale):
+    showcaseQuickCartMarkup(item))+
+  '</section>'+
+  (facts.length?'<dl class="showcase-details-table">'+facts.map(([label,value])=>
+   '<div class="showcase-detail-info"><dt>'+e(label)+'</dt><dd>'+e(value)+'</dd></div>').join('')+'</dl>':'')+
+  '<div class="actions showcase-detail-actions"><a class="button secondary" href="'+backHref+'">Browse '+e(departmentName)+'</a></div></div>';
+ const related=showcaseItemsFor(all.showcaseItems,dept,null,null,40).filter(x=>x.id!==item.id).slice(0,4);
  layout('<section class="section showcase-item-page">'+
-  '<nav class="showcase-detail-breadcrumb" aria-label="Product classification"><a href="'+backHref+'">'+e(departmentName)+'</a>'+
-   (category?' <span aria-hidden="true">/</span> <a href="#category/'+encodeURIComponent(category.id)+'">'+e(category.name)+'</a>':'')+
-  '</nav>'+
-  '<div class="showcase-detail-grid">'+photoMarkup+
-  '<div class="showcase-detail-copy"><p class="eyebrow">'+classifications.map(e).join(' / ')+'</p><h1>'+e(item.name)+'</h1>'+
-   '<p class="showcase-detail-provenance">'+e(provenance)+'</p>'+
-   '<section class="product-description"><h2>Description</h2><p class="showcase-detail-description">'+e(description)+'</p></section>'+
-   (sale?'<div class="showcase-sale-summary"><p class="price">'+money(sale.price_cents)+' / '+e(sellingUnitLabel(sale.unit))+'</p>'+
-    '<p class="small">'+(productReady(sale)?'Ready to Sell':'')+
-    (productReady(sale)&&productPreorder(sale)?' · ':'')+
-    (productPreorder(sale)?'Preorder available':'')+'</p>'+
-    quickCartMarkup(sale)+
-    '<a class="button secondary" href="#product/'+encodeURIComponent(sale.id)+'">View full ordering options</a></div>':
-    '<p class="small muted">Display listing only. Contact the bakery about ordering and current availability.</p>')+
-   '<div class="showcase-details-table">'+
-    info.map(([label,value])=>'<div class="showcase-detail-info"><strong>'+e(label)+'</strong><span>'+e(value)+'</span></div>').join('')+
-   '</div>'+
-   '<section class="product-ingredient-details"><h2>Ingredients</h2><p>'+e(display.ingredients||'Please ask Momma Bee for ingredient details before ordering.')+'</p>'+
-   '<h2>Allergens</h2><p>'+e(allergensKnown)+'</p>'+ 
-   (dietaryClaims.length?'<h2>Dietary information</h2><p>'+e(dietaryClaims.join(' · '))+'</p>':'')+
-   '<h2>Storage & Handling</h2><p>'+e(display.storage_notes||'Contact Momma Bee for storage and handling information.')+'</p></section>'+
-   '<div class="actions showcase-detail-actions">'+
-    (sale?'<a class="button" href="#cart">View Cart</a>':'')+
-    '<a class="button secondary" href="'+backHref+'">Browse '+e(departmentName)+'</a></div>'+
-  '</div></div>'+
-  (sale?'<section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content">Loading reviews…</div></section>':'')+
-  (related.length?'<section class="showcase-detail-related" aria-label="More '+e(departmentName)+' items">'+
-   '<h2>More '+e(departmentName)+'</h2><div class="grid">'+related.map(showcaseCard).join('')+'</div></section>':'')+
+  '<nav class="showcase-detail-breadcrumb"><a href="'+backHref+'">'+e(departmentName)+'</a>'+
+  (category?' / <a href="#category/'+encodeURIComponent(category.id)+'">'+e(category.name)+'</a>':'')+'</nav>'+
+  '<div class="showcase-detail-grid">'+left+copy+'</div>'+
+  (sale?'<section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content"></div></section>':'')+
+  (related.length?'<section class="showcase-detail-related"><h2>More '+e(departmentName)+'</h2><div class="grid">'+related.map(showcaseCard).join('')+'</div></section>':'')+
   '</section>');
  document.querySelectorAll('[data-showcase-photo-index]').forEach(button=>button.onclick=()=>{
-  const index=Number(button.dataset.showcasePhotoIndex);
-  if(photos[index])$('#showcase-primary-photo').innerHTML=image(photos[index],'showcase-detail-photo',item.name);
+  const url=photoList[Number(button.dataset.showcasePhotoIndex)];
+  if(url)$('#showcase-primary-photo').innerHTML=image(url,'showcase-detail-photo',item.name);
  });
  if(sale)reviewArea(sale.id);
 }
