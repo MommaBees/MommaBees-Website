@@ -12,8 +12,8 @@ test('Shop All, homepage, Bakery and Homestand share compact product details and
  assert.match(app,/shopShowcase\.map\(item=>showcaseCard\(item,true\)\)/);
  assert.match(app,/quickCartMarkup\(p\)/);
  assert.match(app,/quickCartMarkup\(sale\)/);
- assert.match(app,/card-quick-buy is-unavailable/);
- assert.match(app,/disabled>Add to Cart/);
+ assert.match(app,/showcaseQuickCartMarkup\(item\)/);
+ assert.match(app,/data-showcase-test/);
  assert.doesNotMatch(app,/Product information|Ask about ordering|shop-card-information/);
  assert.match(css,/\.card-quick-actions/);
  assert.match(css,/\.store-showcase-card>.card-showcase-buy/);
@@ -27,7 +27,7 @@ test('Shop All still lists Showcase even with Bakery-Homestand split off',()=>{
 test('Showcase-only cards cannot bypass a published, real-stock product for checkout',()=>{
  const app=read('site/app.js');
  assert.match(app,/const showcaseSaleProduct=item=>publicShowcaseSaleProduct/);
- assert.match(app,/sale\?'<div class="card-showcase-buy">/);
- assert.match(app,/disabled aria-label="Quantity unavailable until published inventory is added"/);
+ assert.match(app,/quickCartMarkup\(sale\)/);
+ assert.match(app,/cartHasShowcase\(cart\)/);
  assert.match(read('functions/api/checkout.js'),/reserve_checkout/);
 });
