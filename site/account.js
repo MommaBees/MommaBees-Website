@@ -59,11 +59,17 @@ function verificationStatus(form,message){
  const slot=form.querySelector('[data-captcha-status]');
  if(slot)slot.textContent=message||'';
 }
+function syncAuthSubmit(form){
+ const verified=form.querySelector('[data-verify-human]')?.checked===true&&Boolean(form.dataset.captchaVerifiedToken);
+ const submit=form.querySelector('button[type="submit"]');if(submit)submit.disabled=!verified;
+}
 function resetVerification(form){
+ delete form.dataset.captchaVerifiedToken;
  const slot=form.querySelector('[data-captcha]');
  if(slot?.dataset.widget!==undefined&&window.turnstile)window.turnstile.reset(slot.dataset.widget);
  form.querySelector('[data-verify-human]').checked=false;
  verificationStatus(form,'');
+ syncAuthSubmit(form);
 }
 async function protect(form){
  if(!config.turnstileSiteKey)throw Error('Human verification is unavailable. Please try again later.');
@@ -72,9 +78,9 @@ async function protect(form){
  if(!slot.dataset.widget){
   const id=api.render(slot,{
    sitekey:config.turnstileSiteKey,theme:'auto',appearance:'interaction-only',execution:'execute',
-   callback:()=>verificationStatus(form,'Verification complete.'),
-   'error-callback':()=>{verificationStatus(form,'');authError(form,'Verification failed. Select the checkbox to retry.');form.querySelector('[data-verify-human]').checked=false;},
-   'expired-callback':()=>{verificationStatus(form,'');authError(form,'Verification expired. Select the checkbox again.');form.querySelector('[data-verify-human]').checked=false;}
+   callback:(token)=>{if(form.querySelector('[data-verify-human]')?.checked&&token){form.dataset.captchaVerifiedToken=String(token);verificationStatus(form,'Verification complete.');}else delete form.dataset.captchaVerifiedToken;syncAuthSubmit(form);},
+   'error-callback':()=>{resetVerification(form);authError(form,'Verification failed. Select the checkbox to retry.');},
+   'expired-callback':()=>{resetVerification(form);authError(form,'Verification expired. Select the checkbox again.');}
   });
   slot.dataset.widget=String(id);
  }
@@ -83,11 +89,12 @@ async function protect(form){
 async function executeHumanCheck(form){
  const api=await protect(form),slot=form.querySelector('[data-captcha]');
  verificationStatus(form,'Verifying…');
+ delete form.dataset.captchaVerifiedToken;syncAuthSubmit(form);
  api.execute(slot.dataset.widget);
 }
 function captchaToken(form){
  if(!form.querySelector('[data-verify-human]')?.checked)throw Error('Select Verify I’m Human before signing in.');
- const token=form.querySelector('[name="cf-turnstile-response"]')?.value||'';
+ const token=form.dataset.captchaVerifiedToken||'';
  if(!token)throw Error('Complete human verification before signing in.');
  return token;
 }
@@ -97,7 +104,7 @@ async function authPage({layout,rerender,showError}){
   '<form id="bakery-login" class="box">'+item('identifier','Username or email address','username',true,'text')+
   item('password','Password','current-password',true,'password')+
   '<p class="auth-form-error" data-auth-error role="alert" hidden></p>'+
-  '<div class="actions auth-submit-actions"><button class="button" type="submit">Sign In Securely</button>'+
+  '<div class="actions auth-submit-actions"><button class="button" type="submit" disabled>Sign In Securely</button>'+
   '<button type="button" class="button secondary" data-auth-tab="register">Create Account</button></div>'+
   '<div class="auth-verification"><label class="checkbox auth-verify-choice"><input type="checkbox" data-verify-human> Verify I’m Human</label>'+
   '<div data-captcha></div><p class="small" data-captcha-status role="status" aria-live="polite"></p></div></form>'+
@@ -106,7 +113,7 @@ async function authPage({layout,rerender,showError}){
   item('email','Email address','email',true,'email')+item('password','Password (at least 8 characters)','new-password',true,'password')+
   profileFields({billing_same:true})+
   '<p class="auth-form-error" data-auth-error role="alert" hidden></p>'+
-  '<div class="actions auth-submit-actions"><button class="button" type="submit">Create Account</button>'+
+  '<div class="actions auth-submit-actions"><button class="button" type="submit" disabled>Create Account</button>'+
   '<button type="button" class="button secondary" data-auth-tab="login">Back to Sign In</button></div>'+
   '<div class="auth-verification"><label class="checkbox auth-verify-choice"><input type="checkbox" data-verify-human> Verify I’m Human</label>'+
   '<div data-captcha></div><p class="small" data-captcha-status role="status" aria-live="polite"></p></div></form></section>');
@@ -118,12 +125,13 @@ async function authPage({layout,rerender,showError}){
  document.querySelectorAll('[data-verify-human]').forEach(checkbox=>checkbox.onchange=async()=>{
   const form=checkbox.closest('form');authError(form,'');
   if(!checkbox.checked){resetVerification(form);return;}
-  try{await executeHumanCheck(form);}catch(error){checkbox.checked=false;authError(form,error.message);}
+  syncAuthSubmit(form);
+  try{await executeHumanCheck(form);}catch(error){resetVerification(form);authError(form,error.message);}
  });
  login.onsubmit=async ev=>{
   ev.preventDefault();const button=login.querySelector('[type=submit]');authError(login,'');button.disabled=true;
   try{await signIn(login.elements.identifier.value,login.elements.password.value,captchaToken(login));await rerender();}
-  catch(error){authError(login,error.message);resetVerification(login);button.disabled=false;}
+  catch(error){authError(login,error.message);resetVerification(login);syncAuthSubmit(login);}
  };
  register.onsubmit=async ev=>{
   ev.preventDefault();const button=register.querySelector('[type=submit]');authError(register,'');button.disabled=true;
@@ -132,8 +140,8 @@ async function authPage({layout,rerender,showError}){
    if(result.access_token)await rerender();
    else{const info=document.createElement('div');info.className='notice success';
     info.textContent='Account created. Check your email to verify your address, then sign in.';
-    register.prepend(info);resetVerification(register);button.disabled=false;}
-  }catch(error){authError(register,error.message);resetVerification(register);button.disabled=false;}
+    register.prepend(info);resetVerification(register);syncAuthSubmit(register);}
+  }catch(error){authError(register,error.message);resetVerification(register);syncAuthSubmit(register);}
  };
 }
 export async function account({layout,rerender,showError,section=null}){
