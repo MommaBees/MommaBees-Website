@@ -907,9 +907,18 @@ async function openEditor(record){const c=configs[selected];
     '<p class="small" role="status" aria-live="polite"></p>';
    select.closest('.field').append(panel);
    const nameInput=panel.querySelector('.admin-inline-name'),save=panel.querySelector('.admin-inline-save'),
-    status=panel.querySelector('[role="status"]');let previous='';
+    status=panel.querySelector('[role="status"]');let previous=select.value;
    select.addEventListener('change',()=>{
-    if(select.value==='__create__'){panel.hidden=false;nameInput.value='';status.textContent='';nameInput.focus();}
+    if(select.value==='__create__'){
+     if(table==='categories'){
+      const typeControl=panel.querySelector('.admin-inline-type');
+      const choices=(refs.catalog_product_types||[]).filter(t=>t.active!==false);
+      typeControl.innerHTML=choices.map(t=>'<option value="'+e(t.code)+'">'+e(t.name)+'</option>').join('');
+      const current=$('#field_product_type')?.value;
+      if(choices.some(t=>t.code===current))typeControl.value=current;
+     }
+     panel.hidden=false;nameInput.value='';status.textContent='';nameInput.focus();
+    }
     else {previous=select.value;panel.hidden=true;}
    });
    panel.querySelector('.admin-inline-cancel').onclick=()=>{
@@ -1048,6 +1057,10 @@ async function openEditor(record){const c=configs[selected];
  if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload(selected==='past_bakes'?'past-bakes':'product-photos',inp.files[0]);v=photo.url;} }
  if(f.type==='carousel_image'){const inp=document.querySelector('[data-carousel-photo-for="field_'+f.key+'"]');if(inp?.files?.[0]){const uploaded=await upload('carousel-photos',inp.files[0]);v=uploaded.url;}if(!v)throw Error('Upload a real photograph before saving this slide.');}
  if(v==='__create__')throw Error('Save or cancel the new '+f.label+' before saving this record.');
+ if(selected==='categories'&&f.key==='product_type'&&!v){
+  if(!record||record._unsaved)throw Error('Choose a product type for the new category.');
+  v=null;
+ }
  if(f.type==='money')v=v===''?null:Math.round(Number(v)*100);
  if(f.type==='number')v=v===''?null:Number(v);
  if(f.type==='csv'||f.type==='uuids')v=v.split(',').map(x=>x.trim()).filter(Boolean);
