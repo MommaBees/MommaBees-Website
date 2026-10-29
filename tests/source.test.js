@@ -1048,7 +1048,8 @@ test('Product type is derived from category and non-food products cannot be publ
  assert.match(sql,/enforce_product_type_gate/);
  assert.match(sql,/category_slug='natural-homemade-products'/);
  assert.match(admin,/field\('product_type','Product type','select'/);
- assert.match(admin,/productTypeForCategory\(cat\?\.slug\)/);
+ assert.match(admin,/productTypeForCategory\(cat\)/);
+ assert.equal(productTypeForCategory({slug:'brand-new',product_type:'handmade'}),'handmade');
  assert.match(admin,/publication\.disabled=!isFood/);
  assert.match(admin,/body\.published=false;body\.featured=false/);
  assert.match(admin,/if\(body\.published && !reviewed\)/);
@@ -1369,7 +1370,7 @@ test('store routes have department tabs only in split mode, and Admin holds cata
  assert.match(admin,/selected==='store_display'\)return storeDisplayPanel\(\)/);
  assert.match(admin,/update\('site_settings',1,next\)/);
  assert.match(admin,/id="product-taxonomy-search"/);
- assert.match(admin,/searchTaxonomyPaths\(paths,query,20\)/);
+ assert.match(admin,/searchTaxonomyPaths\(paths\(\),query,20\)/);
  assert.match(admin,/field\('variety_id','Variety'/);
  assert.match(admin,/body\.department!==departmentForCategory\(cat\)/);
  assert.match(nav,/catalog_varieties/);
@@ -1849,4 +1850,19 @@ test('responsive storefront widths and uniform product cards do not alter carous
  assert.match(app,/homepageGridLayout\(s\)/);
  const carousel=read('site/home-carousel.js');
  assert.match(carousel,/stopHomeCarousel/);
+});
+
+
+test('Owner can create types, categories, and subcategories from the product editor',()=>{
+ const admin=read('site/admin.js'),types=read('site/product-types.js');
+ const migration=read('supabase/migrations/20261029_owner_inline_catalog_taxonomy_v141.sql');
+ for(const text of ['Create Product Type','Create Category','Create Subcategory','admin-inline-create','catalog_product_types','category_id','__create__']){
+  assert.ok(admin.includes(text),'Missing inline catalog creation: '+text);
+ }
+ assert.match(migration,/create table if not exists public\.catalog_product_types/);
+ assert.match(migration,/products_nonfood_unpublished_check|Non-food products are held from publication/);
+ assert.match(migration,/owner admin manage product types/);
+ assert.match(admin,/await add\(table,payload\)/);
+ assert.match(admin,/select\.dispatchEvent\(new Event\('change'/);
+ assert.match(types,/category\.product_type/);
 });
