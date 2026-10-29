@@ -21,10 +21,8 @@ export function sandboxProductPage({id,items,allowed,layout,nav,showError}){
   '<p class="small">Illustrative artwork — not an actual product photograph.</p></div><div><h1>'+e(item.name)+'</h1>'+
   '<p class="price">'+money(item.price_cents)+' / '+e(unit)+'</p>'+
   '<section class="product-description"><h2>Description</h2><p>'+e(item.description||'No TEST description entered.')+'</p></section>'+
-  '<form id="sandbox-add-form"><label for="sandbox-qty">Qty ('+e(unit)+' packages)</label>'+
-  '<div class="product-quantity-control"><button type="button" class="button secondary" data-sandbox-step="-1">−</button>'+
-  '<input id="sandbox-qty" type="number" min="1" max="30" step="1" value="1" inputmode="numeric" required>'+
-  '<button type="button" class="button secondary" data-sandbox-step="1">+</button></div>'+
+  '<form id="sandbox-add-form"><label for="sandbox-qty"># Qty ('+e(unit)+' packages)</label>'+
+  '<div class="product-quantity-control"><span class="qty-input-wrap"><input id="sandbox-qty" type="number" min="1" max="30" step="1" value="1" inputmode="numeric" required><span class="qty-arrows"><button type="button" data-qty-arrow="1" aria-label="Increase quantity">▲</button><button type="button" data-qty-arrow="-1" aria-label="Decrease quantity">▼</button></span></span></div>'+
   '<p id="sandbox-item-total" aria-live="polite"></p><button class="button" type="submit">Add to Sandbox Cart</button>'+
   '<a href="#sandbox-cart" class="button secondary">View Sandbox Cart</a></form>'+
   '<section class="product-ingredient-details"><h2>Ingredients</h2><p>'+e(item.ingredients||'No ingredient information recorded for this TEST item.')+'</p>'+
@@ -35,9 +33,6 @@ export function sandboxProductPage({id,items,allowed,layout,nav,showError}){
  const total=document.getElementById('sandbox-item-total');
  const update=()=>total.textContent='TEST item subtotal: '+money(item.price_cents*(Number(qty.value)||1));
  qty.addEventListener('input',update);
- document.querySelectorAll('[data-sandbox-step]').forEach(button=>button.onclick=()=>{
-  qty.value=String(Math.min(30,Math.max(1,(Number(qty.value)||1)+Number(button.dataset.sandboxStep))));update();
- });
  update();
  document.getElementById('sandbox-add-form').onsubmit=event=>{
   event.preventDefault();
@@ -59,7 +54,7 @@ export function sandboxCartPage({items,allowed,layout,showError}){
   '<p class="muted">Staff-only Stripe TEST checkout. This cart is separate from customer orders.</p>'+
   (valid.length?valid.map(({row,index,item})=>'<div class="lineitem sandbox-cart-line"><div><strong>'+e(item.name)+'</strong>'+
    '<p class="small">'+e(sellingUnitLabel(item.unit))+' · '+money(item.price_cents)+' per TEST package</p>'+
-   '<label for="sandbox-cart-qty-'+index+'">Qty</label><input id="sandbox-cart-qty-'+index+'" data-sandbox-cart-qty="'+index+'" type="number" min="1" max="30" step="1" value="'+row.quantity+'"></div>'+
+   '<label for="sandbox-cart-qty-'+index+'"># Qty</label><span class="qty-input-wrap"><input id="sandbox-cart-qty-'+index+'" data-sandbox-cart-qty="'+index+'" type="number" min="0" max="30" step="1" value="'+row.quantity+'"><span class="qty-arrows"><button type="button" data-qty-arrow="1" aria-label="Increase quantity">▲</button><button type="button" data-qty-arrow="-1" aria-label="Decrease quantity">▼</button></span></span></div>'+
    '<div><strong>'+money(item.price_cents*row.quantity)+'</strong> <button class="button ghost" type="button" data-sandbox-remove="'+index+'">Remove</button></div></div>').join('')+
    '<p class="total">TEST subtotal: '+money(amount)+'</p>'+
    '<button class="button" type="button" id="sandbox-test-checkout"'+(cart.length!==valid.length?' disabled':'')+'>Try Stripe TEST Checkout</button>':
@@ -69,7 +64,8 @@ export function sandboxCartPage({items,allowed,layout,showError}){
   cart.splice(Number(button.dataset.sandboxRemove),1);saveCart(cart);sandboxCartPage({items,allowed,layout,showError});
  });
  document.querySelectorAll('[data-sandbox-cart-qty]').forEach(input=>input.onchange=()=>{
-  const quantity=Number(input.value);
+  const index=Number(input.dataset.sandboxCartQty),quantity=Number(input.value);
+  if(quantity===0){cart.splice(index,1);saveCart(cart);sandboxCartPage({items,allowed,layout,showError});return;}
   if(!validCartQuantity(quantity)){showError('Choose between 1 and 30 TEST packages.');input.value=String(cart[Number(input.dataset.sandboxCartQty)]?.quantity||1);return;}
   cart[Number(input.dataset.sandboxCartQty)].quantity=quantity;saveCart(cart);sandboxCartPage({items,allowed,layout,showError});
  });
