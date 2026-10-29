@@ -1371,7 +1371,7 @@ test('store routes have department tabs only in split mode, and Admin holds cata
  assert.match(admin,/update\('site_settings',1,next\)/);
  assert.match(admin,/id="product-taxonomy-search"/);
  assert.match(admin,/searchTaxonomyPaths\(paths\(\),query,20\)/);
- assert.match(admin,/field\('variety_id','Variety'/);
+ assert.match(admin,/field\('variety_id','Variety classification/);
  assert.match(admin,/body\.department!==departmentForCategory\(cat\)/);
  assert.match(nav,/catalog_varieties/);
  assert.match(nav,/store_display/);
@@ -1866,4 +1866,9 @@ test('Owner can create types, categories, and subcategories from the product edi
  assert.match(admin,/await add\(table,payload\)/);
  assert.match(admin,/select\.dispatchEvent\(new Event\('change'/);
  assert.match(types,/category\.product_type/);
+ const countMigration=read('supabase/migrations/20261029_numeric_variety_count_v142.sql');
+ assert.match(countMigration,/products add column if not exists variety_count integer/);
+ assert.match(countMigration,/prevent_category_product_type_drift/);
+ assert.match(admin,/field\('variety_count','Number of varieties','number'\)/);
+ assert.match(admin,/Number\.isInteger\(v\)/);
 });
