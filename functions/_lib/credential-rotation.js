@@ -68,3 +68,13 @@ export async function verifyStripeKey(value,environment){
  }
  return {ok:true,checks};
 }
+
+export async function automaticRotationSetting(env,enabled=null,actor=null){
+ const setting=await db(env,'/rest/v1/rpc/mommabees_rotation_control',{
+  method:'POST',body:{p_enabled:enabled,p_actor:actor}
+ });
+ return {enabled:setting?.enabled===true,updated_at:setting?.updated_at||null};
+}
+export async function markSignedWebhookProof(env,id){
+ return db(env,'/rest/v1/rpc/mommabees_credential_mark_proven',{method:'POST',body:{p_rotation:id}});
+}
