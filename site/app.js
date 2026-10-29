@@ -577,19 +577,56 @@ async function reviewArea(pid){try{const reviews=await list('reviews',{product_i
  if(currentUser())$('#review-form').onsubmit=async ev=>{ev.preventDefault();const f=new FormData(ev.target);const files=[...ev.target.elements.photos.files];if(files.length>3)return showError('Up to three pictures per review.');try{const review=await add('reviews',{customer_id:currentUser().id,product_id:pid,rating:Number(f.get('rating')),body:String(f.get('body')).slice(0,2000)});for(const file of files){const media=await upload('review-photos',file);await add('review_photos',{review_id:review.id,storage_path:media.path});}$('#review-content').insertAdjacentHTML('afterbegin','<div class="notice success">Thank you. Your review has been submitted for moderation.</div>');ev.target.reset();}catch(err){showError(err);}};
  }catch{if($('#review-content'))$('#review-content').textContent='Reviews are not available right now.';}}
 function cartPage(){
- // Keep display amounts aligned to the current product record; checkout re-verifies on the server.
- const subtotal=cart.reduce((sum,item)=>sum+packageTotal(all.products.find(p=>p.id===item.product_id)?.price_cents??item.price_cents,item.quantity),0);
- layout(`<section class="section"><h1>Your Cart</h1>${cart.length?cart.map((item,i)=>{const product=all.products.find(p=>p.id===item.product_id);const unit=sellingUnitLabel(product?.unit||item.unit);const price=product?.price_cents??item.price_cents;const batch=all.batches.find(b=>b.id===item.batch_id&&b.product_id===item.product_id);const max=item.mode==='ready'?Math.min(30,Number(batch?.quantity_available||0)):30;return `<div class="lineitem cart-line"><div><strong>${e(item.name)}</strong><p class="small">${item.mode==='ready'?'Ready to Sell':'Preorder'} · ${e(unit)} · ${money(price)} per package</p><label for="cart-qty-${i}">Qty</label><input id="cart-qty-${i}" data-cart-qty="${i}" type="number" min="1" max="${max}" step="1" inputmode="numeric" value="${item.quantity}" aria-label="Quantity of ${e(item.name)}"></div><div><strong>${money(packageTotal(price,item.quantity))}</strong> <button type="button" class="button ghost" data-remove="${i}" aria-label="Remove ${e(item.name)}">Remove</button></div></div>`}).join('')+`<p class="total">Product subtotal: ${money(subtotal)}</p><p class="muted">Final prices, discounts, delivery fees and applicable taxes are calculated at checkout. Product availability is verified before payment.</p><a class="button" href="#checkout">Continue to checkout</a>`:'<div class="empty">Your cart is empty. <a href="#shop">Browse products</a>.</div>'}</section>`);
- $$('[data-remove]').forEach(button=>button.onclick=()=>{cart.splice(Number(button.dataset.remove),1);saveCart();cartPage();});
- $$('[data-cart-qty]').forEach(input=>input.onchange=()=>{
-  const item=cart[Number(input.dataset.cartQty)],qty=Number(input.value);
+ const hasPreviews=cartHasShowcase(cart);
+ const real=cart.filter(x=>x.mode!=='showcase');
+ const subtotal=real.reduce((n,item)=>n+packageTotal(all.products.find(p=>p.id===item.product_id)?.price_cents??item.price_cents,item.quantity),0);
+ const previewTotal=cart.filter(x=>x.mode==='showcase').reduce((n,item)=>n+packageTotal(item.price_cents,item.quantity),0);
+ const rows=cart.map((item,i)=>{
+  const preview=item.mode==='showcase';
+  const product=preview?null:all.products.find(p=>p.id===item.product_id);
+  const showcase=preview?all.showcaseItems.find(x=>x.id===item.showcase_id):null;
+  const unit=sellingUnitLabel(product?.unit||item.unit);
+  const price=product?.price_cents??item.price_cents;
   const batch=all.batches.find(b=>b.id===item.batch_id&&b.product_id===item.product_id);
-  const permitted=item.mode==='ready'?Math.min(30,Number(batch?.quantity_available||0)):30;
-  if(!validCartQuantity(qty)||qty>permitted){showError('Choose between 1 and '+permitted+' packages for this cart line.');input.value=String(item.quantity);return;}
-  item.quantity=qty;saveCart();cartPage();
+  const max=preview?Math.min(30,showcasePreviewLimit(showcase)):
+   item.mode==='ready'?Math.min(30,Number(batch?.quantity_available||0)):30;
+  return '<div class="lineitem cart-line"><div><strong>'+e(item.name)+'</strong>'+
+   '<p class="small">'+(preview?'Cart preview':item.mode==='ready'?'Ready to Sell':'Preorder')+' · '+e(unit)+' · '+money(price)+'</p>'+
+   '<label for="cart-qty-'+i+'">Qty</label><input id="cart-qty-'+i+'" data-cart-qty="'+i+'" type="number" min="1" max="'+max+
+   '" step="1" value="'+item.quantity+'" inputmode="numeric"></div><div><strong>'+money(packageTotal(price,item.quantity))+
+   '</strong><button type="button" class="button ghost" data-remove="'+i+'">Remove</button></div></div>';
+ }).join('');
+ layout('<section class="section bakery-cart-section"><h1>Your Cart</h1>'+
+  (cart.length?rows+
+   (real.length?'<p class="total">Product subtotal: '+money(subtotal)+'</p>':'')+
+   (hasPreviews?'<p class="total">Preview subtotal: '+money(previewTotal)+'</p>'+
+    '<p class="small">Remove preview items to complete a real checkout.</p>':
+    '<a class="button" href="#checkout">Continue to checkout</a>'):
+   '<div class="empty">Your cart is empty. <a href="#shop">Browse products</a>.</div>')+'</section>');
+ $$('[data-remove]').forEach(button=>button.onclick=()=>{
+  cart.splice(Number(button.dataset.remove),1);saveCart();cartPage();
+ });
+ $$('[data-cart-qty]').forEach(input=>input.onchange=()=>{
+  const item=cart[Number(input.dataset.cartQty)],quantity=Number(input.value);
+  const batch=all.batches.find(b=>b.id===item.batch_id&&b.product_id===item.product_id);
+  const preview=item.mode==='showcase';
+  const showcase=preview?all.showcaseItems.find(x=>x.id===item.showcase_id):null;
+  const permitted=preview?Math.min(30,showcasePreviewLimit(showcase)):
+   item.mode==='ready'?Math.min(30,Number(batch?.quantity_available||0)):30;
+  if(!validCartQuantity(quantity)||quantity>permitted){
+   showError('Choose a Qty between 1 and '+permitted+'.');input.value=String(item.quantity);return;
+  }
+  item.quantity=quantity;saveCart();cartPage();
  });
 }
-async function checkoutPage(){const mod=await import('./checkout-form.js');await mod.showCheckout({cart,all,layout,nav,showError,clearCart:()=>{cart=[];saveCart();}});}
+async function checkoutPage(){
+ if(cartHasShowcase(cart)){
+  layout('<section class="section"><h1>Your Cart</h1><p>Remove preview items before checkout.</p><a class="button" href="#cart">View Cart</a></section>');
+  return;
+ }
+ const mod=await import('./checkout-form.js');
+ await mod.showCheckout({cart,all,layout,nav,showError,clearCart:()=>{cart=[];saveCart();}});
+}
 function success(){let last={};try{last=JSON.parse(sessionStorage.getItem('mb_latest_order')||'{}');}catch{}layout(`<section class="section box"><h1>Returning from Stripe</h1><p>Payment status is confirmed separately by Stripe. Do not assume the order is paid until its status shows Paid.</p><p>${last.id?'Order reference: '+e(last.id):'Your receipt will be emailed by Stripe when payment succeeds.'}</p>${last.token?`<a class="button" href="#track/${e(last.token)}">Check your order status</a>`:''}<p><a href="#shop">Back to bakery</a></p></section>`);cart=[];saveCart();}
 async function track(token){layout('<section class="section"><h1>Track your guest order</h1><div id="order-details" class="box">Looking up order…</div></section>');try{const r=await fetch('/api/order-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});const d=await r.json();if(!r.ok)throw Error(d.error||'No order found');$('#order-details').innerHTML=`<p><strong>Order:</strong> ${e(d.order_id)}</p><p><strong>Payment:</strong> ${e(d.payment_status)}</p><p><strong>Order status:</strong> ${e(d.status)}</p><p><strong>Fulfillment:</strong> ${fmt(d.fulfillment_date)} · ${e(d.fulfillment_window)}</p><p><strong>Total:</strong> ${money(d.total_cents)}</p>`;}catch(x){showError(x);}}
 async function account(section=null){
