@@ -6,10 +6,12 @@ import {MAJOR_ALLERGENS} from '../site/allergens.js';
 import {onRequestPost as recover} from '../functions/api/auth/recover.js';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
-test('all nine FDA major allergen choices are preserved and Showcase cards visibly disclose status',()=>{
+test('all nine FDA major allergen choices remain available on product details but not cards',()=>{
  assert.equal(MAJOR_ALLERGENS.length,9);
  const app=read('site/app.js'),admin=read('site/admin.js');
- assert.match(app,/showcase-card-allergens/);
+ assert.doesNotMatch(app,/class="showcase-card-allergens"/);
+ assert.match(app,/showcase-photo-information/);
+ assert.match(app,/knownAllergenStatement/);
  assert.match(app,/knownAllergenStatement/);
  assert.match(admin,/showcase-allergen-choices/);
  assert.match(admin,/showcase-allergens-reviewed/);
