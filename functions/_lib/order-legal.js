@@ -1,6 +1,6 @@
 // Shared backend terms acceptance validation and order-level audit stamp.
 // Date/time is set on the server, never accepted from a browser timestamp.
-export const LEGAL_VERSION='2026-10-27-v1';
+export const LEGAL_VERSION='2026-10-29-v2';
 export function acceptedOrderNote(body,method,maxLength=1000){
  const consent=body?.policy_acceptance;
  if(consent?.accepted!==true||consent.version!==LEGAL_VERSION||consent.method!==method||
