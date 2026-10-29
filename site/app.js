@@ -21,6 +21,7 @@ import {showcaseEnabled,showcaseDescription,showcasePrice,showcaseOrigin,showcas
 import {sellingUnitLabel,validCartQuantity,availablePackages,packageTotal} from './selling-units.js';
 import {availableReadyBatches,validQuickQty,publicShowcaseSaleProduct} from './quick-cart.js';
 import {approvedDietaryClaims,knownAllergenStatement} from './dietary-labels.js';
+import {capturePasswordRecoveryRedirect} from './password-recovery.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],showcaseItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -635,4 +636,4 @@ async function render(){await watchIdleSession();const [route,pid]=decodeURIComp
  else window.scrollTo({top:0,behavior:'instant'});
  }else window.scrollTo({top:0,behavior:'instant'});}
 window.addEventListener('hashchange',render);
-(async()=>{initCookiePreferences();bindRequiredMarkers();try{await load();}catch(ex){console.error('Could not load storefront',ex);}await render();})();
+(async()=>{capturePasswordRecoveryRedirect();initCookiePreferences();bindRequiredMarkers();try{await load();}catch(ex){console.error('Could not load storefront',ex);}await render();})();
