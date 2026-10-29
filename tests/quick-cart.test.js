@@ -50,7 +50,7 @@ test('showcase purchase link is a foreign key, not a second price or checkout sy
  assert.doesNotMatch(migration,/insert into public\.products/);
  const site=source('site/app.js');
  assert.match(site,/productReady\(sale\)/);
- assert.match(site,/showcaseFields\(display\)/);
+ assert.match(site,/showcaseFields\(info\)/);
  assert.match(site,/reviewArea\(sale\.id\)/);
  const backend=source('functions/api/checkout.js');
  assert.match(backend,/reserve_checkout/);
