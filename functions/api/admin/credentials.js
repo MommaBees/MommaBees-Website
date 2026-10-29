@@ -3,7 +3,7 @@
 import {db,response} from '../../_lib/db.js';
 import {requireBakeryManager,auditAccount} from '../../_lib/bakery-admin.js';
 import {validCredentialSlot,RUNTIME_CREDENTIALS} from '../../_lib/runtime-credentials.js';
-import {dependenciesFor,stageCredential,credentialHistory,verifyStripeKey,promoteWithReadback,rejectCredential,pendingCredential} from '../../_lib/credential-rotation.js';
+import {dependenciesFor,stageCredential,credentialHistory,verifyStripeKey,promoteWithReadback,rejectCredential,pendingCredential,automaticRotationSetting} from '../../_lib/credential-rotation.js';
 const EXTERNAL=Object.freeze([
  {provider:'Cloudflare',label:'Cloudflare Pages/API tokens, Workers secrets, Turnstile site key',mode:'provider',details:'Rotate tokens in the MommaBees Cloudflare account. Pages bindings and Turnstile site-key rotation require corresponding provider changes.'},
  {provider:'GitHub',label:'GitHub access tokens, Actions secrets, Deploy keys, webhooks',mode:'provider',details:'Rotate in the MommaBees GitHub repository or organization. Reauthorize the Cloudflare GitHub connection there.'},
@@ -34,10 +34,11 @@ export async function onRequestGet({request,env}){
   const a=await owner(env,request);if(a.error)return a.error;
   const rows=await db(env,'/rest/v1/rpc/mommabees_credential_status',{method:'POST',body:{}});
   const history=await credentialHistory(env);
-  return response({managed:metadata(env,rows),external:EXTERNAL,history});
+  const rotation=await automaticRotationSetting(env);
+  return response({managed:metadata(env,rows),external:EXTERNAL,history,auto_rotation_enabled:rotation.enabled});
  }catch{ return response({error:'Credential inventory is unavailable'},503);}
 }
-async function confirmOwnerPassword(env,user,password,captcha){
+export async function confirmOwnerPassword(env,user,password,captcha){
  if(typeof password!=='string'||password.length<8||password.length>256||typeof captcha!=='string'||captcha.length<20||captcha.length>2048)return false;
  const result=await fetch(env.SUPABASE_URL.replace(/\/$/,'')+'/auth/v1/token?grant_type=password',{
   method:'POST',headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json'},
