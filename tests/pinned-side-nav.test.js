@@ -65,8 +65,8 @@ test('all Showcase cards, including homepage, have matching Qty and Add to Cart 
  const app=source('site/app.js'),css=source('site/country-home-v2.css');
  const card=app.slice(app.indexOf('const showcaseCard='),app.indexOf('function bindQuickCart()'));
  assert.match(card,/quickCartMarkup\(sale\)/);
- assert.match(card,/card-quick-buy is-unavailable/);
- assert.match(card,/disabled>Add to Cart/);
+ assert.match(card,/showcaseQuickCartMarkup\(item\)/);
+ assert.match(app,/data-showcase-test/);
  assert.doesNotMatch(card,/Ask about ordering|Product information/);
  assert.match(app,/view\.products\.map\(card\)/);
  assert.match(app,/\.map\(showcaseCard\)\.join\(''\)/);
