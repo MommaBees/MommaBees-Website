@@ -23,6 +23,7 @@ import {availableReadyBatches,validQuickQty,publicShowcaseSaleProduct} from './q
 import {approvedDietaryClaims,knownAllergenStatement} from './dietary-labels.js';
 import {capturePasswordRecoveryRedirect} from './password-recovery.js';
 import {showcasePreviewLimit,previewRemaining,validPreviewQty,cartHasShowcase} from './showcase-preview-cart.js';
+import {cartActionLabel,lineQuantity} from './cart-action.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],showcaseItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -120,7 +121,7 @@ const showcaseSaleProduct=item=>publicShowcaseSaleProduct(item,all.products,cate
 const canTestShowcase=()=>showcaseEnabled(all.settings);
 const showcaseQuickCartMarkup=item=>{
  const count=canTestShowcase()&&item.active!==false?previewRemaining(item,cart):0;
- const max=Math.min(30,count);
+ const max=canTestShowcase()&&item.active!==false?Math.min(30,showcasePreviewLimit(item)):0;
  return '<form class="card-quick-buy showcase-quick-buy" data-showcase-test="'+e(item.id)+'">'+
   '<p class="showcase-available" aria-live="polite">Available: '+count+'</p>'+
   '<div class="card-quick-actions"><label class="card-quick-qty"># Qty<span class="qty-input-wrap"><input name="qty" type="number" min="1" max="'+max+
@@ -143,6 +144,38 @@ const quickCartMarkup=p=>{
   '<button class="button card-quick-add" type="submit" '+(max<1?'disabled':'')+'>Add to Cart</button></div>'+
   '<p class="card-quick-status" role="status" aria-live="polite"></p></form>';
 };
+// Restore the selected cart quantity on revisits, and keep the action in sync with edits.
+function syncQuickCartButtons(){
+ for(const form of document.querySelectorAll('form[data-showcase-test],form[data-quick-buy]')){
+  const input=form.elements.qty,button=form.querySelector('.card-quick-add');
+  if(!input||!button)continue;
+  let selection;
+  if(form.hasAttribute('data-showcase-test')){
+   const item=all.showcaseItems.find(x=>x.id===form.dataset.showcaseTest);
+   if(!item)continue;
+   selection={mode:'showcase',showcase_id:item.id};
+   const limit=Math.min(30,showcasePreviewLimit(item));
+   const held=lineQuantity(cart,selection);
+   input.max=String(limit);
+   input.disabled=limit<1;button.disabled=limit<1;
+   const available=form.querySelector('.showcase-available');
+   if(available)available.textContent='Available: '+previewRemaining(item,cart);
+  }else{
+   const p=all.products.find(x=>x.id===form.dataset.quickBuy);
+   if(!p)continue;
+   const mode=form.elements.mode?.value||'ready';
+   const batch=mode==='ready'?availableQuickBatches(p)[0]:null;
+   const held=cart.find(x=>x.product_id===p.id&&x.mode===mode);
+   selection={mode,product_id:p.id,batch_id:mode==='ready'?(batch?.id||held?.batch_id||null):null};
+  }
+  const qty=Number(input.value);
+  const label=cartActionLabel(cart,selection,qty);
+  button.textContent=label;
+  button.dataset.cartAction=label==='Checkout'?'checkout':'add';
+  // A matching cart line is navigable even if no additional units remain.
+  if(label==='Checkout')button.disabled=false;
+ }
+}
 const card=(p,showShopDetails=false)=>{
  const visual=productVisual(p),cat=categoryFor(p),sub=subcategoryFor(p);
  return '<article class="card bakery-product-card"><div class="card-media">'+image(visual.src,'product-photo',p.name)+visual.credit+'</div>'+
@@ -180,8 +213,12 @@ function bindQuickCart(){
   const p=all.products.find(x=>x.id===form.dataset.quickBuy),select=form.elements.mode;
   if(!p||!p.published||!available(p))return {p:null,mode:'',max:0,batch:null};
   const mode=select?.value||'ready';
-  const batch=mode==='ready'?availableQuickBatches(p)[0]:null;
-  const max=mode==='ready'?Math.min(30,batch?.remaining||0):productPreorder(p)?30:0;
+  const availableBatch=mode==='ready'?availableQuickBatches(p)[0]:null;
+  const held=cart.find(x=>x.product_id===p.id&&x.mode===mode&&x.batch_id);
+  const batch=mode==='ready'?(held&&all.batches.find(b=>b.id===held.batch_id)?
+   {id:held.batch_id,remaining:(availableBatch?.id===held.batch_id?availableBatch.remaining:0)}:availableBatch):null;
+  const existing=mode==='ready'?lineQuantity(cart,{mode,product_id:p.id,batch_id:batch?.id}):0;
+  const max=mode==='ready'?Math.min(30,(batch?.remaining||0)+existing):productPreorder(p)?30:0;
   return {p,mode,max,batch};
  };
  const refresh=form=>{
@@ -191,7 +228,8 @@ function bindQuickCart(){
   if(!Number.isInteger(Number(input.value))||Number(input.value)<1)input.value='1';
   button.disabled=max<1;
   const status=form.querySelector('.card-quick-status');
-  if(status&&mode==='ready'&&max===0)status.textContent='All available packages are already in your cart.';
+  if(status&&mode==='ready'&&max===0)status.textContent='No remaining packages.';
+  syncQuickCartButtons();
  };
  document.addEventListener('click',event=>{
   const arrow=event.target.closest?.('[data-qty-arrow]');
@@ -206,6 +244,12 @@ function bindQuickCart(){
   input.dispatchEvent(new Event('input',{bubbles:true}));
   input.dispatchEvent(new Event('change',{bubbles:true}));
  });
+ document.addEventListener('input',event=>{
+  if(event.target.matches?.('form[data-showcase-test] input[name="qty"],form[data-quick-buy] input[name="qty"]'))syncQuickCartButtons();
+ });
+ document.addEventListener('change',event=>{
+  if(event.target.matches?.('form[data-showcase-test] input[name="qty"],form[data-quick-buy] input[name="qty"]'))syncQuickCartButtons();
+ });
  document.addEventListener('change',event=>{
   const form=event.target.closest?.('form[data-quick-buy]');
   if(form&&event.target.name==='mode')refresh(form);
@@ -216,29 +260,20 @@ function bindQuickCart(){
   event.preventDefault();
   const item=all.showcaseItems.find(x=>x.id===form.dataset.showcaseTest&&x.active!==false);
   const quantity=Number(form.elements.qty.value),status=form.querySelector('.card-quick-status');
-  if(!canTestShowcase()||!item||!validPreviewQty(item,cart,quantity)){
+  if(!canTestShowcase()||!item||!validCartQuantity(quantity)||quantity>showcasePreviewLimit(item)){
    if(status)status.textContent='Quantity unavailable.';return;
   }
+  const selection={mode:'showcase',showcase_id:item.id};
+  if(cartActionLabel(cart,selection,quantity)==='Checkout'){nav('#checkout');return;}
   const key='showcase:'+item.id;
   const existing=cart.find(line=>line.key===key);
   const price=Number.isInteger(item.price_cents)&&item.price_cents>=0?item.price_cents:0;
-  if(existing){
-   if(!validCartQuantity(existing.quantity+quantity)){if(status)status.textContent='Maximum 30 per cart line.';return;}
-   existing.quantity+=quantity;
-  }else cart.push({key,mode:'showcase',showcase_id:item.id,quantity,name:item.name,unit:item.price_unit||'each',price_cents:price});
+  if(existing){existing.quantity=quantity;}
+  else cart.push({key,mode:'showcase',showcase_id:item.id,quantity,name:item.name,unit:item.price_unit||'each',price_cents:price});
   saveCart();
   document.querySelectorAll('.nav-cart-link').forEach(link=>{link.textContent='Cart ('+cart.reduce((n,x)=>n+x.quantity,0)+')';});
   if(status)status.textContent='Added to cart.';
-  nav('#cart');
-  document.querySelectorAll('[data-showcase-test]').forEach(other=>{
-   const rec=all.showcaseItems.find(x=>x.id===other.dataset.showcaseTest);
-   if(!rec)return;
-   const remaining=previewRemaining(rec,cart),max=Math.min(30,remaining);
-   other.querySelector('.showcase-available').textContent='Available: '+remaining;
-   const input=other.elements.qty;
-   input.max=String(max);input.disabled=max===0;other.querySelector('button[type="submit"]').disabled=max===0;
-   if(max>0&&Number(input.value)>max)input.value=String(max);
-  });
+  syncQuickCartButtons();
  });
  document.addEventListener('submit',event=>{
   const form=event.target.closest?.('form[data-quick-buy]');
@@ -251,19 +286,20 @@ function bindQuickCart(){
    refresh(form);return;
   }
   const key=p.id+':'+mode+':'+(batch?.id||'');
-  const existing=cart.find(x=>x.key===key),combined=(existing?.quantity||0)+qty;
-  if(!validCartQuantity(combined)){
-   if(status)status.textContent='Maximum 30 packages per cart line.';
-   return;
+  const selection={mode,product_id:p.id,batch_id:batch?.id||null};
+  if(cartActionLabel(cart,selection,qty)==='Checkout'){nav('#checkout');return;}
+  if(mode==='ready'&&qty>Number(all.batches.find(b=>b.id===batch?.id)?.quantity_available||0)){
+   if(status)status.textContent='Not enough packages available.';return;
   }
-  if(existing){existing.quantity=combined;existing.price_cents=p.price_cents;existing.unit=p.unit;}
+  const existing=cart.find(x=>x.key===key);
+  if(existing){existing.quantity=qty;existing.price_cents=p.price_cents;existing.unit=p.unit;}
   else cart.push({key,product_id:p.id,mode,batch_id:batch?.id||null,quantity:qty,name:p.name,price_cents:p.price_cents,unit:p.unit});
   saveCart();
   const count=cart.reduce((total,row)=>total+row.quantity,0);
   for(const link of document.querySelectorAll('.nav-cart-link'))link.textContent='Cart ('+count+')';
-  if(status)status.textContent='Added '+qty+' '+sellingUnitLabel(p.unit)+' package(s) to your cart.';
-  nav('#cart');
+  if(status)status.textContent='Added to cart.';
   document.querySelectorAll('form[data-quick-buy]').forEach(refresh);
+  syncQuickCartButtons();
  });
 }
 const categories=(department=null)=>all.categories.filter(c=>c.active&&(!department||departmentForCategory(c)===department)&&(sellable().some(p=>p.category_id===c.id)||(showcaseEnabled(all.settings)&&all.settings.split_store_enabled===true&&all.showcaseItems.some(i=>i.active&&i.category_id===c.id))||(['owner','admin'].includes(verifiedBackOfficeRole)&&all.settings.demo_store_enabled===true&&all.demoItems.some(x=>x.enabled&&x.category===c.name))));
@@ -325,6 +361,7 @@ function layout(content){
  </div></footer>`;
  bindHomeCarousel(settings.home_carousel_interval_seconds);
  bindQuickCart();
+ syncQuickCartButtons();
  const primary=$('#primary-navigation');
  if(primary){
   primary.querySelectorAll('a[href^="#"]').forEach(anchor=>{
