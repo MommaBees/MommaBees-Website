@@ -138,6 +138,24 @@ export async function onRequestPatch({request,env}){
    return response({error:'Invalid pending rotation'},400);
   if(!await confirmOwnerPassword(env,a.user,input.owner_password,input.captcha_token))
    return response({error:'Owner reauthentication failed'},403);
+  if(input.action==='activate_webhook'){
+   const environment=String(input.environment||'');
+   if(!['test','live'].includes(environment))return response({error:'Invalid Stripe webhook environment'},400);
+   if(environment==='live'&&input.confirm_live!=='LIVE')return response({error:'Type LIVE to confirm production activation'},400);
+   const pendingWebhook=await pendingCredential(env,'STRIPE_WEBHOOK_SECRET',environment);
+   if(!pendingWebhook||pendingWebhook.id!==input.rotation_id)
+    return response({error:'No matching pending webhook replacement'},409);
+   if(pendingWebhook.proof_verified!==true)
+    return response({error:'Awaiting a valid Stripe-signed webhook event; existing key remains active'},409);
+   const plan=dependenciesFor('STRIPE_WEBHOOK_SECRET',environment).map(d=>
+    ['stripe_signed_delivery','website_webhook'].includes(d.name)?{...d,state:'verified'}:d);
+   const result=await promoteWithReadback(env,pendingWebhook.id,'STRIPE_WEBHOOK_SECRET',environment,pendingWebhook.secret,plan);
+   await auditAccount(env,a.user.id,null,'owner_manual_webhook_rotation_activated',
+    {rotation_id:pendingWebhook.id,environment,state:result.state}).catch(()=>{});
+   return response({ok:result.state==='activated',id:pendingWebhook.id,state:result.state,dependencies:plan,
+    message:result.state==='activated'?'Signed webhook key verified and manually activated.':'Verification failed; old website key restored.'},
+    result.state==='activated'?200:409);
+  }
   const pending=await pendingCredential(env,'TURNSTILE_SECRET_KEY','shared');
   if(!pending||pending.id!==input.rotation_id)
    return response({error:'No matching pending Turnstile secret'},409);
