@@ -99,7 +99,7 @@ function captchaToken(form){
  if(!token)throw Error('Complete human verification before signing in.');
  return token;
 }
-async function authPage({layout,rerender,showError}){
+async function authPage({layout,rerender,showError,section=null}){
  layout('<section class="section bakery-account-entry"><h1>Bakery Account</h1>'+
   '<p>Use your username or email address to access your account. Guest checkout is available.</p>'+
   '<form id="bakery-login" class="box">'+item('identifier','Username or email address','username',true,'text')+
@@ -123,7 +123,7 @@ async function authPage({layout,rerender,showError}){
  billingToggle(register);
  const select=kind=>{const r=kind==='register';login.hidden=r;register.hidden=!r;authError(r?register:login,'');};
  document.querySelectorAll('[data-auth-tab]').forEach(b=>b.onclick=()=>select(b.dataset.authTab));
- select('login');
+ select(section==='register'?'register':'login');
  document.querySelectorAll('[data-verify-human]').forEach(checkbox=>checkbox.onchange=async()=>{
   const form=checkbox.closest('form');authError(form,'');
   if(!checkbox.checked){resetVerification(form);return;}
@@ -204,7 +204,7 @@ async function resetPasswordPage({layout}){
 export async function account({layout,rerender,showError,section=null}){
  if(section==='forgot-password')return forgotPasswordPage({layout});
  if(section==='reset-password')return resetPasswordPage({layout});
- if(!currentUser())return authPage({layout,rerender,showError});
+ if(!currentUser())return authPage({layout,rerender,showError,section});
  const user=currentUser();
  layout('<section class="section"><h1>My Bakery Account</h1><p>Signed in as '+h(user.email)+'</p>'+
   '<button class="button secondary" id="signout">Sign Out</button><div class="cols">'+
