@@ -24,7 +24,7 @@ test('server rejects missing, stale, mismatched, or forged order-policy acceptan
  assert.throws(()=>acceptedOrderNote({policy_acceptance:{accepted:'true',version:LEGAL_VERSION,method:'pickup'}},'pickup'),/Review and accept/);
  const note=acceptedOrderNote({note:'Delivery at front porch',policy_acceptance:{accepted:true,version:LEGAL_VERSION,method:'delivery'}},'delivery');
  assert.match(note,/Delivery at front porch/);
- assert.match(note,/Policies accepted: 2026-10-29-v2 \| delivery/);
+ assert.match(note,/Policies accepted: 2026-10-29-v3 \| delivery/);
  assert.match(note,/\d{4}-\d{2}-\d{2}T/);
  assert.ok(note.length<=1000);
 });
@@ -47,9 +47,9 @@ test('optional cookie preferences default off and persist by choice/version',()=
 });
 
 test('all policy pages include expanded business, delivery, premises and food-safety coverage',()=>{
- assert.match(read('site/legal-policies.js'),/export const LEGAL_VERSION='2026-10-29-v2'/);
+ assert.match(read('site/legal-policies.js'),/export const LEGAL_VERSION='2026-10-29-v3'/);
  assert.match(read('site/legal-policies.js'),/legalPolicySections\(slug\)\.map/);
- assert.equal(LEGAL_VERSION,'2026-10-29-v2');
+ assert.equal(LEGAL_VERSION,'2026-10-29-v3');
  const required={
   terms:['Our business and service boundaries','Missouri online-sale restrictions','No general release of negligence'],
   privacy:['Order and delivery records','Visitor and incident reports','Data access and delivery personnel'],
@@ -67,7 +67,7 @@ test('all policy pages include expanded business, delivery, premises and food-sa
    assert.ok(actual.includes(heading),slug+' missing '+heading);
    assert.match(read('site/legal-policies.js'),/legalPolicySections\(slug\)\.map/);
   }
-  assert.ok(read('site/legal-policies.js').includes('2026-10-29-v2'));
+  assert.ok(read('site/legal-policies.js').includes('2026-10-29-v3'));
  }
  const food=LEGAL_POLICY_EXTENSIONS.food.map(x=>x.join(' ')).join(' ');
  assert.match(food,/196\.298/);
@@ -82,5 +82,5 @@ test('all policy pages include expanded business, delivery, premises and food-sa
 test('updated checkout terms are stamped server-side using the same current version',()=>{
  assert.throws(()=>acceptedOrderNote({policy_acceptance:{accepted:true,version:'2026-10-27-v1',method:'delivery'}},'delivery'),/Review and accept/);
  const note=acceptedOrderNote({policy_acceptance:{accepted:true,version:LEGAL_VERSION,method:'pickup'}},'pickup');
- assert.match(note,/2026-10-29-v2/);
+ assert.match(note,/2026-10-29-v3/);
 });
