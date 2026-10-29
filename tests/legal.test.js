@@ -24,7 +24,7 @@ test('server rejects missing, stale, mismatched, or forged order-policy acceptan
  assert.throws(()=>acceptedOrderNote({policy_acceptance:{accepted:'true',version:LEGAL_VERSION,method:'pickup'}},'pickup'),/Review and accept/);
  const note=acceptedOrderNote({note:'Delivery at front porch',policy_acceptance:{accepted:true,version:LEGAL_VERSION,method:'delivery'}},'delivery');
  assert.match(note,/Delivery at front porch/);
- assert.match(note,/Policies accepted: 2026-10-27-v1 \| delivery/);
+ assert.match(note,/Policies accepted: 2026-10-29-v2 \| delivery/);
  assert.match(note,/\d{4}-\d{2}-\d{2}T/);
  assert.ok(note.length<=1000);
 });
