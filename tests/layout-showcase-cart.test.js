@@ -82,9 +82,11 @@ test('Qty arrows and bounds are consistent across storefront, detail, regular ca
  assert.match(app,/arrow\.closest\('\.qty-input-wrap'\)/);
  assert.match(app,/input\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/);
  assert.match(app,/id="qty" inputmode="numeric" required/);
- assert.match(app,/data-cart-qty="\'+i\+'" type="number" min="0"/);
+ assert.match(app,/data-cart-qty/);
+ assert.match(app,/type="number" min="0" max=/);
  assert.match(app,/if\(quantity===0\)\{cart\.splice\(index,1\);saveCart\(\);cartPage\(\);return;\}/);
- assert.match(sandbox,/data-sandbox-cart-qty="\'+index\+'" type="number" min="0"/);
+ assert.match(sandbox,/data-sandbox-cart-qty/);
+ assert.match(sandbox,/type="number" min="0" max=/);
  assert.match(sandbox,/if\(quantity===0\)\{cart\.splice\(index,1\);saveCart\(cart\);sandboxCartPage/);
  assert.match(css,/\.qty-input-wrap \.qty-arrows button/);
  assert.match(css,/appearance:textfield/);
