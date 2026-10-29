@@ -129,7 +129,8 @@ export async function renderCredentialManager({showError}){
   const password=form.elements.password.value;
   const confirmLive=form.elements.confirm_live.value;
   save.disabled=true;
-  feedback.textContent='Checking Owner confirmation and updating the selected credential…';
+  feedback.dataset.state='';
+  feedback.textContent='Checking Owner confirmation and validating the replacement credential…';
   try{
    const res=await fetch(API,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},
     body:JSON.stringify({name,environment,value,owner_password:password,captcha_token:captchaToken,confirm_live:confirmLive})});
