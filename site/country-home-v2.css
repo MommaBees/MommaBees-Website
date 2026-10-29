@@ -2011,3 +2011,24 @@ body[data-card-style="open"] #main .lineitem{background:transparent}
     min-height:0;
   }
 }
+
+/* MBB-UI-062 — visible increment/decrement controls in every Qty input. */
+#main .qty-input-wrap{display:inline-flex;align-items:stretch;vertical-align:middle;width:86px;max-width:100%;height:36px;min-width:0;border:1px solid #b7a28c;border-radius:4px;background:#fffdf8;overflow:hidden}
+#main .qty-input-wrap input[type="number"],#main .bakery-product-card .card-quick-qty .qty-input-wrap input[type="number"],#main .bakery-cart-section .qty-input-wrap input[type="number"]{appearance:textfield;-moz-appearance:textfield;flex:1 1 0;width:0!important;max-width:none!important;min-width:0;box-sizing:border-box;margin:0!important;padding:2px 4px!important;height:100%!important;min-height:0!important;border:0!important;border-radius:0!important;text-align:center;font:inherit;font-size:.88rem;background:transparent}
+#main .qty-input-wrap input[type="number"]::-webkit-inner-spin-button,#main .qty-input-wrap input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
+#main .qty-input-wrap .qty-arrows{flex:0 0 22px;display:flex;flex-direction:column;min-width:22px;border-left:1px solid #d5c3b1}
+#main .qty-input-wrap .qty-arrows button{flex:1 1 50%;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:0;height:50%;margin:0;padding:0;border:0;border-radius:0;background:#f4e8d9;color:#4b3426;font-size:9px;line-height:1;cursor:pointer}
+#main .qty-input-wrap .qty-arrows button:first-child{border-bottom:1px solid #d5c3b1}
+#main .qty-input-wrap .qty-arrows button:hover:not(:disabled){background:#ead2b4}
+#main .qty-input-wrap .qty-arrows button:focus-visible{outline:2px solid #5e402c;outline-offset:-2px}
+#main .qty-input-wrap .qty-arrows button:disabled{opacity:.45;cursor:not-allowed}
+#main .bakery-product-card .card-quick-qty{flex:0 0 78px;width:78px;gap:2px}
+#main .bakery-product-card .card-quick-qty .qty-input-wrap{width:100%;height:34px}
+#main .bakery-product-card .card-quick-buy .card-quick-actions{align-items:end;gap:5px}
+#main .bakery-product-card .card-quick-buy .required-indicator{display:none!important}
+#main .bakery-cart-section .cart-line .qty-input-wrap{display:flex;width:96px;margin:4px 0}
+#main .product-detail .product-quantity-control .qty-input-wrap{height:42px;width:105px}
+#main .product-detail .product-quantity-control{display:flex;align-items:center}
+#main .showcase-sale-summary .qty-input-wrap{height:42px;width:96px}
+#main .store-showcase-card .showcase-card-allergens,#main .store-showcase-card .showcase-card-dietary{display:none!important}
+@media(max-width:480px){#main .bakery-product-card .card-quick-qty{flex-basis:72px;width:72px}}
