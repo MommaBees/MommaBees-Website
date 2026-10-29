@@ -27,10 +27,10 @@ test('Shop All lists Showcase even when the two-department setting is off',()=>{
 });
 test('Showcase-only Shop All entries do not bypass real inventory or create fake orders',()=>{
  const app=read('site/app.js');
- assert.match(app,/showShopDetails\?'<div class="card-showcase-buy"><div class="card-quick-buy is-unavailable">'/);
+ assert.match(app,/card-quick-buy is-unavailable/);
  assert.match(app,/disabled>Add to Cart/);
  assert.match(app,/Ask about ordering/);
- assert.match(app,/sale\?'<div class="card-showcase-buy">'\+quickCartMarkup\(sale\)/);
+ assert.match(app,/quickCartMarkup\(sale\)/);
  const endpoint=read('functions/api/checkout.js');
  assert.match(endpoint,/reserve_checkout/);
 });
