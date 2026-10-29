@@ -83,11 +83,20 @@ test('homepage Register appears beside Sign In and opens the Create Account form
  assert.match(account,/select\(section==='register'\?'register':'login'\)/);
  assert.match(account,/authPage\(\{layout,rerender,showError,section\}\)/);
 });
-test('footer retains gray original background and changes only word color to header clay',()=>{
+test('footer restores original gray/dark palette and full internal styling, keeping only narrower outer width',()=>{
  const css=source('site/country-home-v2.css');
- assert.match(css,/body \.footer\{background:#948D87!important;color:#C07C57!important/);
- assert.match(css,/body \.footer :is\(\.footer-location/);
- assert.match(css,/\.footer-legal-links a,\.footer-cookie-link/);
- assert.match(css,/\.nav-account-register\{/);
+ assert.match(css,/\.footer\{background:#948D87;color:#211b18/);
+ assert.match(css,/\.footer a\{color:#211b18\}/);
+ assert.match(css,/\.footer \.footer-brand-name\{color:#231d1a\}/);
+ const anchor=css.indexOf('Original MommaBee footer appearance retained');
+ assert.ok(anchor>0);
+ const narrowed=css.slice(anchor,css.indexOf('Owner-selectable open design.',anchor));
+ assert.match(narrowed,/max-width:1300px/);
+ assert.match(narrowed,/margin-left:auto/);
+ assert.match(narrowed,/margin-right:auto/);
+ assert.doesNotMatch(narrowed,/background|color|font-size|padding/);
  assert.doesNotMatch(css,/body \.footer\{background:#C07C57!important/);
+ assert.doesNotMatch(css,/body \.footer\{background:#948D87!important;color:#C07C57!important/);
+ assert.match(css,/\.nav-account-register\{/);
 });
+
