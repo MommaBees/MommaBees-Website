@@ -33,7 +33,7 @@ test('Showcase preview Add to Cart works for guests and cannot enter real checko
  const app=read('site/app.js'),checkout=read('site/checkout-form.js'),migration=read('supabase/migrations/20261029_storefront_open_layout_preview_qty_v147.sql');
  assert.match(app,/const canTestShowcase=\(\)=>showcaseEnabled\(all\.settings\)/);
  assert.match(app,/data-showcase-test/);
- assert.match(app,/validPreviewQty\(item,cart,quantity\)/);
+ assert.match(app,/quantity>showcasePreviewLimit\(item\)/);
  assert.match(app,/mode:'showcase'/);
  assert.match(app,/const hasPreviews=cartHasShowcase\(cart\)/);
  assert.match(app,/if\(cartHasShowcase\(cart\)\)/);
@@ -60,7 +60,7 @@ test('public Shop All preview cards can enter cart but never paid checkout',()=>
  const app=read('site/app.js'),checkout=read('site/checkout-form.js');
  assert.match(app,/const canTestShowcase=\(\)=>showcaseEnabled\(all\.settings\)/);
  assert.match(app,/const count=canTestShowcase\(\)&&item\.active!==false\?previewRemaining\(item,cart\):0/);
- assert.match(app,/validPreviewQty\(item,cart,quantity\)/);
+ assert.match(app,/quantity>showcasePreviewLimit\(item\)/);
  assert.match(app,/mode:'showcase'/);
  assert.match(app,/if\(cartHasShowcase\(cart\)\)/);
  assert.match(checkout,/cartHasShowcase\(cart\)/);
