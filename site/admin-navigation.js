@@ -2,7 +2,8 @@
 export const ADMIN_GROUPS=Object.freeze([["Overview",["dashboard"]],["Orders & Fulfillment",["orders","baking_days","product_day_limits","stock_batches","shopping","fulfillment_settings"]],["Products & Inventory",["products","store_showcase_items","categories","subcategories","catalog_varieties","product_photos","recipes","recipe_ingredients","ingredients","past_bakes"]],["Accounts & Permissions",["customer_profiles","users"]],["Customer Service",["messages","reviews","notifications"]],["Marketing & Promotions",["announcements","announcement_recipients","promotions","promotion_recipients"]],["Website & Design",["homepage_content","home_carousel_slides","store_display","website_size","website_background","site_settings"]],["Checkout & Finance",["checkout_settings","reports","expenses"]],["Sandbox & Testing",["sandbox_settings","demo_catalog_items","demo_checkout_tests"]]]);
 export function adminGroupsForRole(role){
  if(role==='moderator')return [['Customer Moderation',['messages','reviews']]];
- return role==='owner'||role==='admin'?ADMIN_GROUPS:[];
+ if(role==='owner')return [...ADMIN_GROUPS,['Security & Credentials',['owner_credentials']]];
+ return role==='admin'?ADMIN_GROUPS:[];
 }
 export const ADMIN_DESCRIPTIONS=Object.freeze({
  dashboard:'Key metrics, action items and shortcuts.',
@@ -42,5 +43,6 @@ export const ADMIN_DESCRIPTIONS=Object.freeze({
  expenses:'Record business expenses.',
  demo_checkout_tests:'Sandbox checkout evidence (not LIVE payments).',
  demo_catalog_items:'Owner-only sample items for sandbox testing.',
+ owner_credentials:'Owner-only API credentials for TEST/LIVE, with password confirmation and provider rotation requirements.',
  users:'Accounts, staff permissions and access controls.'
 });
