@@ -18,29 +18,48 @@ export async function onRequestPost({request,env}){
   const settings=await db(env,'/rest/v1/site_settings?select=demo_store_enabled&id=eq.1');
   if(settings[0]?.demo_store_enabled!==true)return response({error:'Enable the Owner/Admin Demo Store in Website Settings first'},409);
   const input=await request.json();
-  const id=asUuid(input?.item_id);if(!id)return response({error:'Choose a valid demo item'},400);
-  const items=await db(env,'/rest/v1/demo_catalog_items?select=id,name,price_cents,enabled&id=eq.'+id);
-  const item=items[0];
-  if(!item||item.enabled!==true)return response({error:'Demo item is unavailable'},404);
-  const catalog=TEST_PRICES[item.name];
-  if(!catalog||catalog.amount!==item.price_cents)
-   return response({error:'Demo price differs from the configured Stripe sandbox price. Contact Owner to synchronize the test catalog.'},409);
-  const testId=crypto.randomUUID(), amount=item.price_cents;
+  // Legacy single-item tests remain supported; the sandbox cart supplies item_id + quantity lines.
+  const requested=Array.isArray(input?.items)?input.items:[{item_id:input?.item_id,quantity:1}];
+  if(!requested.length||requested.length>10)return response({error:'Choose between 1 and 10 sandbox product lines'},400);
+  const ids=new Set(),validated=[];
+  for(const line of requested){
+   const id=asUuid(line?.item_id),quantity=Number(line?.quantity);
+   if(!id||!Number.isInteger(quantity)||quantity<1||quantity>30||ids.has(id))
+    return response({error:'Invalid sandbox item, duplicate item or quantity'},400);
+   ids.add(id);
+   const items=await db(env,'/rest/v1/demo_catalog_items?select=id,name,price_cents,enabled&id=eq.'+id);
+   const item=items[0];
+   if(!item||item.enabled!==true)return response({error:'Demo item is unavailable'},404);
+   const catalog=TEST_PRICES[item.name];
+   if(!catalog||catalog.amount!==item.price_cents)
+    return response({error:'Demo price differs from the configured Stripe sandbox price. Contact Owner to synchronize the test catalog.'},409);
+   validated.push({item,catalog,quantity});
+  }
+  const amount=validated.reduce((total,line)=>total+line.item.price_cents*line.quantity,0);
+  if(!Number.isSafeInteger(amount)||amount<50||amount>10000000)
+   return response({error:'Sandbox cart amount is invalid'},400);
+  const testId=crypto.randomUUID();
+  const itemName=validated.map(line=>line.item.name+' x'+line.quantity).join(', ').slice(0,230);
   await db(env,'/rest/v1/demo_checkout_tests',{method:'POST',
-   body:{id:testId,actor_id:auth.user.id,item_id:item.id,item_name:item.name,amount_cents:amount,status:'created'}});
+   body:{id:testId,actor_id:auth.user.id,item_id:validated.length===1?validated[0].item.id:null,
+    item_name:itemName,amount_cents:amount,status:'created'}});
   const site=origin(env);
   try{
-   const checkout=await createStripeSession(env,{
+   const checkoutFields={
     mode:'payment',
     'allowed_payment_method_types[0]':'card',
-    'line_items[0][price]':catalog.stripePrice,
-    'line_items[0][quantity]':'1',
     'metadata[demo_checkout_test_id]':testId,
     'metadata[environment]':'MommaBeesBakery-sandbox',
     'success_url':site+'/#sandbox-success',
     'cancel_url':site+'/#shop',
     'customer_email':auth.user.email,
-   });
+   };
+   for(let index=0;index<validated.length;index++){
+    const line=validated[index];
+    checkoutFields['line_items['+index+'][price]']=line.catalog.stripePrice;
+    checkoutFields['line_items['+index+'][quantity]']=String(line.quantity);
+   }
+   const checkout=await createStripeSession(env,checkoutFields);
    if(!checkout?.id||!checkout?.url||checkout.livemode!==false)throw Error('Stripe did not return a verified sandbox Checkout session');
    await db(env,'/rest/v1/demo_checkout_tests?id=eq.'+testId,{method:'PATCH',
     body:{stripe_session_id:checkout.id,updated_at:new Date().toISOString()}});
