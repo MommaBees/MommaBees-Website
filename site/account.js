@@ -1,6 +1,7 @@
 import {config,currentUser,list,update,signIn,signUp,signOut,money,escapeHtml as h,fmt} from './api.js';
 import {renderMessages} from './message-center.js';
 import {IDLE_OPTIONS,normalizeIdle} from './idle-session.js';
+import {requestRecoveryEmail,pendingRecovery,recoveryLinkError,setRecoveryPassword} from './password-recovery.js';
 const addressFields=[
  ['address_line1','Street address','street-address',true],
  ['address_line2','Apt, suite or unit','address-line2',false],
@@ -105,7 +106,8 @@ async function authPage({layout,rerender,showError}){
   item('password','Password','current-password',true,'password')+
   '<p class="auth-form-error" data-auth-error role="alert" hidden></p>'+
   '<div class="actions auth-submit-actions"><button class="button" type="submit" disabled>Sign In Securely</button>'+
-  '<button type="button" class="button secondary" data-auth-tab="register">Create Account</button></div>'+
+  '<button type="button" class="button secondary" data-auth-tab="register">Create Account</button></div>'+ 
+  '<p class="account-recovery-link"><a href="#account/forgot-password">Forgot password?</a></p>'+
   '<div class="auth-verification"><label class="checkbox auth-verify-choice"><input type="checkbox" data-verify-human> Verify I’m Human</label>'+
   '<div data-captcha></div><p class="small" data-captcha-status role="status" aria-live="polite"></p></div></form>'+
   '<form id="bakery-register" class="box" hidden><h2>Create Account</h2>'+
@@ -144,7 +146,64 @@ async function authPage({layout,rerender,showError}){
   }catch(error){authError(register,error.message);resetVerification(register);syncAuthSubmit(register);}
  };
 }
+async function forgotPasswordPage({layout}){
+ layout('<section class="section bakery-account-entry"><h1>Forgot Password</h1>'+
+  '<p>Enter the email address associated with your bakery account. We will email reset instructions if an account exists.</p>'+
+  '<form class="box" id="bakery-forgot-password">'+item('email','Account email address','email',true,'email')+
+  '<p class="auth-form-error" data-auth-error role="alert" hidden></p>'+
+  '<div class="actions"><button type="submit" class="button" disabled>Send Reset Link</button>'+
+  '<a href="#account" class="button secondary">Back to Sign In</a></div>'+
+  '<div class="auth-verification"><label class="checkbox auth-verify-choice"><input type="checkbox" data-verify-human> Verify I’m Human</label>'+
+  '<div data-captcha></div><p class="small" data-captcha-status role="status" aria-live="polite"></p></div>'+
+  '<p role="status" id="recovery-status" aria-live="polite"></p></form></section>');
+ const form=document.getElementById('bakery-forgot-password'),checkbox=form.querySelector('[data-verify-human]');
+ const error=recoveryLinkError();if(error)authError(form,error);
+ checkbox.onchange=async()=>{
+  authError(form,'');
+  if(!checkbox.checked){resetVerification(form);return;}
+  try{await executeHumanCheck(form);}catch(err){resetVerification(form);authError(form,err.message);}
+ };
+ form.onsubmit=async event=>{
+  event.preventDefault();authError(form,'');
+  const button=form.querySelector('button[type="submit"]');button.disabled=true;
+  try{
+   const token=captchaToken(form);
+   const message=await requestRecoveryEmail(form.elements.email.value,token);
+   form.querySelector('#recovery-status').textContent=message;
+   resetVerification(form);
+  }catch(err){resetVerification(form);authError(form,err.message);}
+ };
+}
+async function resetPasswordPage({layout}){
+ const authorized=pendingRecovery();
+ layout('<section class="section bakery-account-entry"><h1>Reset Password</h1>'+
+  (authorized?'<p>Choose a new password for your account.</p>'+
+   '<form id="bakery-reset-password" class="box">'+
+   item('password','New password (8–128 characters)','new-password',true,'password')+
+   item('confirm_password','Confirm new password','new-password',true,'password')+
+   '<p class="auth-form-error" data-auth-error role="alert" hidden></p>'+
+   '<div class="actions"><button type="submit" class="button">Update Password</button></div>'+
+   '<p id="recovery-status" role="status" aria-live="polite"></p></form>':
+   '<p>The recovery link is missing or expired. <a href="#account/forgot-password">Request a new password reset email.</a></p>')+
+  '</section>');
+ if(!authorized)return;
+ const form=document.getElementById('bakery-reset-password');
+ form.onsubmit=async event=>{
+  event.preventDefault();authError(form,'');
+  const button=form.querySelector('button[type="submit"]');button.disabled=true;
+  try{
+   if(form.elements.password.value!==form.elements.confirm_password.value)throw Error('Passwords do not match.');
+   await setRecoveryPassword(form.elements.password.value);
+   form.replaceWith(Object.assign(document.createElement('p'),{className:'notice success',
+    textContent:'Password updated. You can sign in with your new password.'}));
+   const back=document.createElement('a');back.className='button secondary';back.href='#account';back.textContent='Sign In';
+   document.querySelector('.bakery-account-entry')?.append(back);
+  }catch(err){authError(form,err.message);button.disabled=false;}
+ };
+}
 export async function account({layout,rerender,showError,section=null}){
+ if(section==='forgot-password')return forgotPasswordPage({layout});
+ if(section==='reset-password')return resetPasswordPage({layout});
  if(!currentUser())return authPage({layout,rerender,showError});
  const user=currentUser();
  layout('<section class="section"><h1>My Bakery Account</h1><p>Signed in as '+h(user.email)+'</p>'+
