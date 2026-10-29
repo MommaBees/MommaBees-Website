@@ -33,7 +33,7 @@ test('Showcase may render a real sale only when explicitly linked, published, ca
 });
 test('same small Qty/Add to Cart form is reused by homepage, Bakery, Homestand and Showcase',()=>{
  const site=source('site/app.js'),admin=source('site/admin.js'),css=source('site/country-home-v2.css');
- for(const x of ['const quickCartMarkup=p=>','data-quick-buy','card-quick-qty','card-quick-add','Add to Cart','function bindQuickCart()','form[data-quick-buy]','availableQuickBatches','saveCart()','view.products.map(card)','items.map(card)','featured.map(card)','quickCartMarkup(sale)','function showcaseDetail(item)'])
+ for(const x of ['const quickCartMarkup=p=>','data-quick-buy','card-quick-qty','card-quick-add','Add to Cart','function bindQuickCart()','form[data-quick-buy]','availableQuickBatches','saveCart()','view.products.map(card)','shopProducts.map(p=>card(p,true))','featured.map(card)','quickCartMarkup(sale)','function showcaseDetail(item)'])
   assert.ok(site.includes(x),'Missing inline commerce behavior '+x);
  assert.match(site,/publicShowcaseSaleProduct\(item,all\.products/);
  assert.match(site,/showcaseSaleProduct\(item\)/);
