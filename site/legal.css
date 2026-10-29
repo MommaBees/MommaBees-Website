@@ -99,3 +99,11 @@ body[data-page="faq"] #main .customer-faq{
 .footer .footer-nav-row>a{min-height:26px}
 .footer .footer-qr{margin-top:5px;max-width:240px}
 .footer .footer-qr svg{width:68px!important;height:68px!important}
+
+/* Compact, single-choice cookie selector; default necessary-only. */
+.cookie-options{display:grid;gap:5px;margin-top:12px}
+.cookie-options label{font-weight:650}
+.cookie-options select{width:100%;max-width:520px;min-height:43px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);padding:7px 12px;font:inherit}
+.cookie-options select:focus-visible{outline:3px solid #b78349;outline-offset:2px}
+.cookie-actions{justify-content:flex-end;gap:10px}
+.cookie-actions .button{min-width:100px}
