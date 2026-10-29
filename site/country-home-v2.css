@@ -1617,3 +1617,14 @@ body[data-website-size] #main .showcase-detail-related .card-media .product-phot
 body[data-page="admin"] .admin-workspace .admin-side{position:static;top:auto;max-height:none;height:auto;overflow:visible;align-self:stretch}
 body[data-page="admin"] .admin-layout{align-items:start}
 body[data-page="account"] .auth-submit-actions .button:disabled{cursor:not-allowed;opacity:.55}
+
+/* Staff sandbox product and cart share the real product page's compact layout, never its cart state. */
+.sandbox-product-detail{max-width:1080px;margin:0 auto}
+.sandbox-product-detail .detail{margin-top:16px}
+.sandbox-product-detail .product-description,.sandbox-product-detail .product-ingredient-details{padding-top:12px;border-top:1px solid var(--line,#e2d2be);margin-top:14px}
+.sandbox-product-detail h2{font-size:1.16rem;margin:10px 0 6px}
+.sandbox-product-detail .detail-photo{max-width:100%;object-fit:contain}
+.sandbox-product-detail .product-quantity-control{margin:8px 0}
+.sandbox-cart-page .lineitem{gap:12px;align-items:flex-start}
+.sandbox-cart-page input[data-sandbox-cart-qty]{display:block;width:92px;max-width:100%;padding:8px;margin:5px 0}
+.sandbox-cart-page .total{margin:20px 0 12px}
