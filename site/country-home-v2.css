@@ -1612,3 +1612,8 @@ body[data-website-size] #main .showcase-detail-related .card-media .product-phot
 .admin-ready-inventory .field{margin:.5rem 0}
 .admin-ready-inventory input{width:100%;max-width:330px}
 @media(max-width:640px){.product-detail .product-quantity-control{max-width:100%}.cart-line{align-items:flex-start;gap:.65rem}}
+
+/* Admin menu shares the page scrollbar instead of using its own. */
+body[data-page="admin"] .admin-workspace .admin-side{position:static;top:auto;max-height:none;height:auto;overflow:visible;align-self:stretch}
+body[data-page="admin"] .admin-layout{align-items:start}
+body[data-page="account"] .auth-submit-actions .button:disabled{cursor:not-allowed;opacity:.55}
