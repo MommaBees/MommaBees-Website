@@ -486,7 +486,7 @@ test('subcategory migration enforces same-parent consistency and preserves blank
  assert.match(store,/subcategory-tabs/);
  assert.match(store,/items\.some\(p=>p\.subcategory_id===x\.id\)/);
  assert.match(admin,/const updateHierarchy=\(level='department'\)/);
- assert.match(admin,/if\(!el&&\['subcategory_id','variety_id'\]\.includes\(f\.key\)\)/);
+ assert.match(admin,/if\(!el&&\['subcategory_id','variety_id','product_id'\]\.includes\(f\.key\)\)/);
 });
 test('FAQ directs special-order inquiries to explicit acceptance and food eligibility policy',()=>{
  const store=read('site/app.js'),faq=read('site/customer-faq.js'),legal=read('site/legal-policies.js');
@@ -1485,7 +1485,7 @@ test('six specified showcase entries are grouped and ordered by department',()=>
  assert.equal(showcaseIcon(products[4]),SHOWCASE_ICONS['green-beans']);
  assert.deepEqual(showcaseItemsFor(products,'invalid'),[]);
 });
-test('owner catalog showcases render in split home and department Shop All without checkout fields',()=>{
+test('owner catalog showcases render in split home and department Shop All with eligible product quick-cart only',()=>{
  const app=read('site/app.js'),admin=read('site/admin.js'),css=read('site/country-home-v2.css');
  const sql=read('supabase/migrations/20261027_store_showcase_items_v131.sql');
  assert.match(app,/\['store_showcase_items',\{order:'sort_order\.asc'\}\]/);
@@ -1494,7 +1494,9 @@ test('owner catalog showcases render in split home and department Shop All witho
  assert.match(app,/visibleDepartments\.flatMap\(d=>showcaseItemsFor\(all\.showcaseItems,d/);
  assert.match(app,/\.map\(showcaseCard\)/);
  const component=app.slice(app.indexOf('const showcaseCard=item=>'),app.indexOf('const categories='));
- assert.doesNotMatch(component,/price_cents|Add to Cart|not for sale|Not available/i);
+ assert.match(component,/showcaseSaleProduct\(item\)/);
+ assert.match(component,/quickCartMarkup\(sale\)/);
+ assert.match(component,/showcasePrice\(item\)/);
  assert.match(admin,/store_showcase_items:\{label:'Product Showcase'/);
  assert.match(css,/\.showcase-illustration--homestand/);
  assert.match(sql,/create table if not exists public\.store_showcase_items/);
@@ -1594,7 +1596,7 @@ test('harvest crop maps original images to their named store cards',()=>{
 });
 
 
-test('owner photo gallery items have individual navigable pages but never fake checkout prices',()=>{
+test('owner showcase detail pages expose complete information and checkout only for linked sale products',()=>{
  const app=read('site/app.js'),css=read('site/country-home-v2.css');
  assert.match(app,/const showcaseCard=item=>/);
  assert.match(app,/href="#product\/['"]?\+encodeURIComponent\(item\.slug\)/);
@@ -1604,7 +1606,10 @@ test('owner photo gallery items have individual navigable pages but never fake c
  assert.match(read('site/product-showcase-details.js'),/Homegrown in Nixa, Missouri without chemical sprays/);
  assert.match(read('site/product-showcase-details.js'),/Homemade in Nixa, Missouri/);
  const showcase=app.slice(app.indexOf('function showcaseDetail(item)'),app.indexOf('function detail(id)'));
- assert.doesNotMatch(showcase,/Add to Cart|price_cents|\$0\.00|certified organic/i);
+ assert.match(showcase,/quickCartMarkup\(sale\)/);
+ assert.match(showcase,/showcaseFields\(display\)/);
+ assert.match(showcase,/product-ingredient-details/);
+ assert.doesNotMatch(showcase,/\$0\.00|certified organic/i);
  assert.match(css,/\.showcase-detail-grid/);
  assert.match(css,/\.showcase-detail-photo/);
  assert.match(css,/a\.store-showcase-card:focus-visible/);
@@ -1643,7 +1648,7 @@ test('Product Showcase master setting and per-item visibility do not affect real
  assert.equal(showcaseAvailability({availability_date:'2026-08-23'}),'Aug. 23, 2026');
  assert.ok(SHOWCASE_PRICE_UNITS.includes('pound'));
  assert.ok(showcaseFields({department:'bakery',ingredients:'Confirmed recipe',allergens:'Confirmed allergens'}).some(([k])=>k==='Allergens'));
- assert.ok(!showcaseFields({department:'homestand',ingredients:'Unknown'}).some(([k])=>k==='Ingredients'));
+ assert.ok(showcaseFields({department:'homestand',ingredients:'Known ingredients'}).some(([k])=>k==='Ingredients'));
 });
 test('Product Showcase visibility is enforced across Admin, site, detail and carousel',()=>{
  const admin=read('site/admin.js'),site=read('site/app.js'),carousel=read('site/catalog-carousel.js');
@@ -1655,7 +1660,7 @@ test('Product Showcase visibility is enforced across Admin, site, detail and car
  assert.match(site,/showcaseEnabled\(all\.settings\)/);
  assert.match(site,/showcaseEnabled\(s\)/);
  assert.match(site,/showcasePrice\(item\)/);
- assert.match(site,/showcaseFields\(item\)/);
+ assert.match(site,/showcaseFields\(display\)/);
  assert.match(carousel,/showcaseEnabled\(settings\)/);
  assert.match(sql,/product_showcase_enabled boolean not null default true/);
  assert.match(sql,/price_cents integer/);
@@ -1678,7 +1683,7 @@ test('Product Showcase uses selected calendar dates with Aug. 23, 2026 format',(
  const helper=read('site/product-showcase-details.js');
  const app=read('site/app.js'),admin=read('site/admin.js');
  assert.match(helper,/formatShowcaseDate\(item\?\.availability_date\)/);
- assert.match(app,/showcaseFields\(item\)/);
+ assert.match(app,/showcaseFields\(display\)/);
  assert.match(admin,/field\('availability_date','Availability date','date'\)/);
  assert.match(admin,/date\.required=true/);
  assert.match(admin,/formatShowcaseDate\(val\)/);
