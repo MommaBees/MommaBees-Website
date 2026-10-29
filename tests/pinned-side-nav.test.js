@@ -72,3 +72,22 @@ test('all Showcase cards, including homepage, have matching Qty and Add to Cart 
  assert.match(app,/\.map\(showcaseCard\)\.join\(''\)/);
  assert.match(css,/\.store-showcase-card>.card-showcase-buy/);
 });
+
+test('homepage Register appears beside Sign In and opens the Create Account form immediately',()=>{
+ const app=source('site/app.js'),account=source('site/account.js');
+ const header=app.slice(app.indexOf("$('#app').innerHTML=`<header"),app.indexOf('<main id="main"'));
+ assert.match(header,/accountNavigationMarkup\(Boolean\(currentUser\(\)\),verifiedBackOfficeRole\)/);
+ assert.match(header,/routeName==='home'&&!currentUser\(\)/);
+ assert.match(header,/href="#account\/register" class="nav-account-register">Register<\/a>/);
+ assert.ok(header.indexOf('accountNavigationMarkup')<header.indexOf('nav-account-register'),'Register must appear after Sign In');
+ assert.match(account,/select\(section==='register'\?'register':'login'\)/);
+ assert.match(account,/authPage\(\{layout,rerender,showError,section\}\)/);
+});
+test('footer retains gray original background and changes only word color to header clay',()=>{
+ const css=source('site/country-home-v2.css');
+ assert.match(css,/body \.footer\{background:#948D87!important;color:#C07C57!important/);
+ assert.match(css,/body \.footer :is\(\.footer-location/);
+ assert.match(css,/\.footer-legal-links a,\.footer-cookie-link/);
+ assert.match(css,/\.nav-account-register\{/);
+ assert.doesNotMatch(css,/body \.footer\{background:#C07C57!important/);
+});
