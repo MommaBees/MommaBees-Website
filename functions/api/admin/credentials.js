@@ -3,7 +3,7 @@
 import {db,response} from '../../_lib/db.js';
 import {requireBakeryManager,auditAccount} from '../../_lib/bakery-admin.js';
 import {validCredentialSlot,RUNTIME_CREDENTIALS} from '../../_lib/runtime-credentials.js';
-import {dependenciesFor,stageCredential,credentialHistory,verifyStripeKey,promoteWithReadback,rejectCredential} from '../../_lib/credential-rotation.js';
+import {dependenciesFor,stageCredential,credentialHistory,verifyStripeKey,promoteWithReadback,rejectCredential,pendingCredential} from '../../_lib/credential-rotation.js';
 const EXTERNAL=Object.freeze([
  {provider:'Cloudflare',label:'Cloudflare Pages/API tokens, Workers secrets, Turnstile site key',mode:'provider',details:'Rotate tokens in the MommaBees Cloudflare account. Pages bindings and Turnstile site-key rotation require corresponding provider changes.'},
  {provider:'GitHub',label:'GitHub access tokens, Actions secrets, Deploy keys, webhooks',mode:'provider',details:'Rotate in the MommaBees GitHub repository or organization. Reauthorize the Cloudflare GitHub connection there.'},
@@ -123,4 +123,39 @@ export async function onRequestDelete({request,env}){
  }catch{
   return response({error:'Unable to cancel pending rotation'},409);
  }
+}
+
+export async function onRequestPatch({request,env}){
+ try{
+  if(new URL(request.url).origin!==new URL(env.SITE_URL).origin||
+   request.headers.get('Origin')!==new URL(env.SITE_URL).origin)
+   return response({error:'Credential update origin mismatch'},403);
+  const a=await owner(env,request);if(a.error)return a.error;
+  const input=await request.json();
+  if(typeof input.rotation_id!=='string'||!/^[-a-f0-9]{36}$/i.test(input.rotation_id))
+   return response({error:'Invalid pending rotation'},400);
+  if(!await confirmOwnerPassword(env,a.user,input.owner_password,input.captcha_token))
+   return response({error:'Owner reauthentication failed'},403);
+  const pending=await pendingCredential(env,'TURNSTILE_SECRET_KEY','shared');
+  if(!pending||pending.id!==input.rotation_id)
+   return response({error:'No matching pending Turnstile secret'},409);
+  if(typeof input.proof_token!=='string'||input.proof_token.length<20||input.proof_token.length>2048)
+   return response({error:'Complete a second fresh verification challenge'},400);
+  const body=new FormData();
+  body.set('secret',pending.secret);body.set('response',input.proof_token);
+  const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body});
+  if(!r.ok)return response({error:'Turnstile provider verification unavailable; previous key unchanged'},503);
+  const proof=await r.json().catch(()=>({}));
+  if(proof.success!==true||proof.hostname!==new URL(env.SITE_URL).hostname)
+   return response({error:'New Turnstile key was not verified; previous key unchanged'},409);
+  const plan=dependenciesFor('TURNSTILE_SECRET_KEY','shared').map(d=>
+   d.name==='turnstile_challenge'?{...d,state:'verified'}:d);
+  const result=await promoteWithReadback(env,pending.id,'TURNSTILE_SECRET_KEY','shared',pending.secret,plan);
+  await auditAccount(env,a.user.id,null,'owner_credential_rotation_verified',
+   {rotation_id:pending.id,state:result.state,credential_name:'TURNSTILE_SECRET_KEY'}).catch(()=>{});
+  return response({ok:result.state==='activated',id:pending.id,state:result.state,dependencies:plan,
+   message:result.state==='activated'?
+    'Turnstile replacement passed a real challenge and is active. Recheck Supabase Auth CAPTCHA and public site key dependencies.':
+    'Verification failed after promotion. Previous key restored.'},result.state==='activated'?200:409);
+ }catch{return response({error:'Credential verification failed; existing active key retained'},503);}
 }
