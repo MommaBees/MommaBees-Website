@@ -1,6 +1,7 @@
 import {response,rpc,sha256,randomToken,getVerifiedUser} from '../_lib/db.js';
 import {verifyTurnstile} from '../_lib/turnstile.js';
 import {acceptedOrderNote} from '../_lib/order-legal.js';
+import {checkoutAdmission} from '../_lib/checkout-admission.js';
 const clean=(value,length=200)=>String(value||'').trim().slice(0,length);
 export async function onRequestPost({request,env}){
  try{
@@ -9,6 +10,8 @@ export async function onRequestPost({request,env}){
   const data=JSON.parse(text);
   if(!data || !Array.isArray(data.items))return response({error:'Choose the products to order'},400);
   const user=await getVerifiedUser(env,request);
+  const blocked=await checkoutAdmission(env,request,{guest:!user});
+  if(blocked)return blocked;
   if(!user){
    if(!await verifyTurnstile(env,data.captcha_token,request))
     return response({error:'Complete human verification to reserve a guest pickup'},400);
