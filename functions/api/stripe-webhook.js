@@ -1,10 +1,16 @@
 import {response,rpc,db} from '../_lib/db.js';
 import {verifyStripeSignature} from '../_lib/stripe.js';
+import {runtimeCredential} from '../_lib/runtime-credentials.js';
 export async function onRequestPost({request,env}){
  try{
   const raw=await request.text();if(raw.length>100000)return response({error:'Payload too large'},413);
-  if(!await verifyStripeSignature(request,env.STRIPE_WEBHOOK_SECRET,raw))return response({error:'Invalid Stripe signature'},400);
-  const event=JSON.parse(raw);const session=event.data?.object||{};
+  // Verify with the signing secret for the event's TEST/LIVE environment.
+  // The event body is untrusted until verification; never act on it before this check.
+  const claimed=JSON.parse(raw);
+  const mode=claimed.livemode===true?'live':'test';
+  const secret=await runtimeCredential(env,'STRIPE_WEBHOOK_SECRET',mode);
+  if(!await verifyStripeSignature(request,secret,raw))return response({error:'Invalid Stripe signature'},400);
+  const event=claimed;const session=event.data?.object||{};
   // Sandbox-only demonstrations never create or update real customer orders.
   if(session.metadata?.demo_checkout_test_id){
    if(event.livemode!==false||session.livemode!==false)return response({error:'Demo payments must never be live'},400);
