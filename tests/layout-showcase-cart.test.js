@@ -55,3 +55,37 @@ test('Product details place ingredients, allergens, handling below photo; Showca
  const detail=app.slice(app.indexOf('function detail(id){'),app.indexOf('async function reviewArea'));
  assert.ok(detail.indexOf('product-ingredient-details')<detail.indexOf('product-description'));
 });
+
+test('public Shop All preview cards can enter cart but never paid checkout',()=>{
+ const app=read('site/app.js'),checkout=read('site/checkout-form.js');
+ assert.match(app,/const canTestShowcase=\(\)=>showcaseEnabled\(all\.settings\)/);
+ assert.match(app,/const count=canTestShowcase\(\)&&item\.active!==false\?previewRemaining\(item,cart\):0/);
+ assert.match(app,/validPreviewQty\(item,cart,quantity\)/);
+ assert.match(app,/mode:'showcase'/);
+ assert.match(app,/if\(cartHasShowcase\(cart\)\)/);
+ assert.match(checkout,/cartHasShowcase\(cart\)/);
+ assert.doesNotMatch(app,/const canTestShowcase=\(\)=>\['owner','admin'\]/);
+});
+test('storefront cards hide allergens; product details keep them',()=>{
+ const app=read('site/app.js'),css=read('site/country-home-v2.css');
+ const card=app.slice(app.indexOf('const showcaseCard='),app.indexOf('function bindQuickCart()'));
+ assert.doesNotMatch(card,/showcase-card-allergens|<strong>Allergens:<\/strong>/);
+ const details=app.slice(app.indexOf('function showcaseDetail(item){'),app.indexOf('function detail(id){'));
+ assert.match(details,/<h2>Allergens<\/h2>/);
+ assert.match(css,/store-showcase-card \.showcase-card-allergens/);
+});
+test('Qty arrows and bounds are consistent across storefront, detail, regular cart and sandbox cart',()=>{
+ const app=read('site/app.js'),css=read('site/country-home-v2.css'),sandbox=read('site/sandbox-products.js');
+ assert.match(app,/# Qty/);
+ assert.match(app,/data-qty-arrow="1"/);
+ assert.match(app,/data-qty-arrow="-1"/);
+ assert.match(app,/arrow\.closest\('\.qty-input-wrap'\)/);
+ assert.match(app,/input\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/);
+ assert.match(app,/id="qty" inputmode="numeric" required/);
+ assert.match(app,/data-cart-qty="\'+i\+'" type="number" min="0"/);
+ assert.match(app,/if\(quantity===0\)\{cart\.splice\(index,1\);saveCart\(\);cartPage\(\);return;\}/);
+ assert.match(sandbox,/data-sandbox-cart-qty="\'+index\+'" type="number" min="0"/);
+ assert.match(sandbox,/if\(quantity===0\)\{cart\.splice\(index,1\);saveCart\(cart\);sandboxCartPage/);
+ assert.match(css,/\.qty-input-wrap \.qty-arrows button/);
+ assert.match(css,/appearance:textfield/);
+});
