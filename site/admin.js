@@ -53,12 +53,13 @@ const cols=(...x)=>x;
 const field=(key,label,type='text',extra={})=>({key,label,type,...extra});
 const configs={
  categories:{label:'Categories',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('name','Category name'),field('slug','URL slug (example: cookies)'),field('description','Description','textarea'),field('photo_url','Category image','image'),field('sort_order','Display order','number'),field('active','Active','bool'))},
- products:{label:'Products',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('category_id','Category','ref',{table:'categories'}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('variety_id','Variety','ref',{table:'catalog_varieties'}),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Sold by','select',{options:['each','dozen','tray','box','slice','bag','bunch','basket','pint','quart','pound']}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
+ products:{label:'Products',fields:cols(field('department','Store department','select',{options:STORE_DEPARTMENTS}),field('category_id','Category','ref',{table:'categories'}),field('product_type','Product type','select',{options:PRODUCT_TYPES}),field('subcategory_id','Subcategory','ref',{table:'subcategories'}),field('variety_id','Variety classification (optional)','ref',{table:'catalog_varieties'}),field('variety_count','Number of varieties','number'),field('name','Product name'),field('slug','Unique URL slug'),field('description','Description','textarea'),field('price_cents','Price in dollars','money'),field('unit','Sold by','select',{options:['each','dozen','tray','box','slice','bag','bunch','basket','pint','quart','pound']}),field('mode','Selling method','select',{options:['ready','preorder','both']}),field('lead_days','Preorder lead days','number'),field('ingredients','Ingredients','textarea'),field('storage_notes','Storage and shelf-life notes','textarea'),field('photo_url','Main photo','image'),field('published','Published','bool'),field('featured','Featured','bool'))},
  store_showcase_items:{label:'Product Showcase',fields:cols(
   field('department','Department','select',{options:STORE_DEPARTMENTS}),
   field('category_id','Category','ref',{table:'categories'}),
   field('subcategory_id','Subcategory (optional)','ref',{table:'subcategories'}),
-  field('variety_id','Variety (optional)','ref',{table:'catalog_varieties'}),
+  field('variety_id','Variety classification (optional)','ref',{table:'catalog_varieties'}),
+  field('variety_count','Number of varieties','number'),
   field('name','Display name'),
   field('slug','Identifier'),
   field('description','Item description','textarea'),
@@ -726,7 +727,7 @@ function fieldInput(f,r){const val=r?.[f.key], id='field_'+f.key;let raw='';cons
  <small id="${id}_license">All reference photographs must be labeled as examples; bakery-owned gallery photos are from prior bakes. Upload your own photograph to replace a reference.</small>
  <div class="preset-preview" id="${id}_preview"></div>`;
  else if(f.type==='datetime'){const v=value?centralInputFromIso(value):'';raw=`<input id="${id}" type="datetime-local" value="${v}"${req}><small class="muted">Central Time (Nixa, Missouri); daylight saving time is handled automatically.</small>`;}
- else if(f.type==='number'||f.type==='money')raw=`<input id="${id}" type="number" step="${f.type==='money'?'0.01':'any'}" value="${value===''?'':(f.type==='money'?Number(value)/100:value)}"${req}>`;
+ else if(f.type==='number'||f.type==='money')raw=`<input id="${id}" type="number" step="${f.type==='money'?'0.01':f.key==='variety_count'?'1':'any'}"${f.key==='variety_count'?' min="0"':''} value="${value===''?'':(f.type==='money'?Number(value)/100:value)}"${req}>`;
  else raw=`<input id="${id}" type="${f.type==='date'?'date':'text'}" value="${e(value)}"${req}>`;
  return `<div class="field"><label for="${id}" ${mandatory&&['image','carousel_image'].includes(f.type)?'data-required-label="true"':''}>${e(f.label)}</label>${raw}</div>`;}
 async function openEditor(record){const c=configs[selected];
@@ -1063,6 +1064,7 @@ async function openEditor(record){const c=configs[selected];
  }
  if(f.type==='money')v=v===''?null:Math.round(Number(v)*100);
  if(f.type==='number')v=v===''?null:Number(v);
+ if(f.key==='variety_count'&&v!==null&&(!Number.isInteger(v)||v<0))throw Error('Number of varieties must be a whole number of zero or more.');
  if(f.type==='csv'||f.type==='uuids')v=v.split(',').map(x=>x.trim()).filter(Boolean);
  if(f.type==='datetime')v=v?isoFromCentralInput(v):null;
  if(['max_discount_cents','max_uses'].includes(f.key)&&v==='')v=null;
