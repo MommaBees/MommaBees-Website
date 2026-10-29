@@ -7,6 +7,7 @@ import {qrMarkup,qrSvg,bindQrActions} from './qr-code.js';
 import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
 import {SAMPLE_MENU,samplesFor} from './sample-menu.js';
 import {accountNavigationMarkup,bindAccountNavigation} from './account-navigation.js';
+import {bindSideNavigation} from './side-navigation.js';
 import {catalogCarouselSlides} from './catalog-carousel.js';
 import {normalizeIdle,startIdleWatch,stopIdleWatch,isIdle,idleActivityTime} from './idle-session.js';
 import {bindRequiredMarkers} from './required-fields.js';
@@ -238,7 +239,7 @@ function bindQuickCart(){
   else cart.push({key,product_id:p.id,mode,batch_id:batch?.id||null,quantity:qty,name:p.name,price_cents:p.price_cents,unit:p.unit});
   saveCart();
   const count=cart.reduce((total,row)=>total+row.quantity,0);
-  for(const link of document.querySelectorAll('#primary-navigation a[href="#cart"]'))link.textContent='Cart ('+count+')';
+  for(const link of document.querySelectorAll('.nav-cart-link'))link.textContent='Cart ('+count+')';
   if(status)status.textContent='Added '+qty+' '+sellingUnitLabel(p.unit)+' package(s) to your cart.';
   document.querySelectorAll('form[data-quick-buy]').forEach(refresh);
  });
@@ -256,8 +257,23 @@ function layout(content){
  applyBakeryBackground(settings,config.supabaseUrl);
  stopHomeCarousel();
  $('#app').innerHTML=`<header class="header"><div class="shell nav">
+ <div class="nav-leading">
+  <div class="nav-side-wrapper" data-side-navigation>
+   <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false" aria-pressed="false" aria-label="Open navigation menu (click to keep open)">☰ <span>Menu</span></button>
+   <nav id="primary-navigation" aria-label="Storefront navigation" class="navlinks" hidden>
+    <a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a><a href="#preorder">Preorder</a>
+    <a href="#shop/bakery">Bakery Storefront</a><a href="#shop/homestand">Homestand Storefront</a>
+    <a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#faq">Questions &amp; Policies</a>
+   </nav>
+  </div>
+  <a href="#home" class="nav-home-link" ${routeName==='home'?'aria-current="page"':''}>Home</a>
+ </div>
  <a href="#home" class="brand">MommaBee Bakery&Farmstand</a>
- <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">☰</span></button><nav id="primary-navigation" aria-label="Primary navigation" class="navlinks"><a href="#shop" class="${location.hash==='#shop'?'current':''}" ${location.hash==='#shop'?'aria-current="page"':''}>Shop All</a><a href="#ready" class="${location.hash==='#ready'?'current':''}" ${location.hash==='#ready'?'aria-current="page"':''}>Ready to Sell</a><a href="#preorder" class="${location.hash==='#preorder'?'current':''}" ${location.hash==='#preorder'?'aria-current="page"':''}>Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Contact</a><a href="#cart">Cart (${cart.reduce((s,x)=>s+x.quantity,0)})</a>${accountNavigationMarkup(Boolean(currentUser()),verifiedBackOfficeRole)}</nav></div><div class="header-offerings" aria-label="Products and services"><div class="shell">${e(settings.brand_subtitle||HEADER_OFFERINGS)}</div></div></header>
+ <div class="nav-utilities">
+  <a href="#cart" class="nav-cart-link" ${routeName==='cart'?'aria-current="page"':''}>Cart (${cart.reduce((sum,item)=>sum+item.quantity,0)})</a>
+  ${accountNavigationMarkup(Boolean(currentUser()),verifiedBackOfficeRole)}
+ </div></div>
+ <div class="header-offerings" aria-label="Products and services"><div class="shell">${e(settings.brand_subtitle||HEADER_OFFERINGS)}</div></div></header>
  <main id="main" class="shell"><div id="feedback" aria-live="polite"></div>${crumb}${content}</main><footer class="footer"><div class="shell">
   <div class="footer-inner">
    <div class="footer-col"><div class="footer-brand-name">MommaBee Bakery&Farmstand</div>
@@ -285,7 +301,6 @@ function layout(content){
  </div></footer>`;
  bindHomeCarousel(settings.home_carousel_interval_seconds);
  bindQuickCart();
- const toggle=$('#mobile-nav-toggle');
  const primary=$('#primary-navigation');
  if(primary){
   primary.querySelectorAll('a[href^="#"]').forEach(anchor=>{
@@ -297,10 +312,7 @@ function layout(content){
    else anchor.removeAttribute('aria-current');
   });
  }
- if(toggle&&primary){
-  toggle.onclick=()=>{const opened=primary.classList.toggle('mobile-open');toggle.setAttribute('aria-expanded',String(opened));};
-  primary.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{primary.classList.remove('mobile-open');toggle.setAttribute('aria-expanded','false');}));
- }
+ bindSideNavigation();
  bindAccountNavigation({onSignOut:async()=>{
   try{
    await signOut();
