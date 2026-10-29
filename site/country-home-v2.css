@@ -1761,3 +1761,31 @@ body[data-website-size] .header .nav-side-wrapper #primary-navigation a,.header 
 .header .nav-utilities .account-dropdown-divider{border-top:1px solid #e3ceb0;margin:6px}
 .header .nav-utilities .account-dropdown-panel .account-signout{color:#7f352d!important}
 @media(max-width:480px){.header .nav-utilities .account-avatar{width:24px;height:24px}.header .nav-utilities .account-dropdown-trigger{min-height:38px;gap:4px}}
+
+/* Product / Showcase food labeling controls, deliberately compact and readable. */
+#main .store-showcase-card .showcase-card-allergens{
+ margin:7px 0 2px;font-size:.75rem;line-height:1.38;overflow-wrap:anywhere;color:#4e3328;
+}
+#main .store-showcase-card .showcase-card-allergens strong{font-weight:800}
+#main .store-showcase-card .showcase-card-dietary{margin:4px 0 5px;font-size:.75rem;font-weight:700;color:#4a613f;line-height:1.35}
+#main .store-showcase-card .showcase-card-link{margin-top:auto}
+body[data-page="admin"] .dietary-claim-panel,body[data-page="admin"] .showcase-allergen-panel{
+ min-width:0;padding:12px 14px;border:1px solid #d8c0a5;border-radius:6px;margin-block:13px;
+}
+body[data-page="admin"] .dietary-claim-panel[hidden],body[data-page="admin"] .showcase-allergen-panel[hidden]{display:none!important}
+body[data-page="admin"] .dietary-claim-choices,body[data-page="admin"] .showcase-allergen-choices{
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:7px 11px;margin:11px 0;
+}
+body[data-page="admin"] .dietary-claim-panel .allergen-choice,
+body[data-page="admin"] .showcase-allergen-panel .allergen-choice{
+ display:flex;align-items:center;gap:7px;font-size:.89rem;padding:6px;
+}
+body[data-page="admin"] .dietary-claim-panel .allergen-choice input,
+body[data-page="admin"] .showcase-allergen-panel .allergen-choice input{width:19px;height:19px;margin:0;flex:none}
+body[data-page="account"] .account-recovery-link{margin:8px 0 0;font-size:.91rem}
+body[data-page="account"] .account-recovery-link a{font-weight:700;text-underline-offset:3px}
+body[data-page="account"] #bakery-forgot-password,
+body[data-page="account"] #bakery-reset-password{max-width:510px}
+body[data-page="account"] #bakery-forgot-password .actions,
+body[data-page="account"] #bakery-reset-password .actions{flex-wrap:wrap;gap:9px}
+body[data-page="account"] #recovery-status:not(:empty){margin:13px 0 0;line-height:1.48}
