@@ -1,6 +1,8 @@
 import {response,rpc,db,sha256,randomToken,getVerifiedUser,origin,limited} from '../_lib/db.js';
 import {createStripeSession,stripePaymentMode} from '../_lib/stripe.js';
 import {acceptedOrderNote} from '../_lib/order-legal.js';
+import {verifyTurnstile} from '../_lib/turnstile.js';
+import {checkoutAdmission} from '../_lib/checkout-admission.js';
 export async function onRequestPost({request,env}){
  let orderId=null;
  try{
@@ -8,6 +10,10 @@ export async function onRequestPost({request,env}){
   if(stripePaymentMode(env)==='live' && env.LIVE_PAYMENT_ALLOWED!=='yes')return response({error:'Live payments are disabled. Use Stripe TEST keys until live payments are explicitly authorized.'},503);
   if(env.STRIPE_AUTOMATIC_TAX_ENABLED!=='yes')return response({error:'Tax setup is not verified. Configure Stripe Tax and enable STRIPE_AUTOMATIC_TAX_ENABLED only after reviewing applicable bakery tax obligations.'},503);
   const user=await getVerifiedUser(env,request);
+  const blocked=await checkoutAdmission(env,request,{guest:!user});
+  if(blocked)return blocked;
+  if(!user && !await verifyTurnstile(env,body.captcha_token,request))
+   return response({error:'Complete human verification before starting guest checkout'},403);
   // Guest orders collect a real contact/address even when payment is online.
   const guestAddress=body.guest_address||{};
   const first=String(body.first_name||'').trim();
