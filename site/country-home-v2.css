@@ -1789,3 +1789,115 @@ body[data-page="account"] #bakery-reset-password{max-width:510px}
 body[data-page="account"] #bakery-forgot-password .actions,
 body[data-page="account"] #bakery-reset-password .actions{flex-wrap:wrap;gap:9px}
 body[data-page="account"] #recovery-status:not(:empty){margin:13px 0 0;line-height:1.48}
+
+/* MBB-UI-060 — compact storefront, detail and footer; Admin-selectable open (borderless) layout. */
+body[data-website-size]:is([data-page="home"],[data-page="shop"],[data-page="ready"],[data-page="preorder"],[data-page="category"],[data-page="subcategory"]) #main.shell{
+ width:calc(100% - clamp(24px,4vw,78px));
+ max-width:1270px;
+ margin-inline:auto;
+ padding-inline:clamp(13px,2vw,26px);
+}
+body[data-page="shop"] .shop-hero,body[data-page="ready"] .shop-hero,
+body[data-page="preorder"] .shop-hero{
+ max-width:960px;width:100%;min-height:140px!important;
+ display:grid;grid-template-columns:minmax(0,1fr) 190px;
+ margin:3px auto 16px;border-radius:5px;box-shadow:none;
+}
+#main .shop-page .shop-hero-copy{padding:clamp(14px,2vw,27px)!important;align-self:center}
+#main .shop-page .shop-hero-copy h1{font-size:clamp(1.65rem,2.7vw,2.8rem);line-height:1.2;margin:0 0 8px}
+#main .shop-page .shop-hero-copy .shop-result-count{margin:0;font-size:.79rem}
+#main .shop-page .shop-hero-picture--brand{min-height:0!important;max-height:150px;overflow:hidden}
+#main .shop-page .shop-hero-brand-image{min-height:0!important;max-height:144px;height:100%;padding:8px;object-fit:contain}
+#main .shop-department-tabs{display:flex!important;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;
+ width:max-content;max-width:100%;margin:2px auto 9px;padding:0!important}
+#main .shop-department-tabs .tab{flex:0 1 auto!important;width:auto!important;min-width:90px!important;max-width:190px;
+ padding:7px 12px!important;min-height:34px;font-size:.83rem!important;text-align:center}
+#main .shop-mode-tabs{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:6px;
+ max-width:760px;margin:0 auto 10px}
+#main .shop-mode-tabs .tab{min-width:0;flex:0 0 auto;min-height:34px;padding:7px 12px;font-size:.81rem}
+#main .shop-page .subcategory-tabs{max-width:1000px;margin:0 auto 11px;gap:5px}
+#main .shop-page .subcategory-tabs .tab{min-height:30px;padding:6px 10px;font-size:.78rem}
+#main .shop-page .product-results.grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,205px),1fr));
+ gap:clamp(8px,1.25vw,14px);align-items:stretch;margin-inline:auto;max-width:1110px}
+#main .bakery-product-card .product-photo{height:clamp(125px,13vw,168px);object-fit:cover}
+#main .bakery-product-card .card-content{padding:10px 12px}
+#main .bakery-product-card .card-content h3{font-size:clamp(1.01rem,1.35vw,1.23rem);line-height:1.26;margin:5px 0}
+#main .bakery-product-card .card-content p{line-height:1.35;margin-block:6px}
+#main .bakery-product-card .card-content .eyebrow{font-size:.69rem}
+#main .bakery-product-card .showcase-card-price{font-size:.91rem}
+#main .bakery-product-card .card-quick-buy{padding-top:6px!important;margin-top:7px!important}
+#main .store-showcase-card>.card-showcase-buy{padding:0 10px 10px}
+#main .store-showcase-card>.showcase-card-main .card-content{padding:10px 12px}
+#main .bakery-product-card .card-quick-add{min-height:34px}
+#main .bakery-product-card .card-quick-qty input{height:34px}
+#main .bakery-product-card .card-quick-status:empty{display:none}
+
+body[data-website-size][data-page="product"] #main.shell{max-width:1050px!important;padding-inline:clamp(15px,2.3vw,32px)}
+#main .showcase-item-page{max-width:920px;margin:12px auto 26px}
+#main .showcase-detail-grid{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:clamp(15px,2.7vw,29px);align-items:start}
+#main .showcase-detail-photo{height:auto;max-height:350px;width:100%;object-fit:cover;border-radius:5px}
+#main .showcase-detail-gallery{max-width:410px}
+#main .showcase-detail-copy{padding:0;min-width:0}
+#main .showcase-detail-copy h1{font-size:clamp(1.7rem,2.7vw,2.5rem);margin:5px 0 13px}
+#main .showcase-detail-copy .product-description{margin:8px 0 13px;padding:9px 0}
+#main .showcase-detail-description{font-size:.91rem;line-height:1.5;margin:5px 0}
+#main .showcase-detail-copy .price{font-size:1.02rem;margin:10px 0}
+#main .showcase-sale-summary{margin:8px 0 14px}
+#main .showcase-sale-summary .showcase-quick-buy{max-width:370px}
+#main .showcase-sale-summary .showcase-available,
+#main .showcase-sale-summary .showcase-detail-stock{margin:4px 0 8px;font-weight:700;font-size:.85rem}
+#main .showcase-photo-information{max-width:410px;margin-top:13px;padding-top:6px;border-top:1px solid #dfc6a6}
+#main .showcase-photo-information h2{font-size:1.02rem;margin:11px 0 4px}
+#main .showcase-photo-information p{font-size:.84rem;line-height:1.45;margin:0;white-space:pre-line}
+#main .showcase-detail-copy .showcase-details-table{margin:10px 0}
+#main .showcase-detail-info{display:grid;grid-template-columns:minmax(100px,.4fr) minmax(0,1fr);gap:8px;
+ font-size:.82rem;padding:7px 0}
+#main .showcase-detail-info dt{font-weight:750}
+#main .showcase-detail-info dd{margin:0;overflow-wrap:anywhere}
+body[data-page="product"] #main .product-detail{max-width:940px;gap:25px;margin:12px auto}
+body[data-page="product"] #main .product-detail .detail-photo{height:auto;max-height:355px;object-fit:cover;border-radius:5px}
+body[data-page="product"] #main .product-detail .product-ingredient-details{border-top:1px solid #dfc6a6;margin-top:12px}
+body[data-page="product"] #main .product-detail .product-ingredient-details h2{font-size:1.04rem;margin:10px 0 4px}
+body[data-page="product"] #main .product-detail .product-ingredient-details p{font-size:.85rem;line-height:1.5;margin:3px 0}
+body[data-page="product"] #main .product-detail .product-description p{line-height:1.5;margin:4px 0}
+body[data-page="product"] #main .product-detail .product-description h2{font-size:1.18rem}
+body[data-page="product"] #main .product-detail .field{margin:7px 0}
+body[data-page="product"] #main .product-detail .button{min-height:38px;padding:8px 12px}
+body[data-page="product"] #main .product-detail .detail .product-ingredient-details{max-width:420px}
+
+/* Footer matches the saved MommaBee header clay shade, with less visual width and vertical padding. */
+body .footer{background:#C07C57!important;color:#2b1e18!important;border-top:2px solid #9f593b!important;
+ width:calc(100% - clamp(16px,3.5vw,70px));max-width:1300px;margin:30px auto 0;padding:21px 0 12px}
+body .footer .shell{max-width:1180px;padding-inline:clamp(14px,2vw,28px)}
+body .footer a,body .footer button,body .footer .footer-col-title,
+body .footer .footer-bottom,body .footer .footer-brand-name{color:#2b1e18!important}
+body .footer .footer-inner{gap:clamp(10px,1.7vw,22px)}
+body .footer .footer-navigation{gap:4px}
+body .footer .footer-legal{padding-block:9px}
+body .footer .footer-bottom{margin-top:10px;padding-top:9px}
+
+/* Owner-selectable open design. Cards retain their layout and controls without a card enclosure. */
+body[data-card-style="open"] #main :is(.card,.box,.home-department-panel,.shop-hero){
+ background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+}
+body[data-card-style="open"] #main .bakery-product-card{overflow:visible}
+body[data-card-style="open"] #main .card-media{border-radius:4px;overflow:hidden}
+body[data-card-style="open"] #main .bakery-product-card>.card-content,
+body[data-card-style="open"] #main .store-showcase-card>.card-showcase-buy{padding-inline:4px}
+body[data-card-style="open"] #main .home-departments-section .home-department-panel{padding:8px}
+body[data-card-style="open"] #main .showcase-details-table{border:0}
+body[data-card-style="open"] #main .lineitem{background:transparent}
+
+@media(max-width:650px){
+ #main .shop-page .shop-hero{grid-template-columns:minmax(0,1fr) 110px;min-height:100px!important}
+ #main .shop-page .shop-hero-copy{padding:12px!important}
+ #main .shop-page .shop-hero-copy h1{font-size:1.6rem}
+ #main .shop-page .shop-hero-picture--brand{max-height:115px}
+ #main .showcase-detail-grid{grid-template-columns:1fr;gap:15px}
+ #main .showcase-detail-photo{max-height:330px}
+ #main .showcase-photo-column{display:contents}
+ #main .showcase-detail-gallery{order:0}
+ #main .showcase-detail-copy{order:1}
+ #main .showcase-photo-information{order:2}
+ body .footer{width:calc(100% - 16px)}
+}
