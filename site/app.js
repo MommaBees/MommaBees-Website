@@ -17,6 +17,7 @@ import {eligibleHomeSlides,homeCarouselMarkup,bindHomeCarousel,stopHomeCarousel}
 import {departmentForCategory,departmentLabel,effectiveDepartment,filterStoreProducts,homepageStorefronts,homepageVisibleDepartments,homepageGridLayout,shopVisibleDepartments} from './store-departments.js';
 import {showcaseItemsFor,showcaseIcon} from './store-showcase.js';
 import {showcaseEnabled,showcaseDescription,showcasePrice,showcaseOrigin,showcaseFields} from './product-showcase-details.js';
+import {sellingUnitLabel,validCartQuantity,availablePackages,packageTotal} from './selling-units.js';
 const HEADER_OFFERINGS='Decorated Cakes, Cake Pops, & Cookies | Homemade Cheesecakes & Pies | Candies | Bread & Pastries | Handmade crocheted&sewn items | Custom engraved cutting boards | Natural homemade products - bug spray, sunscreen, lip balm, soaps & more';
 let all={categories:[],subcategories:[],products:[],batches:[],days:[],photos:[],announcements:[],pastBakes:[],demoItems:[],carouselSlides:[],showcaseItems:[],settings:{},reviews:[]};
 let cart=JSON.parse(sessionStorage.getItem('mb_cart')||'[]');
@@ -115,7 +116,7 @@ const card=p=>{
   (productPreorder(p)?'<span class="badge">Preorder</span>':'')+'</div>'+
   '<p class="eyebrow">'+e(cat?.name||'Bakery')+(sub?' / '+e(sub.name):'')+'</p>'+
   '<h3>'+e(p.name)+'</h3><p class="small">'+e((p.description||'').slice(0,120))+'</p>'+
-  '<p class="price">'+money(p.price_cents)+' <small>/ '+e(p.unit)+'</small></p>'+
+  '<p class="price">'+money(p.price_cents)+' <small>/ '+e(sellingUnitLabel(p.unit))+'</small></p>'+
   '<a class="button secondary" href="#product/'+encodeURIComponent(p.id)+'">View details</a></div></article>';
 };
 const showcaseCard=item=>{
@@ -347,26 +348,82 @@ function showcaseDetail(item){
   '</section>');
 }
 function detail(id){
- const p=all.products.find(x=>x.id===id || (x.slug===id&&x.published&&available(x)));
+ const p=all.products.find(x=>x.id===id||(x.slug===id&&x.published&&available(x)));
  if(!p||!p.published||!available(p)){
   const item=showcaseEnabled(all.settings)?all.showcaseItems.find(x=>x.active!==false&&x.slug===id):null;
   if(item){showcaseDetail(item);return;}
-  layout('<div class="empty">Item not found. <a href="#shop">Return to shop</a>.</div>');
-  return;
+  layout('<div class="empty">Item not found. <a href="#shop">Return to shop</a>.</div>');return;
  }
- const batches=all.batches.filter(b=>b.product_id===p.id&&!b.disabled&&b.baked_on<=currentDate()&&b.quantity_available>0&&all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date<=b.best_before));
+ const batches=all.batches.filter(b=>b.product_id===p.id&&!b.disabled&&b.baked_on<=currentDate()&&b.quantity_available>0&&
+  all.days.some(d=>d.enabled&&new Date(d.cutoff_at)>new Date()&&d.date<=b.best_before));
  const visual=productVisual(p);
- const gallery=[visual.src,...all.photos.filter(x=>x.product_id===p.id).sort((a,b)=>a.sort_order-b.sort_order).map(x=>x.url)].filter(Boolean);
- layout(`<div class="detail"><div><div id="primary-photo">${image(gallery[0],'detail-photo',p.name)}</div>${visual.credit}${gallery.length>1?`<div class="thumbs">${gallery.map((u,i)=>`<img src="${photo(u)}" alt="View image ${i+1}" data-primary="${i}">`).join('')}</div>`:''}</div><div><a href="#shop" class="muted">← Back to shop</a><h1>${e(p.name)}</h1><p class="price">${money(p.price_cents)} / ${e(p.unit)}</p><p>${e(p.description)}</p><hr><form id="add-form"><div class="field"><label for="mode">Ordering method</label><select id="mode" name="mode">${productReady(p)?'<option value="ready">Ready to Sell (already baked)</option>':''}${productPreorder(p)?'<option value="preorder">Preorder for a baking day</option>':''}</select></div>${batches.length?`<div class="field" id="batch-section"><label for="batch">Available finished batch</label><select id="batch" name="batch">${batches.map(b=>`<option value="${e(b.id)}">Baked ${e(b.baked_on)} · ${e(b.quantity_available)} available${b.clearance_approved?' · Clearance':''}</option>`).join('')}</select></div>`:''}<div class="field"><label for="qty">Quantity</label><input type="number" min="1" max="30" value="1" id="qty" required></div><button class="button" type="submit">Add to Cart</button></form><hr><h3>Ingredients and allergens</h3><p>${e(p.ingredients||'Please contact the bakery for ingredient details before purchasing.')}</p><p><strong>Allergens:</strong> ${e(p.allergens||'Contact the bakery for allergen information.')}</p><p class="small">${e(p.storage_notes||'')}</p></div></div><section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content">Loading reviews…</div></section>`);
- $('#add-form').onsubmit=ev=>{ev.preventDefault();const mode=$('#mode').value;const batch=mode==='ready'?$('#batch')?.value:null;const qty=Number($('#qty').value);if(qty<1||qty>30)return showError('Choose a quantity between 1 and 30.');const key=p.id+':'+mode+':'+(batch||'');const found=cart.find(x=>x.key===key);if(found)found.quantity+=qty;else cart.push({key,product_id:p.id,mode,batch_id:batch,quantity:qty,name:p.name,price_cents:p.price_cents});saveCart();nav('#cart');};
- $('#mode').onchange=()=>{if($('#batch-section'))$('#batch-section').hidden=$('#mode').value!=='ready';};$('#mode').dispatchEvent(new Event('change'));
+ const gallery=[visual.src,...all.photos.filter(x=>x.product_id===p.id).sort((x,y)=>x.sort_order-y.sort_order).map(x=>x.url)].filter(Boolean);
+ const unit=sellingUnitLabel(p.unit);
+ const showReady=productReady(p),showPreorder=productPreorder(p);
+ const allergens=Array.isArray(p.major_allergens)&&p.major_allergens.length
+  ?'Contains: '+p.major_allergens.join(', ')+'.'
+  :(p.allergens||'No major allergens declared. Ask about all ingredients and possible cross-contact before ordering.');
+ layout(`<div class="detail product-detail"><div><div id="primary-photo">${image(gallery[0],'detail-photo',p.name)}</div>${visual.credit}${gallery.length>1?`<div class="thumbs">${gallery.map((u,i)=>`<img src="${photo(u)}" alt="View image ${i+1}" data-primary="${i}">`).join('')}</div>`:''}</div><div><a href="#shop" class="muted">← Back to shop</a><h1>${e(p.name)}</h1><p class="price">${money(p.price_cents)} / ${e(unit)}</p><section class="product-description" aria-label="Product description"><h2>Description</h2><p>${e(p.description||'Contact Momma Bee for product details.')}</p></section><form id="add-form"><div class="field"><label for="mode">Ordering method</label><select id="mode" name="mode">${showReady?'<option value="ready">Ready to Sell (already prepared)</option>':''}${showPreorder?'<option value="preorder">Preorder for a baking day</option>':''}</select></div>${batches.length?`<div class="field" id="batch-section"><label for="batch">Available finished batch</label><select id="batch" name="batch">${batches.map(b=>`<option value="${e(b.id)}">Prepared ${e(b.baked_on)} · ${e(b.quantity_available)} packages available</option>`).join('')}</select></div>`:''}<div class="field"><label for="qty">Qty (number of ${e(unit)} packages)</label><div class="product-quantity-control"><button type="button" class="button secondary" data-qty-step="-1" aria-label="Decrease quantity">−</button><input type="number" min="1" max="30" step="1" value="1" id="qty" inputmode="numeric" required><button type="button" class="button secondary" data-qty-step="1" aria-label="Increase quantity">+</button></div><p class="small muted" id="product-stock-note"></p><strong id="product-line-total" aria-live="polite"></strong></div><button class="button" type="submit">Add to Cart</button><a class="button secondary" href="#cart">View Cart</a></form><section class="product-ingredient-details"><h2>Ingredients</h2><p>${e(p.ingredients||'Please contact the bakery for the confirmed ingredient list before ordering.')}</p><h2>Allergens</h2><p>${e(allergens)}</p>${p.storage_notes?'<h2>Storage &amp; Handling</h2><p>'+e(p.storage_notes)+'</p>':''}</section></div></div><section class="section" id="reviews"><h2>Customer Reviews</h2><div id="review-content">Loading reviews…</div></section>`); 
+ const mode=$('#mode'),batch=$('#batch'),quantity=$('#qty'),lineTotal=$('#product-line-total');
+ const existingForBatch=(id)=>cart.filter(i=>i.product_id===p.id&&i.mode==='ready'&&i.batch_id===id)
+  .reduce((sum,i)=>sum+i.quantity,0);
+ const capacity=()=>{
+  if(mode.value!=='ready')return 30;
+  const selected=batches.find(b=>b.id===batch?.value);
+  return selected?availablePackages(selected,existingForBatch(selected.id)):0;
+ };
+ const refreshQuantity=()=>{
+  if($('#batch-section'))$('#batch-section').hidden=mode.value!=='ready';
+  const max=capacity();quantity.max=String(max);
+  if(max>0&&Number(quantity.value)>max)quantity.value=String(max);
+  if(Number(quantity.value)<1)quantity.value='1';
+  if(lineTotal)lineTotal.textContent='Estimated item total: '+money(packageTotal(p.price_cents,Number(quantity.value)||1));
+  const note=$('#product-stock-note');
+  if(note)note.textContent=mode.value==='ready'
+   ?max+' '+unit+' package(s) available to add to your cart from this batch.'
+   :'Select the number of '+unit+' packages you want to preorder. Final capacity is checked at checkout.';
+  $('#add-form button[type="submit"]').disabled=max<1;
+ };
+ $('#add-form').onsubmit=ev=>{
+  ev.preventDefault();
+  const selectedMode=mode.value,selectedBatch=selectedMode==='ready'?batch?.value:null,qty=Number(quantity.value);
+  if(!validCartQuantity(qty)||qty>capacity())return showError('Choose a valid Qty within the number of packages available.');
+  const key=p.id+':'+selectedMode+':'+(selectedBatch||'');
+  const found=cart.find(i=>i.key===key);
+  const combined=(found?.quantity||0)+qty;
+  if(!validCartQuantity(combined))return showError('A cart line cannot exceed 30 packages.');
+  if(selectedMode==='ready'&&combined>Number(batches.find(b=>b.id===selectedBatch)?.quantity_available||0))
+   return showError('Only the available finished packages can be added to your cart.');
+  if(found){found.quantity=combined;found.price_cents=p.price_cents;found.unit=p.unit;}
+  else cart.push({key,product_id:p.id,mode:selectedMode,batch_id:selectedBatch,quantity:qty,name:p.name,price_cents:p.price_cents,unit:p.unit});
+  saveCart();nav('#cart');
+ };
+ mode.addEventListener('change',refreshQuantity);batch?.addEventListener('change',refreshQuantity);
+ quantity.addEventListener('input',refreshQuantity);
+ $$('[data-qty-step]').forEach(button=>button.onclick=()=>{
+  quantity.value=String(Math.max(1,Math.min(capacity(),(Number(quantity.value)||1)+Number(button.dataset.qtyStep))));
+  refreshQuantity();
+ });
+ refreshQuantity();
  $$('[data-primary]').forEach(el=>el.onclick=()=>{$('#primary-photo').innerHTML=image(gallery[Number(el.dataset.primary)],'detail-photo',p.name);});
- reviewArea(id);
+ reviewArea(p.id);
 }
 async function reviewArea(pid){try{const reviews=await list('reviews',{product_id:'eq.'+pid,approved:'eq.true',order:'created_at.desc'});$('#review-content').innerHTML=`${reviews.map(r=>`<article class="box" style="margin:10px 0"><strong>${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</strong> <span class="small">${fmt(r.created_at)}</span><p>${e(r.body)}</p></article>`).join('')||'<p>No published reviews yet.</p>'}${currentUser()?`<form id="review-form" class="box"><h3>Leave a review</h3><div class="field"><label>Rating<select name="rating"><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select></label></div><div class="field"><label>Review<textarea name="body" minlength="10" maxlength="2000" required></textarea></label></div><div class="field"><label>Up to 3 photos (JPG/PNG/WebP, 5MB each)<input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple></label></div><button class="button">Submit for review</button></form>`:'<p><a href="#account">Sign in</a> to leave a review or upload photographs.</p>'}`;
  if(currentUser())$('#review-form').onsubmit=async ev=>{ev.preventDefault();const f=new FormData(ev.target);const files=[...ev.target.elements.photos.files];if(files.length>3)return showError('Up to three pictures per review.');try{const review=await add('reviews',{customer_id:currentUser().id,product_id:pid,rating:Number(f.get('rating')),body:String(f.get('body')).slice(0,2000)});for(const file of files){const media=await upload('review-photos',file);await add('review_photos',{review_id:review.id,storage_path:media.path});}$('#review-content').insertAdjacentHTML('afterbegin','<div class="notice success">Thank you. Your review has been submitted for moderation.</div>');ev.target.reset();}catch(err){showError(err);}};
  }catch{if($('#review-content'))$('#review-content').textContent='Reviews are not available right now.';}}
-function cartPage(){layout(`<section class="section"><h1>Your Cart</h1>${cart.length?cart.map((x,i)=>`<div class="lineitem"><div><strong>${e(x.name)}</strong><p class="small">${x.mode==='ready'?'Ready to Sell':'Preorder'} · Qty ${x.quantity}</p></div><div><strong>${money(x.price_cents*x.quantity)}</strong> <button class="button ghost" data-remove="${i}" aria-label="Remove ${e(x.name)}">Remove</button></div></div>`).join('')+`<p class="total">Product subtotal: ${money(cart.reduce((s,x)=>s+x.price_cents*x.quantity,0))}</p><p class="muted">Final price, discounts, delivery fee and applicable tax are calculated at checkout. Product availability is verified before payment.</p><a class="button" href="#checkout">Continue to checkout</a>`:'<div class="empty">Your cart is empty. <a href="#shop">Browse baked goods</a>.</div>'}</section>`);$$('[data-remove]').forEach(b=>b.onclick=()=>{cart.splice(Number(b.dataset.remove),1);saveCart();cartPage();});}
+function cartPage(){
+ // Keep display amounts aligned to the current product record; checkout re-verifies on the server.
+ const subtotal=cart.reduce((sum,item)=>sum+packageTotal(all.products.find(p=>p.id===item.product_id)?.price_cents??item.price_cents,item.quantity),0);
+ layout(`<section class="section"><h1>Your Cart</h1>${cart.length?cart.map((item,i)=>{const product=all.products.find(p=>p.id===item.product_id);const unit=sellingUnitLabel(product?.unit||item.unit);const price=product?.price_cents??item.price_cents;const batch=all.batches.find(b=>b.id===item.batch_id&&b.product_id===item.product_id);const max=item.mode==='ready'?Math.min(30,Number(batch?.quantity_available||0)):30;return `<div class="lineitem cart-line"><div><strong>${e(item.name)}</strong><p class="small">${item.mode==='ready'?'Ready to Sell':'Preorder'} · ${e(unit)} · ${money(price)} per package</p><label for="cart-qty-${i}">Qty</label><input id="cart-qty-${i}" data-cart-qty="${i}" type="number" min="1" max="${max}" step="1" inputmode="numeric" value="${item.quantity}" aria-label="Quantity of ${e(item.name)}"></div><div><strong>${money(packageTotal(price,item.quantity))}</strong> <button type="button" class="button ghost" data-remove="${i}" aria-label="Remove ${e(item.name)}">Remove</button></div></div>`}).join('')+`<p class="total">Product subtotal: ${money(subtotal)}</p><p class="muted">Final prices, taxes and availability are confirmed at checkout.</p><a class="button" href="#checkout">Continue to checkout</a>`:'<div class="empty">Your cart is empty. <a href="#shop">Browse products</a>.</div>'}</section>`);
+ $$('[data-remove]').forEach(button=>button.onclick=()=>{cart.splice(Number(button.dataset.remove),1);saveCart();cartPage();});
+ $$('[data-cart-qty]').forEach(input=>input.onchange=()=>{
+  const item=cart[Number(input.dataset.cartQty)],qty=Number(input.value);
+  const batch=all.batches.find(b=>b.id===item.batch_id&&b.product_id===item.product_id);
+  const permitted=item.mode==='ready'?Math.min(30,Number(batch?.quantity_available||0)):30;
+  if(!validCartQuantity(qty)||qty>permitted){showError('Choose between 1 and '+permitted+' packages for this cart line.');input.value=String(item.quantity);return;}
+  item.quantity=qty;saveCart();cartPage();
+ });
+}
 async function checkoutPage(){const mod=await import('./checkout-form.js');await mod.showCheckout({cart,all,layout,nav,showError,clearCart:()=>{cart=[];saveCart();}});}
 function success(){let last={};try{last=JSON.parse(sessionStorage.getItem('mb_latest_order')||'{}');}catch{}layout(`<section class="section box"><h1>Returning from Stripe</h1><p>Payment status is confirmed separately by Stripe. Do not assume the order is paid until its status shows Paid.</p><p>${last.id?'Order reference: '+e(last.id):'Your receipt will be emailed by Stripe when payment succeeds.'}</p>${last.token?`<a class="button" href="#track/${e(last.token)}">Check your order status</a>`:''}<p><a href="#shop">Back to bakery</a></p></section>`);cart=[];saveCart();}
 async function track(token){layout('<section class="section"><h1>Track your guest order</h1><div id="order-details" class="box">Looking up order…</div></section>');try{const r=await fetch('/api/order-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});const d=await r.json();if(!r.ok)throw Error(d.error||'No order found');$('#order-details').innerHTML=`<p><strong>Order:</strong> ${e(d.order_id)}</p><p><strong>Payment:</strong> ${e(d.payment_status)}</p><p><strong>Order status:</strong> ${e(d.status)}</p><p><strong>Fulfillment:</strong> ${fmt(d.fulfillment_date)} · ${e(d.fulfillment_window)}</p><p><strong>Total:</strong> ${money(d.total_cents)}</p>`;}catch(x){showError(x);}}
