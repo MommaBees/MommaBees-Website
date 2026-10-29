@@ -62,6 +62,7 @@ const configs={
   field('subcategory_id','Subcategory (optional)','ref',{table:'subcategories'}),
   field('variety_id','Variety classification (optional)','ref',{table:'catalog_varieties'}),
   field('variety_count','Number of varieties','number'),
+  field('product_id','Linked sale product (optional · enables actual cart)','ref',{table:'products'}),
   field('name','Display name'),
   field('slug','Identifier'),
   field('description','Item description','textarea'),
@@ -751,7 +752,7 @@ async function openEditor(record){const c=configs[selected];
   }
   if(price&&kind)price.addEventListener('input',()=>{if(price.value!=='')kind.value='owner';});
  }
- const missingRequired=c.fields.filter(f=>f.type==='ref'&&!['subcategory_id','variety_id'].includes(f.key)&&!(refs[f.table]||[]).length&&!['categories','subcategories'].includes(f.table));
+ const missingRequired=c.fields.filter(f=>f.type==='ref'&&!['subcategory_id','variety_id','product_id'].includes(f.key)&&!(refs[f.table]||[]).length&&!['categories','subcategories'].includes(f.table));
  if(missingRequired.length){
   const warning=document.createElement('p');
   warning.className='admin-reference-warning';
@@ -879,8 +880,14 @@ async function openEditor(record){const c=configs[selected];
   updateHierarchy('department');
  }
  if(selected==='store_showcase_items'){
-  const dept=$('#field_department'),cat=$('#field_category_id'),sub=$('#field_subcategory_id'),variety=$('#field_variety_id');
+  const dept=$('#field_department'),cat=$('#field_category_id'),sub=$('#field_subcategory_id'),variety=$('#field_variety_id'),linked=$('#field_product_id');
   const refresh=(stage='department')=>{
+   if(linked){for(const option of linked.options){if(!option.value)continue;
+    const p=refs.products?.find(x=>x.id===option.value);
+    option.disabled=!p||p.category_id!==cat?.value||p.department!==dept?.value;
+    option.hidden=option.disabled;
+   }if(linked.selectedOptions[0]?.disabled)linked.value='';}
+
    if(stage==='department'&&cat){
     for(const opt of cat.options){if(!opt.value)continue;
      const item=refs.categories?.find(x=>x.id===opt.value);
@@ -1082,7 +1089,7 @@ async function openEditor(record){const c=configs[selected];
  }
 
  const dialog=$('#editor');dialog.showModal();$('#close-editor').onclick=()=>dialog.close();
- $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);if(!el&&['subcategory_id','variety_id'].includes(f.key)){body[f.key]=null;continue;}let v=f.type==='bool'?el.checked:el.value;
+ $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);if(!el&&['subcategory_id','variety_id','product_id'].includes(f.key)){body[f.key]=null;continue;}let v=f.type==='bool'?el.checked:el.value;
  if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload(selected==='past_bakes'?'past-bakes':'product-photos',inp.files[0]);v=photo.url;} }
  if(f.type==='carousel_image'){const inp=document.querySelector('[data-carousel-photo-for="field_'+f.key+'"]');if(inp?.files?.[0]){const uploaded=await upload('carousel-photos',inp.files[0]);v=uploaded.url;}if(!v)throw Error('Upload a real photograph before saving this slide.');}
  if(v==='__create__')throw Error('Save or cancel the new '+f.label+' before saving this record.');
@@ -1097,7 +1104,7 @@ async function openEditor(record){const c=configs[selected];
  if(f.type==='datetime')v=v?isoFromCentralInput(v):null;
  if(['max_discount_cents','max_uses'].includes(f.key)&&v==='')v=null;
  if(f.type==='ref'&&!v){
-  if(!['subcategory_id','variety_id'].includes(f.key))throw Error('Select '+f.label+' before saving.');
+  if(!['subcategory_id','variety_id','product_id'].includes(f.key))throw Error('Select '+f.label+' before saving.');
   v=null;
  }
  if(f.key==='code'&&!v)v=null;
@@ -1106,6 +1113,11 @@ async function openEditor(record){const c=configs[selected];
  if(f.key==='published'&&selected==='products'&&v===true&&$('#field_product_type')?.value==='food'&&!$('#field_ingredients')?.value?.trim())throw Error('Add the actual ingredient list before publishing this product.');
  body[f.key]=v;
 
+ }
+ if(selected==='store_showcase_items'&&body.product_id){
+  const linkedProduct=refs.products?.find(p=>p.id===body.product_id);
+  if(!linkedProduct||linkedProduct.department!==body.department||linkedProduct.category_id!==body.category_id)
+   throw Error('Choose a linked sale product in the same department and category.');
  }
  if(selected==='store_showcase_items'&&(!record||record._unsaved)&&!body.availability_date)
   throw Error('Select an availability date for this item.');
