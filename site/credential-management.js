@@ -43,9 +43,17 @@ export async function renderCredentialManager({showError}){
  const external=Array.isArray(result.external)?result.external:[];
  const history=Array.isArray(result.history)?result.history:[];
  const turnstilePending=history.find(x=>x.name==='TURNSTILE_SECRET_KEY'&&x.state==='pending');
+ const autoRotationEnabled=result.auto_rotation_enabled===true;
  main.innerHTML='<section class="box owner-credentials" aria-label="Owner credential management">'+
   '<h2>API Credentials & Webhooks</h2>'+
   '<p class="small">Owner-only. Every change requires your account password and fresh human verification. Existing secret values cannot be viewed or downloaded.</p>'+
+  '<div class="owner-rotation-setting" aria-label="Automatic API rotation setting">'+
+   '<h3>Automatic API Rotation</h3>'+
+   '<label class="checkbox"><input type="checkbox" id="owner-auto-rotation" '+(autoRotationEnabled?'checked':'')+
+    '> Enable automatic activation of verified staged webhook keys</label>'+
+   '<p class="small">Default: Disabled. You can manually replace and verify keys even when this switch is off. An automatic rotation never creates new provider keys or initiates payments.</p>'+
+   '<button type="button" class="button secondary" id="owner-save-rotation">Save Rotation Setting</button>'+
+   '<p class="small" id="owner-rotation-feedback" role="status"></p></div>'+
   '<div class="credential-status-grid">'+managed.map(item=>'<div class="credential-status-item">'+
    '<strong>'+e(LABELS[key(item)])+'</strong><span>'+e(badge(item.status))+'</span>'+
    (item.changed_at?'<small>Updated '+e(new Date(item.changed_at).toLocaleString())+'</small>':'')+
@@ -77,6 +85,12 @@ export async function renderCredentialManager({showError}){
      '<small>'+e(item.created_at?new Date(item.created_at).toLocaleString():'')+'</small>'+
      '<ul>'+(Array.isArray(item.dependencies)?item.dependencies:[]).map(d=>'<li><strong>'+e(d.name)+'</strong>: '+e(d.state)+
       (d.details?' — '+e(d.details):'')+'</li>').join('')+'</ul>'+
+     (item.state==='pending'&&item.name==='STRIPE_WEBHOOK_SECRET'?
+      (item.proof_verified?
+       '<div class="credential-proof-actions">'+
+        (item.environment==='live'?'<label>Type LIVE<input data-rotation-live-confirm="'+e(item.id)+'" placeholder="LIVE" autocomplete="off"></label>':'')+
+        '<button type="button" class="button" data-webhook-activate="'+e(item.id)+'" data-webhook-environment="'+e(item.environment)+'">Activate verified key manually</button></div>':
+       '<p class="small">Awaiting a Stripe-signed webhook delivery before manual activation.</p>'):'')+
      (item.state==='pending'?'<button type="button" class="button secondary" data-rotation-cancel="'+e(item.id)+'">Cancel pending change</button>':'')+
      '</div>').join(''):'<p class="small">No rotations recorded.</p>')+'</div>'+
    (turnstilePending?'<form id="owner-turnstile-proof" class="owner-credential-form">'+
@@ -161,6 +175,54 @@ export async function renderCredentialManager({showError}){
    if(success)await renderCredentialManager({showError});
   }
  });
+ const rotationToggle=main.querySelector('#owner-auto-rotation');
+ const rotationSave=main.querySelector('#owner-save-rotation');
+ const rotationFeedback=main.querySelector('#owner-rotation-feedback');
+ // All security changes reuse the existing Owner password and fresh challenge controls.
+ const confirmation=()=>({
+  owner_password:form.elements.password.value,
+  captcha_token:captchaToken
+ });
+ rotationSave.addEventListener('click',async()=>{
+  if(!captchaToken||!human.checked||!form.elements.password.value){
+   rotationFeedback.textContent='Enter the Owner password and complete human verification first.';return;
+  }
+  rotationSave.disabled=true;
+  try{
+   const resp=await fetch('/api/admin/rotation-settings',{method:'POST',
+    headers:{...authHeaders(),'Content-Type':'application/json'},
+    body:JSON.stringify({...confirmation(),enabled:rotationToggle.checked})});
+   const data=await resp.json().catch(()=>({}));
+   if(!resp.ok)throw Error(data.error||'Unable to change automatic rotation');
+   form.elements.password.value='';
+   await renderCredentialManager({showError});
+  }catch(error){
+   rotationToggle.checked=autoRotationEnabled;
+   rotationFeedback.textContent=error.message;invalidate();rotationSave.disabled=false;
+  }
+ });
+ main.querySelectorAll('[data-webhook-activate]').forEach(button=>button.addEventListener('click',async()=>{
+  if(!captchaToken||!human.checked||!form.elements.password.value){
+   feedback.textContent='Enter the Owner password and complete human verification to activate a verified key.';return;
+  }
+  const environment=button.dataset.webhookEnvironment;
+  const liveInput=main.querySelector('[data-rotation-live-confirm="'+button.dataset.webhookActivate+'"]');
+  const confirmLive=liveInput?.value||'';
+  if(environment==='live'&&confirmLive!=='LIVE'){
+   feedback.textContent='Type LIVE beside the pending production key before activating.';return;
+  }
+  button.disabled=true;
+  try{
+   const response=await fetch(API,{method:'PATCH',
+    headers:{...authHeaders(),'Content-Type':'application/json'},
+    body:JSON.stringify({...confirmation(),rotation_id:button.dataset.webhookActivate,
+     action:'activate_webhook',environment,confirm_live:confirmLive})});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(data.error||'Manual activation failed');
+   form.elements.password.value='';
+   await renderCredentialManager({showError});
+  }catch(error){feedback.textContent=error.message;button.disabled=false;invalidate();}
+ }));
  main.querySelectorAll('[data-rotation-cancel]').forEach(button=>button.addEventListener('click',async()=>{
   if(!captchaToken||!human.checked||!form.elements.password.value){
    feedback.textContent='Enter your Owner password and complete human verification first.';return;
