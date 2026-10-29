@@ -129,6 +129,8 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   const selected=days.find(d=>d.date===f.get('date'));
   if(!selected)return showError('Choose a highlighted available baking day.');
   if(f.get('policy_acceptance')!=='yes')return showError('Review and accept the applicable order and fulfillment policies.');
+  if(!currentUser()&&!form.querySelector('[name="cf-turnstile-response"]')?.value)
+   return showError('Complete human verification before submitting your order.');
   if(choice==='pickup'&&(method.value!=='pickup'||!payAtPickup||!selected.pay_at_pickup_available))
    return showError('Pay at pickup is not available on this date.');
   if(choice==='stripe'&&!stripeAvailable)return showError('Online checkout is not available.');
