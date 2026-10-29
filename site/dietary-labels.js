@@ -17,6 +17,9 @@ export const approvedDietaryClaims=(record)=>{
  return DIETARY_CLAIMS.filter(([key])=>active.includes(key)).map(([,label])=>label);
 };
 export const knownAllergenStatement=(record)=>{
+ // Never publish previously entered allergen text after a recipe edit has invalidated its review.
+ if(record&&'allergen_reviewed' in record&&record.allergen_reviewed!==true)
+  return 'Allergen information not yet provided or reviewed. Ask Momma Bee before ordering.';
  if(record?.allergen_reviewed===true&&Array.isArray(record.major_allergens)&&record.major_allergens.length)
   return 'Contains: '+record.major_allergens.join(', ')+'.';
  const statement=String(record?.allergens||'').trim();
