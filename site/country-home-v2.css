@@ -1866,11 +1866,11 @@ body[data-page="product"] #main .product-detail .button{min-height:38px;padding:
 body[data-page="product"] #main .product-detail .detail .product-ingredient-details{max-width:420px}
 
 /* Footer matches the saved MommaBee header clay shade, with less visual width and vertical padding. */
-body .footer{background:#C07C57!important;color:#2b1e18!important;border-top:2px solid #9f593b!important;
+body .footer{background:#948D87!important;color:#C07C57!important;border-top:2px solid #685f59!important;
  width:calc(100% - clamp(16px,3.5vw,70px));max-width:1300px;margin:30px auto 0;padding:21px 0 12px}
 body .footer .shell{max-width:1180px;padding-inline:clamp(14px,2vw,28px)}
 body .footer a,body .footer button,body .footer .footer-col-title,
-body .footer .footer-bottom,body .footer .footer-brand-name{color:#2b1e18!important}
+body .footer .footer-bottom,body .footer .footer-brand-name{color:#C07C57!important}
 body .footer .footer-inner{gap:clamp(10px,1.7vw,22px)}
 body .footer .footer-navigation{gap:4px}
 body .footer .footer-legal{padding-block:9px}
@@ -2032,3 +2032,10 @@ body[data-card-style="open"] #main .lineitem{background:transparent}
 #main .showcase-sale-summary .qty-input-wrap{height:42px;width:96px}
 #main .store-showcase-card .showcase-card-allergens,#main .store-showcase-card .showcase-card-dietary{display:none!important}
 @media(max-width:480px){#main .bakery-product-card .card-quick-qty{flex-basis:72px;width:72px}}
+
+/* MBB-NAV/FOOTER-063 — homepage Register and restored gray footer, clay words. */
+.header .nav-utilities .nav-account-register{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 13px;border:1px solid #694532;border-radius:6px;background:#fff9ed;color:#35231c;text-decoration:none;font-weight:750;font-size:.85rem;white-space:nowrap}
+.header .nav-utilities .nav-account-register:hover,.header .nav-utilities .nav-account-register:focus-visible{background:#f2e0ca}
+body .footer{background:#948D87!important;color:#C07C57!important}
+body .footer :is(.footer-location,.footer-availability,.footer-pledge,.footer-bottom,.footer-col-title,.footer-brand-name,.footer-legal,.footer-legal-heading,.footer-legal-heading span,.footer-navigation a,.footer-legal-links a,.footer-cookie-link,.footer-qr span){color:#C07C57!important}
+@media(max-width:480px){.header .nav-utilities .nav-account-register{min-height:38px;padding:6px 9px;font-size:.79rem}}
