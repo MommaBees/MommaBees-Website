@@ -1,7 +1,7 @@
 import {response,rpc,db} from '../_lib/db.js';
 import {verifyStripeSignature} from '../_lib/stripe.js';
 import {runtimeCredential} from '../_lib/runtime-credentials.js';
-import {pendingCredential,promoteWithReadback,dependenciesFor} from '../_lib/credential-rotation.js';
+import {pendingCredential,promoteWithReadback,dependenciesFor,automaticRotationSetting,markSignedWebhookProof} from '../_lib/credential-rotation.js';
 export async function onRequestPost({request,env}){
  try{
   const raw=await request.text();if(raw.length>100000)return response({error:'Payload too large'},413);
@@ -14,6 +14,13 @@ export async function onRequestPost({request,env}){
   const pending=await pendingCredential(env,'STRIPE_WEBHOOK_SECRET',mode);
   let accepted=false;
   if(pending&&await verifyStripeSignature(request,pending.secret,raw)){
+   // When automatic rotation is OFF, a signed event proves the replacement but does
+   // not activate it. Ask Stripe to retry until the Owner manually approves it.
+   const rotation=await automaticRotationSetting(env).catch(()=>({enabled:false}));
+   if(!rotation.enabled){
+    await markSignedWebhookProof(env,pending.id);
+    return response({error:'Verified webhook replacement awaiting Owner activation; please retry'},503);
+   }
    const plan=dependenciesFor('STRIPE_WEBHOOK_SECRET',mode).map(x=>
     x.name==='stripe_signed_delivery'||x.name==='website_webhook'?{...x,state:'verified'}:x);
    const result=await promoteWithReadback(env,pending.id,'STRIPE_WEBHOOK_SECRET',mode,pending.secret,plan);
