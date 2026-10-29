@@ -1491,9 +1491,9 @@ test('owner catalog showcases render in split home and department Shop All with 
  assert.match(app,/\['store_showcase_items',\{order:'sort_order\.asc'\}\]/);
  assert.match(app,/t==='store_showcase_items'\?'showcaseItems'/);
  assert.match(app,/showcaseItemsFor\(all\.showcaseItems,view\.department/);
- assert.match(app,/visibleDepartments\.flatMap\(d=>showcaseItemsFor\(all\.showcaseItems,d/);
+ assert.match(app,/\(split\?visibleDepartments:\['bakery','homestand'\]\)\.flatMap\(d=>showcaseItemsFor\(all\.showcaseItems,d/);
  assert.match(app,/\.map\(showcaseCard\)/);
- const component=app.slice(app.indexOf('const showcaseCard=item=>'),app.indexOf('const categories='));
+ const component=app.slice(app.indexOf('const showcaseCard=(item,showShopDetails=false)=>'),app.indexOf('const categories='));
  assert.match(component,/showcaseSaleProduct\(item\)/);
  assert.match(component,/quickCartMarkup\(sale\)/);
  assert.match(component,/showcasePrice\(item\)/);
@@ -1598,7 +1598,7 @@ test('harvest crop maps original images to their named store cards',()=>{
 
 test('owner showcase detail pages expose complete information and checkout only for linked sale products',()=>{
  const app=read('site/app.js'),css=read('site/country-home-v2.css');
- assert.match(app,/const showcaseCard=item=>/);
+ assert.match(app,/const showcaseCard=\(item,showShopDetails=false\)=>/);
  assert.match(app,/href="#product\/['"]?\+encodeURIComponent\(item\.slug\)/);
  assert.match(app,/function showcaseDetail\(item\)/);
  assert.match(app,/all\.showcaseItems\.find\(x=>x\.active!==false&&x\.slug===id\)/);
@@ -1740,7 +1740,7 @@ test('Shop All follows selected departments and denser cards do not alter the ca
  assert.match(app,/Math\.max\(0,homepageLimit-view\.products\.length\)/);
  assert.match(app,/shopVisibleDepartments\(all\.settings,requestedDepartment,category\)/);
  assert.match(app,/visibleDepartments\.includes\(departmentForCategory\(categoryFor\(product\)\)\)/);
- assert.match(app,/visibleDepartments\.flatMap\(d=>showcaseItemsFor/);
+ assert.match(app,/\(split\?visibleDepartments:\['bakery','homestand'\]\)\.flatMap\(d=>showcaseItemsFor/);
  assert.match(admin,/Both Bakery and Homestand visible/);
  assert.match(admin,/Only Bakery or only Homestand visible/);
  const compact=css.slice(css.indexOf('/* MBB-UI-051:'),css.indexOf('/* MBB-UI-052:'));
