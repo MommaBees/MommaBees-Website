@@ -74,9 +74,9 @@ test('checkout refuses unset Stripe Tax configuration',async()=>{
  const r=await checkout({request,env:{STRIPE_SECRET_KEY:'sk_test_EXAMPLE_ONLY'}});
  assert.equal(r.status,503);assert.match((await r.json()).error,/Tax setup is not verified/);
 });
-test('guest contact refuses traffic without human verification setup',async()=>{
+test('guest contact rejects requests without human verification token before provider access',async()=>{
  const request=new Request('https://example.org/api/contact',{method:'POST',body:JSON.stringify({})});
- const r=await contact({request,env:{}});assert.equal(r.status,503);
+ const r=await contact({request,env:{}});assert.equal(r.status,403);
 });
 test('order-status requires an unpredictable format for tracking token',async()=>{
  const request=new Request('https://example.org/api/order-status',{method:'POST',body:JSON.stringify({token:'small'})});
