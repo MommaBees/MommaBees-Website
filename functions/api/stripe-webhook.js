@@ -1,6 +1,7 @@
 import {response,rpc,db} from '../_lib/db.js';
 import {verifyStripeSignature} from '../_lib/stripe.js';
 import {runtimeCredential} from '../_lib/runtime-credentials.js';
+import {pendingCredential,promoteWithReadback,dependenciesFor} from '../_lib/credential-rotation.js';
 export async function onRequestPost({request,env}){
  try{
   const raw=await request.text();if(raw.length>100000)return response({error:'Payload too large'},413);
@@ -8,8 +9,22 @@ export async function onRequestPost({request,env}){
   // The event body is untrusted until verification; never act on it before this check.
   const claimed=JSON.parse(raw);
   const mode=claimed.livemode===true?'live':'test';
-  const secret=await runtimeCredential(env,'STRIPE_WEBHOOK_SECRET',mode);
-  if(!await verifyStripeSignature(request,secret,raw))return response({error:'Invalid Stripe signature'},400);
+  // Validate genuine provider delivery before changing any active signing secret.
+  // Old signed events continue working while a replacement is awaiting verification.
+  const pending=await pendingCredential(env,'STRIPE_WEBHOOK_SECRET',mode);
+  let accepted=false;
+  if(pending&&await verifyStripeSignature(request,pending.secret,raw)){
+   const plan=dependenciesFor('STRIPE_WEBHOOK_SECRET',mode).map(x=>
+    x.name==='stripe_signed_delivery'||x.name==='website_webhook'?{...x,state:'verified'}:x);
+   const result=await promoteWithReadback(env,pending.id,'STRIPE_WEBHOOK_SECRET',mode,pending.secret,plan);
+   if(result.state!=='activated')return response({error:'Webhook key verification could not be committed; retry'},500);
+   accepted=true;
+  }
+  if(!accepted){
+   const secret=await runtimeCredential(env,'STRIPE_WEBHOOK_SECRET',mode);
+   accepted=await verifyStripeSignature(request,secret,raw);
+  }
+  if(!accepted)return response({error:'Invalid Stripe signature'},400);
   const event=claimed;const session=event.data?.object||{};
   // Sandbox-only demonstrations never create or update real customer orders.
   if(session.metadata?.demo_checkout_test_id){
