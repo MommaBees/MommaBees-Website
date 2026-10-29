@@ -1,10 +1,12 @@
 // Cloudflare Pages Functions: validate the one-time Turnstile token before Auth.
 import { response } from './db.js';
+import {runtimeCredential} from './runtime-credentials.js';
 export async function verifyTurnstile(env,token,request){
- if(!env.TURNSTILE_SECRET_KEY || !env.SITE_URL) throw Error('CAPTCHA server settings are missing');
+ const secret=await runtimeCredential(env,'TURNSTILE_SECRET_KEY','shared');
+ if(!secret || !env.SITE_URL) throw Error('CAPTCHA server settings are missing');
  if(typeof token!=='string' || !token || token.length>2048) return false;
  const body=new FormData();
- body.set('secret',env.TURNSTILE_SECRET_KEY);
+ body.set('secret',secret);
  body.set('response',token);
  if(request.headers.get('CF-Connecting-IP')) body.set('remoteip',request.headers.get('CF-Connecting-IP'));
  const resp=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body});
