@@ -2,9 +2,9 @@
 import { response } from './db.js';
 import {runtimeCredential} from './runtime-credentials.js';
 export async function verifyTurnstile(env,token,request){
+ if(typeof token!=='string' || !token || token.length>2048) return false;
  const secret=await runtimeCredential(env,'TURNSTILE_SECRET_KEY','shared');
  if(!secret || !env.SITE_URL) throw Error('CAPTCHA server settings are missing');
- if(typeof token!=='string' || !token || token.length>2048) return false;
  const body=new FormData();
  body.set('secret',secret);
  body.set('response',token);
