@@ -17,7 +17,7 @@ export async function moderatorReviews({showError}){
   ]);
   const pics=new Map();
   await Promise.all(images.map(async p=>{
-   try{const url=await signedImage('review-photos',p.storage_path);if(url)(pics.get(p.review_id)||(pics.set(p.review_id,[]),pics.get(p.review_id))).push(url);}
+   try{const url=await signedImage('review-photos',p.storage_path);if(url)(pics.get(p.review_id)||(pics.set(p.review_id,[]),pics.get(p.review_id))).push({id:p.id,url,approved:p.approved===true});}
    catch{/* no image access */}
   }));
   main.innerHTML='<section class="box"><h2>Review Moderation</h2>'+
@@ -25,9 +25,17 @@ export async function moderatorReviews({showError}){
    (reviews.map(r=>'<article class="box" style="margin:12px 0"><p><strong>'+e(r.title||'Customer review')+
    '</strong> · '+(r.approved?'Published':'Awaiting approval')+'</p>'+
    '<p>'+e(r.body||r.comment||r.text||'')+'</p>'+
-   '<div class="message-images">'+(pics.get(r.id)||[]).map(u=>'<a target="_blank" rel="noopener noreferrer" href="'+photo(u)+'"><img alt="Review photograph" src="'+photo(u)+'"></a>').join('')+'</div>'+
+   '<div class="message-images">'+(pics.get(r.id)||[]).map(p=>'<div class="review-photo-moderation"><a target="_blank" rel="noopener noreferrer" href="'+photo(p.url)+'"><img alt="Customer review photograph" src="'+photo(p.url)+'"></a><p class="small">'+(p.approved?'Photo approved':'Photo private — awaiting approval')+'</p><button class="button secondary" type="button" data-photo-decision="'+e(p.id)+'" data-photo-approved="'+(p.approved?'false':'true')+'">'+(p.approved?'Unpublish photo':'Approve photo')+'</button></div>').join('')+'</div>'+
    '<div class="actions"><button class="button secondary" data-decision="'+e(r.id)+'" data-approved="'+(r.approved?'false':'true')+'">'+
    (r.approved?'Unpublish':'Approve Review')+'</button></div></article>').join('')||'<p>No reviews submitted.</p>')+'</section>';
+  main.querySelectorAll('[data-photo-decision]').forEach(b=>b.onclick=async()=>{
+   const approved=b.dataset.photoApproved==='true';
+   if(!window.confirm(approved?'Publish this customer photograph with its approved review?':'Withdraw this customer photograph from public view?'))return;
+   try{
+    await moderateAction({action:'review_photo',id:b.dataset.photoDecision,approved});
+    await moderatorReviews({showError});
+   }catch(error){showError(error);}
+  });
   main.querySelectorAll('[data-decision]').forEach(b=>b.onclick=async()=>{
    try{const approved=b.dataset.approved==='true';
     if(!window.confirm(approved?'Approve this customer review?':'Unpublish this customer review?'))return;
