@@ -2190,3 +2190,28 @@ body .footer .footer-bottom{margin-top:9px;}
 #admin-main .media-cleanup-photo{display:flex;align-items:center;gap:10px;min-width:0;overflow-wrap:anywhere;}
 #admin-main .media-cleanup-photo img{height:66px;width:66px;flex:none;border:1px solid #cdb69d;border-radius:4px;background:#f8f0e8;object-fit:cover;}
 #admin-main .media-cleanup-photo span{font-size:.75rem;}
+
+/* MBB-UI-070 — compact footer typography with centered overall site footer. */
+body .footer{width:calc(100% - clamp(28px,12vw,200px));max-width:820px;padding:clamp(16px,2.4vw,24px) 0;}
+body .footer>.shell{width:100%;max-width:100%;padding-inline:clamp(12px,2vw,24px);}
+body .footer .footer-inner{grid-template-columns:minmax(0,1fr) minmax(155px,192px);gap:12px 18px;}
+body .footer .footer-brand-name{font-size:clamp(1.2rem,1.45vw,1.45rem);line-height:1.23;overflow-wrap:anywhere;}
+body .footer .footer-location{font-size:clamp(.78rem,.95vw,.9rem);line-height:1.38;margin:6px 0 0;}
+body .footer .footer-col-title{font-size:.66rem;letter-spacing:.1em;margin-bottom:7px;}
+body .footer .footer-qr{max-width:192px;padding:8px;gap:7px;font-size:.76rem;line-height:1.35;}
+body .footer .footer-qr svg{width:54px!important;height:54px!important;flex:none;}
+body .footer .footer-navigation{gap:4px;max-width:100%;}
+body .footer .footer-nav-row{gap:2px 7px;}
+body .footer .footer-nav-row>a{font-size:clamp(.7rem,.86vw,.77rem);min-height:23px;gap:4px;}
+body .footer .footer-nav-row>a:not(:last-child)::after{font-size:.75rem;}
+body .footer .footer-legal{max-width:100%;padding:10px 0 8px;margin:8px 0 0;font-size:.72rem;}
+body .footer .footer-legal-heading{font-size:.7rem;gap:6px 12px;margin-bottom:5px;}
+body .footer .footer-legal-heading a{font-size:.72rem;}
+body .footer .footer-legal-links{gap:4px 12px;line-height:1.45;}
+body .footer .footer-legal a,body .footer .footer-legal .footer-cookie-link{font-size:.72rem;}
+body .footer .footer-bottom{font-size:.69rem;line-height:1.45;margin-top:7px;}
+@media(max-width:760px){
+ body .footer{width:calc(100% - 16px);max-width:100%;}
+ body .footer .footer-inner{grid-template-columns:minmax(0,1fr);}
+ body .footer .footer-qr{max-width:210px;}
+}
