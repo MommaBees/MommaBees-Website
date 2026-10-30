@@ -8,5 +8,6 @@ export function lineQuantity(cart,{mode,product_id,showcase_id,batch_id}){
  ).reduce((n,x)=>n+(Number.isInteger(x.quantity)?x.quantity:0),0);
 }
 export function cartActionLabel(cart,selection,qty){
- return Number.isInteger(qty)&&qty>=1&&lineQuantity(cart,selection)===qty?'Checkout':'Add to Cart';
+ const saved=lineQuantity(cart,selection);
+ return !Number.isInteger(qty)||qty<1?'Add to Cart':saved===qty?'Checkout':saved>0?'Update':'Add to Cart';
 }
