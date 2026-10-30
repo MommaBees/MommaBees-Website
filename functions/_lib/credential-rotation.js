@@ -51,7 +51,7 @@ export async function promoteWithReadback(env,id,name,environment,secret,depende
  return {id,state:'activated'};
 }
 // This check does not perform a payment, issue a webhook, or revoke a provider key.
-export async function verifyStripeKey(value,environment){
+export async function verifyStripeKey(value,environment,expectedLiveAccountId=null){
  const prefix=environment==='test'?'sk_test_':'sk_live_';
  if(!value.startsWith(prefix)||value.length<24)return {ok:false,checks:[{name:'stripe_key_format',state:'failed'}]};
  const checks=[];
@@ -62,7 +62,7 @@ export async function verifyStripeKey(value,environment){
   if(!response.ok)return {ok:false,checks:[...checks,{name,state:'failed',status:response.status}]};
   if(name==='stripe_account'){
    const data=await response.json().catch(()=>({}));
-   if(environment==='test' && data.id!=='acct_1UWAEICv9zp633CV')return {ok:false,checks:[...checks,{name,state:'failed',reason:'wrong Stripe account'}]};
+   if(data.id!==(environment==='test'?'acct_1UWAEICv9zp633CV':expectedLiveAccountId))return {ok:false,checks:[...checks,{name,state:'failed',reason:'wrong Stripe account'}]};
   }
   checks.push({name,state:'verified'});
  }
