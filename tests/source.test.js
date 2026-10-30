@@ -1025,7 +1025,7 @@ test('Owner requested footer links remain accessible in one row',()=>{
  }
  assert.ok(nav.includes('href="#faq">FAQ &amp; Policies</a>'));
  assert.match(css,/footer-nav-row>a:not\(:last-child\)::after/);
- assert.ok(account.includes('<h1>My Account</h1>'));
+ assert.ok(account.includes('id="account-welcome-heading"'));
 });
 test('Product type is derived from category and non-food products cannot be published',()=>{
  const sql=read('supabase/migrations/20261027_product_type_gates_v119.sql');
@@ -1271,7 +1271,7 @@ test('redundant text removed without losing customer-facing commerce and safety 
   assert.ok(!app.includes(phrase),'redundant copy should not remain: '+phrase);
  }
  assert.doesNotMatch(app,/class="bakery-home-note"/);
- for(const phrase of ['h1>Past Bakes Gallery','food_notice','async function faq()']){
+ for(const phrase of ['h1>Past Bakes Gallery','footer-navigation','async function faq()']){
   assert.ok(app.includes(phrase),'critical storefront information missing: '+phrase);
  }
  assert.match(checkout,/canFulfillCartOn/);
