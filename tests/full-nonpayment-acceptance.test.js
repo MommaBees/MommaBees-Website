@@ -36,6 +36,7 @@ const fixtureFetch=({failStripe=false,invalidProof=false}={})=>{
   if(target.includes('/rest/v1/rpc/reserve_checkout'))return response({order_id:orderId,amount_cents:1750});
   if(target.includes('/rest/v1/orders?id=eq.'))return response([]);
   if(target.includes('/rest/v1/rpc/release_checkout'))return response({released:true});
+  if(target==='https://api.stripe.com/v1/account')return response({id:'acct_1UWAEICv9zp633CV'});
   if(target==='https://api.stripe.com/v1/checkout/sessions')return failStripe?response({error:{message:'Fixture failure'}},400):
    response({id:'cs_test_fixture',url:'https://checkout.stripe.com/test-fixture-link'});
   throw Error('Unexpected fixture network request '+target);
