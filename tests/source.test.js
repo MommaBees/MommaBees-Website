@@ -268,12 +268,12 @@ test('FDA nine-major-allergen checklist suggests ingredients but does not claim 
  assert.match(publicAllergenStatement([]),/No major allergens declared/);
 });
 test('Past Bakes Gallery cannot create a sale product by importing an image',()=>{
- const app=read('site/app.js'),admin=read('site/admin.js'),migration=read('supabase/migrations/20261026_past_bakes_and_allergens.sql');
+ const app=read('site/app.js'),admin=read('site/admin.js'),uploads=read('site/bulk-photo-uploads.js'),migration=read('supabase/migrations/20261026_past_bakes_and_allergens.sql');
  assert.match(app,/all\.pastBakes\.filter\(x=>x\.published&&x\.image_url\)/);
  assert.match(app,/Past Bakes Gallery/);
  assert.doesNotMatch(app,/Past creation · Not for sale/);
- assert.match(admin,/upload\('past-bakes',file\)/);
- assert.match(admin,/add\('past_bakes'/);
+ assert.match(uploads,/upload\('past-bakes',file\)/);
+ assert.match(uploads,/add\('past_bakes'/);
  assert.match(admin,/selected==='products'/);
  assert.match(migration,/create table if not exists public\.past_bakes/);
  assert.doesNotMatch(migration,/product_id uuid references public\.products/, 'Past Bakes must remain independent of products');
@@ -1527,16 +1527,20 @@ test('uploaded 2027 harvest filenames map uniquely and reject restricted stock-p
  assert.deepEqual(result.matched.map(x=>x.slug),['broccoli','green-beans']);
  assert.deepEqual(result.skipped,['broccoli.webp','cherry-tomatoes.webp','unknown.webp']);
 });
-test('Admin can upload permitted WebP harvest images in bulk without creating inventory',()=>{
- const admin=read('site/admin.js'),sql=read('supabase/migrations/20261027_harvest_showcase_v132.sql');
+test('Admin can upload permitted WebP harvest images with tab controls and no checkbox',()=>{
+ const admin=read('site/admin.js'),uploads=read('site/bulk-photo-uploads.js');
+ const sql=read('supabase/migrations/20261027_harvest_showcase_v132.sql');
  const css=read('site/country-home-v2.css');
- assert.match(admin,/id="harvest-upload-files"/);
- assert.match(admin,/id="harvest-photo-rights"/);
- assert.match(admin,/harvestUploadMatches\(files,rows\)/);
- assert.match(admin,/await upload\('product-photos',file\)/);
- assert.match(admin,/await update\('store_showcase_items',item\.id,\{photo_url:image\.url\}\)/);
- assert.match(admin,/await ctx\.load\(\)/);
- assert.match(css,/\.harvest-bulk-panel/);
+ assert.match(admin,/selected==='bulk_photo_uploads'/);
+ assert.match(uploads,/data-upload-tab="harvest"/);
+ assert.match(uploads,/data-upload-tab="past"/);
+ assert.match(uploads,/id="harvest-upload-files"/);
+ assert.doesNotMatch(uploads,/harvest-photo-rights/);
+ assert.match(uploads,/harvestUploadMatches\(files,showcases\)/);
+ assert.match(uploads,/await upload\('product-photos',file\)/);
+ assert.match(uploads,/await update\('store_showcase_items',item\.id,\{photo_url:img\.url\}\)/);
+ assert.match(uploads,/await upload\('past-bakes',file\)/);
+ assert.match(css,/bulk-upload-tabs/);
  for(const name of ['Broccoli','Cauliflower','Jalapeños','Mini Green Peppers','Salad Cucumbers','Spineless Okra','Tomatoes','Yellow Summer Squash','Zucchini'])
   assert.ok(sql.includes(name));
  assert.doesNotMatch(sql,/insert into public\.products/i);
