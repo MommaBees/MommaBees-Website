@@ -170,7 +170,7 @@ export async function admin(context){ctx=context;const user=currentUser();if(!us
  catch(x){ctx.layout(`<div class="section box"><h1>Access denied</h1><p>${e(x.message)}</p><a href="#shop">Return to shop</a></div>`);return;}
  if(ctx.role==='moderator')selected='messages';
  authShell();await renderPanel();}
-async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_size')return websiteSizePanel();if(selected==='store_display')return storeDisplayPanel();if(selected==='media_cleanup'){const mod=await import('./media-cleanup-admin.js');return mod.showMediaCleanup({showError:ctx.showError});}if(selected==='faqs'){const mod=await import('./faq-admin.js');return mod.showFaqEditor({showError:ctx.showError});}if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='live_sales'){if(ctx.role!=='owner')throw Error('Only Owner can manage LIVE selling');const mod=await import('./live-selling-admin.js');return mod.showLiveSelling({showError:ctx.showError});}if(selected==='owner_credentials'){if(ctx.role!=='owner')throw Error('Only Owner can manage credentials');const mod=await import('./credential-management.js');return mod.renderCredentialManager({showError:ctx.showError});}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);if(selected==='store_showcase_items')await loadTable('site_settings');listPanel();}catch(err){ctx.showError(err);}}
+async function renderPanel(){try{if(selected==='demo_checkout_tests')return sandboxHistory();if(ctx.role==='moderator'&&!['messages','reviews'].includes(selected))throw Error('Moderator permissions are limited to messages and reviews');if(selected==='home_carousel_slides')return carouselPanel();if(selected==='website_size')return websiteSizePanel();if(selected==='store_display')return storeDisplayPanel();if(selected==='media_cleanup'){const mod=await import('./media-cleanup-admin.js');return mod.showMediaCleanup({showError:ctx.showError});}if(selected==='bulk_photo_uploads'){const mod=await import('./bulk-photo-uploads.js');return mod.showBulkPhotoUploads({showError:ctx.showError});}if(selected==='faqs'){const mod=await import('./faq-admin.js');return mod.showFaqEditor({showError:ctx.showError});}if(selected==='website_background'){const mod=await import('./background-admin.js');return mod.showBackgroundEditor(ctx);}if(selected==='live_sales'){if(ctx.role!=='owner')throw Error('Only Owner can manage LIVE selling');const mod=await import('./live-selling-admin.js');return mod.showLiveSelling({showError:ctx.showError});}if(selected==='owner_credentials'){if(ctx.role!=='owner')throw Error('Only Owner can manage credentials');const mod=await import('./credential-management.js');return mod.renderCredentialManager({showError:ctx.showError});}if(selected==='users'){const mod=await import('./user-management.js');return mod.userManagement({showError:ctx.showError});}if(selected==='reviews'){const mod=await import('./moderation.js');return mod.moderatorReviews({showError:ctx.showError});}if(selected==='messages'){const mod=await import('./message-center.js');return mod.renderMessages({container:'#admin-main',isAdmin:true,showError:ctx.showError});}if(selected==='dashboard')return dashboard();if(selected==='shopping')return shopping();if(selected==='reports')return reports();if(selected==='notifications')return notices();await loadTable(selected);if(selected==='store_showcase_items')await loadTable('site_settings');listPanel();}catch(err){ctx.showError(err);}}
 async function loadTable(t){const table=configs[t]?.table||t;data[t]=await list(table,selected==='orders'?{order:'created_at.desc',limit:250}:selected==='messages'||selected==='reviews'?{order:'created_at.desc',limit:250}:{limit:500});}
 function listPanel(){if(configs[selected]?.table==='site_settings')return siteSettingsSummary();const c=configs[selected],rows=data[selected]||[],key=c.key||'id';const visible=selected==='orders'?['customer_name','fulfillment_date','fulfillment_window','payment_status','balance_due_cents']:selected==='products'?['department','name','product_type','price_cents','published']:selected==='store_showcase_items'?['department','name','price_cents','price_unit','availability_date','active']:selected==='customer_profiles'?['account_code',...c.fields.map(f=>f.key)]:c.fields.map(f=>f.key);$('#admin-main').innerHTML=`<div class="box"><div class="section-head"><div><h2>${e(c.label)}</h2><p class="muted">${rows.length} record(s)${rows.length===500?' (showing first 500)':''}</p>${selected==='baking_days'?'<button class="button secondary" id="create-fair">Set Up 4-Day Bake Fair</button>':''}</div>${!c.readMostly?`<button class="button" id="new-record">${c.single?'Edit settings':'Add new'}</button>`:''}</div>${selected==='store_showcase_items'?`<form id="showcase-master-form" class="showcase-master-switch" aria-label="Product Showcase visibility">
  <label class="admin-store-switch" for="showcase-master-enabled">
@@ -179,18 +179,7 @@ function listPanel(){if(configs[selected]?.table==='site_settings')return siteSe
  </label>
  <div class="actions"><button type="submit" class="button secondary" id="save-showcase-master">Save Product Showcase</button></div>
  <p id="showcase-master-status" aria-live="polite" role="status"></p>
- </form>`:''}${selected==='store_showcase_items'?`<section class="box harvest-bulk-panel" aria-labelledby="harvest-upload-title">
- <h3 id="harvest-upload-title">Upload Homestand Harvest Photos</h3>
- <p class="small muted">Select converted photos together. Matching vegetables are updated automatically.</p>
- <label for="harvest-upload-files">Harvest photographs (WebP, JPG, PNG · maximum 5 MB each)</label>
- <input type="file" id="harvest-upload-files" accept="image/webp,image/jpeg,image/png" multiple>
- <label class="harvest-publish-confirm" for="harvest-photo-rights">
-  <input type="checkbox" id="harvest-photo-rights" required>
-  <span>I have permission to display the selected photographs on this website.</span>
- </label>
- <button class="button secondary" type="button" id="harvest-upload-button">Upload matching harvest photos</button>
- <p id="harvest-upload-status" role="status" aria-live="polite"></p>
- </section>`:''}selected==='past_bakes'?"<div class=\"box\" style=\"margin:12px 0\"><h3>Bulk Upload Past Baking Photos</h3><p class=\"small muted\">Select the original bakery photographs together. They appear in the Past Bakes Gallery only, without prices or purchase links. Titles can be edited afterward.</p><label>Photographs (JPG/PNG/WebP, max 5 MB each)<input type=\"file\" id=\"past-bakes-files\" accept=\"image/jpeg,image/png,image/webp\" multiple></label><button type=\"button\" class=\"button secondary\" id=\"past-bakes-bulk\">Upload selected gallery photographs</button><div id=\"past-bakes-status\" aria-live=\"polite\"></div></div>":''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">${selected==='products'?'Archive':'Archive/Delete'}</button>`:''}${selected==='demo_catalog_items'?`<a class="button secondary" href="#sandbox-product/${encodeURIComponent(r.id)}">View Sandbox Product</a>`:''}${selected==='products'?`<div class="admin-stripe-sync"><span class="tiny" data-stripe-status="${r.id}" role="status">Checking TEST status…</span><button type="button" class="button secondary" data-sync-product="${i}">Sync Stripe TEST</button></div>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
+ </form>`:''}<div class="table-wrap"><table><thead><tr>${visible.slice(0,5).map(f=>`<th>${e(pretty(f))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.map((r,i)=>`<tr>${visible.slice(0,5).map(f=>`<td>${e(formatCell(f,r[f]))}</td>`).join('')}<td><button class="button secondary" data-edit="${i}">${c.readMostly?'Review':'Edit'}</button>${!c.readMostly&&!c.single?`<button class="button ghost" data-delete="${i}">${selected==='products'?'Archive':'Archive/Delete'}</button>`:''}${selected==='demo_catalog_items'?`<a class="button secondary" href="#sandbox-product/${encodeURIComponent(r.id)}">View Sandbox Product</a>`:''}${selected==='products'?`<div class="admin-stripe-sync"><span class="tiny" data-stripe-status="${r.id}" role="status">Checking TEST status…</span><button type="button" class="button secondary" data-sync-product="${i}">Sync Stripe TEST</button></div>`:''}${selected==='promotions'?`<button class="button ghost" data-deliver="${i}">Send in-app offer</button>`:''}${selected==='messages'?`<button class="button ghost" data-reply="${i}">Reply</button>`:''}${selected==='reviews'?`<button class="button ghost" data-reviewpics="${i}">Photos</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button secondary" data-collect-pickup="${i}">Record Pickup Payment</button>`:''}${selected==='orders'&&r.payment_method==='pay_at_pickup'&&r.payment_status==='awaiting_pickup'?`<button class="button ghost" data-cancel-pickup="${i}">Cancel Unpaid Pickup</button>`:''}</td></tr>`).join('')}</tbody></table></div><p class="tiny muted">Destructive actions require confirmation. Deletes may be rejected when a record is referenced by an order; unpublish instead.</p></div><dialog id="editor"><form id="record-form"><h2 id="editor-title">Edit record</h2><div id="editor-fields"></div><div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" type="button" id="close-editor">Cancel</button></div></form></dialog>`;
  if(selected==='store_showcase_items'){
   $('#showcase-master-form').onsubmit=async event=>{
    event.preventDefault();
@@ -244,70 +233,7 @@ function listPanel(){if(configs[selected]?.table==='site_settings')return siteSe
    }catch(ex){ctx.showError('Created '+completed+' fair dates. Review existing dates before retrying. '+ex.message);}
   };
  }
- if(selected==='store_showcase_items'){
-  const uploadButton=$('#harvest-upload-button');
-  uploadButton.onclick=async()=>{
-   const files=[...($('#harvest-upload-files')?.files||[])];
-   const status=$('#harvest-upload-status');
-   const consent=$('#harvest-photo-rights');
-   if(!files.length){status.textContent='Choose converted photographs first.';return;}
-   if(!consent.checked){status.textContent='Confirm that you have permission to publish the photographs.';return;}
-   if(files.length>30){status.textContent='Choose no more than 30 photographs at once.';return;}
-   const {matched,skipped}=harvestUploadMatches(files,rows);
-   if(!matched.length){status.textContent='No matching Homestand vegetables were found. Choose WebP files from the store-cards folder.';return;}
-   if(!confirm('Upload '+matched.length+' Homestand photographs? Each matching showcase image will be replaced. No prices or products will change.'))return;
-   uploadButton.disabled=true;
-   let completed=0;
-   const errors=[];
-   try{
-    for(const {file,item} of matched){
-     status.textContent='Uploading '+(completed+1)+' of '+matched.length+': '+file.name;
-     try{
-      const image=await upload('product-photos',file);
-      if(!image.url)throw Error('Storage did not return a public image URL');
-      await update('store_showcase_items',item.id,{photo_url:image.url});
-      completed++;
-     }catch(error){errors.push(file.name+': '+error.message);}
-    }
-    await ctx.load();
-    await renderPanel();
-    const message=[
-     completed+' Homestand photo'+(completed===1?'':'s')+' updated.',
-     skipped.length?skipped.length+' skipped (unmatched, duplicate or restricted): '+skipped.join(', '):'',
-     errors.length?errors.length+' failed: '+errors.join('; '):''
-    ].filter(Boolean).join(' ');
-    const newStatus=$('#harvest-upload-status');
-    if(newStatus)newStatus.textContent=message;
-   }catch(error){
-    status.textContent=completed+' uploaded; refresh and retry unsuccessful images. '+error.message;
-   }finally{uploadButton.disabled=false;}
-  };
- }
- if(selected==='past_bakes'){
-  const uploadButton=$('#past-bakes-bulk');
-  uploadButton.onclick=async()=>{
-   const files=[...($('#past-bakes-files')?.files||[])],status=$('#past-bakes-status');
-   if(!files.length){status.textContent='Choose photographs before uploading.';return;}
-   if(files.length>100){status.textContent='Upload 100 or fewer photographs in one batch.';return;}
-   if(!confirm('Publish '+files.length+' images to the public Past Bakes Gallery? No products or sale listings will be created.'))return;
-   uploadButton.disabled=true;let complete=0;
-   try{
-    for(const file of files){
-     status.textContent='Uploading '+(complete+1)+' of '+files.length+' photographs…';
-     const img=await upload('past-bakes',file);
-     if(!img.url)throw Error('Gallery image URL was not returned');
-     await add('past_bakes',{title:pastBakeName(file.name),description:'An earlier bakery creation — gallery display only.',image_url:img.url,sort_order:complete+1,published:true});
-     complete++;
-    }
-    status.textContent='Uploaded '+complete+' photographs successfully.';
-    await renderPanel();
-   }catch(err){
-    status.textContent=complete+' uploaded successfully; upload stopped: '+err.message+'. Review the list before retrying to avoid duplicates.';
-    uploadButton.disabled=false;
-   }
-  };
- }
- $('#new-record')&&( $('#new-record').onclick=()=>openEditor(c.single?rows[0]||{id:1}:null));
+  $('#new-record')&&( $('#new-record').onclick=()=>openEditor(c.single?rows[0]||{id:1}:null));
  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(rows[Number(b.dataset.edit)]));
  if(selected==='products'){
   updateStripeStatusRows(rows);
