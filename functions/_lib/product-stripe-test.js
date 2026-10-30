@@ -1,7 +1,7 @@
 // MBB-CATALOG-039: HTTPS-only Stripe TEST product catalog adapter.
 import {runtimeCredential} from './runtime-credentials.js';
 // Hard account binding prevents accidental use of any stock-market Stripe account.
-export const MOMMABEES_STRIPE_TEST_ACCOUNT='acct_1UUtoDJF02bajTTM';
+export const MOMMABEES_STRIPE_TEST_ACCOUNT='acct_1UWAEICv9zp633CV';
 export function testStripeKeyAllowed(key){
  return /^(sk_test_|rk_test_)[A-Za-z0-9_]+$/.test(String(key||''));
 }
