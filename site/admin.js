@@ -115,7 +115,7 @@ const short=(value)=>{if(value===null||value===undefined)return '—';if(typeof 
 const formatCell=(key,val)=>key==='availability_date'?formatShowcaseDate(val)||'—':key.endsWith('_cents')?money(val):key==='created_at'?fmt(val):short(val);
 function authShell(){
  const visibleGroups=adminGroupsForRole(ctx.role);
- const labelFor=id=>id==='owner_credentials'?'API Credentials & Webhooks':id==='store_display'?'Homepage & Category Layout':id==='website_size'?'Website Size':id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id);
+ const labelFor=id=>id==='dashboard'?"Momma’s Overview Hub":id==='owner_credentials'?'API Credentials & Webhooks':id==='store_display'?'Homepage & Category Layout':id==='website_size'?'Website Size':id==='website_background'?'Website Background':id==='users'?'Accounts & Roles':configs[id]?.label||pretty(id);
  const groupFor=visibleGroups.find(([,ids])=>ids.includes(selected))?.[0]||'Overview';
  const sections=visibleGroups.map(([group,ids],i)=>
   `<details class="admin-nav-group" ${group===groupFor?'open':''}>
@@ -128,7 +128,7 @@ function authShell(){
   `<option value="${e(id)}" ${id===selected?'selected':''}>${e(labelFor(id))}</option>`).join('');
  ctx.layout(`<section class="section admin-workspace">
   <div class="eyebrow">MommaBee Bakery&Farmstand · Staff workspace</div>
-  <h1>Bakery Admin Center</h1>
+  <h1>Bakery &amp; Farmstand Control Center</h1>
   <div class="admin-layout">
     <aside class="admin-side" aria-label="Admin management sections">
       <label class="admin-menu-search-label" for="admin-menu-search">Find a module</label>
@@ -1284,10 +1284,10 @@ async function openEditor(record){const c=configs[selected];
 async function reply(message){const text=prompt('Write your response. It will be saved to the secure account inbox. Email delivery is not enabled by this action:');if(!text)return;try{if(!message.customer_id)throw Error('Guest email replies require a configured email provider; do not mark as replied yet.');await add('messages',{customer_id:message.customer_id,customer_email:message.customer_email,order_id:message.order_id,kind:'reply',subject:'Re: '+message.subject,body:text,parent_id:message.id,is_staff_reply:true,status:'replied'});await update('messages',message.id,{status:'replied'});await renderPanel();}catch(x){ctx.showError(x);}}
 async function reviewPhotos(review){try{const items=await list('review_photos',{review_id:'eq.'+review.id});const urls=[];for(const p of items)urls.push(await signedImage('review-photos',p.storage_path));const win=window.open('','_blank','noopener,noreferrer');if(win){win.document.write('<!doctype html><title>Review photos</title><body style="font-family:sans-serif">'+urls.map(u=>u?`<img alt="Customer review upload" style="max-width:90vw;max-height:65vh" src="${e(u)}">`:'').join('<hr>')+'</body>');win.document.close();}else alert('Allow popups to view review photos.');}catch(x){ctx.showError(x);}}
 async function notices(){const notes=await list('notifications',{order:'created_at.desc',limit:150});$('#admin-main').innerHTML=`<div class="box"><h2>Alerts & Notifications</h2><p class="muted">Owner/admin notifications are created for paid orders, customer requests and reviews. Customer inbox notices are delivered when order status changes.</p>${notes.map(n=>`<article class="lineitem"><div><strong>${e(n.title)}</strong><p>${e(n.body)}</p></div><small>${fmt(n.created_at)}</small></article>`).join('')||'<p class="admin-empty-state">No alerts have been recorded yet. New orders, messages, and reviews will appear here when a notification is generated.</p>'}</div>`;}
-async function dashboard(){const [orders,notes,reviews,messages,expenses]=await Promise.all(['orders','notifications','reviews','messages','expenses'].map(t=>list(t,{limit:1000}).catch(()=>[])));
- const paid=orders.filter(o=>o.payment_status==='paid');const sales=paid.reduce((s,o)=>s+o.total_cents-o.tax_cents,0);
- const costs=expenses.reduce((s,x)=>s+x.amount_cents,0);
- $('#admin-main').innerHTML=`<div class="box"><h2>Bakery Overview</h2><p class="muted">Recorded figures only; not a certified accounting statement. Taxes, refunds, cost allocations and labor require review.</p><div class="stats"><div class="stat">Paid orders<strong>${paid.length}</strong></div><div class="stat">Sales excluding tax<strong>${money(sales)}</strong></div><div class="stat">Recorded expenses<strong>${money(costs)}</strong></div><div class="stat">Unadjusted difference<strong>${money(sales-costs)}</strong></div></div><hr><h3>Attention needed</h3><p><button class="button secondary" id="release-pending">Release expired checkout reservations</button></p><p>Paid orders awaiting confirmation: <strong>${paid.filter(o=>o.status==='new').length}</strong></p><p>Customer messages not closed: <strong>${messages.filter(m=>!['replied','closed'].includes(m.status)&&!m.is_staff_reply).length}</strong></p><p>Reviews awaiting approval: <strong>${reviews.filter(r=>!r.approved).length}</strong></p><p>Unread notices in database: <strong>${notes.filter(n=>!n.read_at).length}</strong></p><p><a href="#admin">Use the Admin navigation to open the required section.</a></p></div>`;const button=$('#release-pending');if(button)button.onclick=async()=>{if(!confirm('Release checkout reservations that have passed their 30-minute expiry? Do not run while webhook delivery is failing.'))return;try{const token=JSON.parse(sessionStorage.getItem('mb_session')||'{}').access_token;const r=await fetch('/api/reconcile',{method:'POST',headers:{Authorization:'Bearer '+token}});const data=await r.json();if(!r.ok)throw Error(data.error);alert('Released '+data.released+' expired reservations.');await dashboard();}catch(x){ctx.showError(x);}};}
+async function dashboard(){
+ const mod=await import('./overview-hub.js');
+ return mod.renderOverviewHub({showError:ctx.showError});
+}
 const getPeriod=()=>{const from=$('#range-from')?.value||'';const to=$('#range-to')?.value||'9999-12-31';return {from,to};};
 async function reports(){const [orders,items,expenses,products,categories]=await Promise.all(['orders','order_items','expenses','products','categories'].map(t=>list(t,{limit:5000}).catch(()=>[])));
  const today=new Date().toISOString().slice(0,10);
