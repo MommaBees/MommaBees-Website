@@ -30,6 +30,7 @@ const fixtureFetch=({failStripe=false,invalidProof=false}={})=>{
  const calls=[];
  const fetch=async(url,options={})=>{
   const target=String(url);calls.push({url:target,method:options.method||'GET',body:options.body});
+  if(target.includes('/rest/v1/site_settings?select=stripe_payment_mode,checkout_enabled'))return response([{stripe_payment_mode:'test',checkout_enabled:true}]);
   if(target.includes('/rest/v1/rpc/mommabees_checkout_admit'))return response({allowed:true});
   if(target.includes('/rest/v1/rpc/mommabees_credential_read'))return response(null);
   if(target.includes('/turnstile/v0/siteverify'))return response({success:!invalidProof,hostname:'mommabees-website.pages.dev'});
