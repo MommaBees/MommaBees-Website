@@ -132,6 +132,8 @@ const showcaseQuickCartMarkup=item=>{
 };
 const quickCartMarkup=p=>{
  if(!p?.published||!available(p))return '';
+ if(p.online_payment_enabled!==true&&p.pay_at_pickup_enabled!==true)
+  return '<p class="small muted">Ordering is not enabled for this item. Please contact the bakery.</p>';
  const ready=productReady(p),preorder=productPreorder(p);
  if(!ready&&!preorder)return '';
  const batches=availableQuickBatches(p),mode=ready&&batches.length?'ready':preorder?'preorder':'ready';
