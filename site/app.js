@@ -2,6 +2,7 @@ import {config,isConfigured,currentUser,currentSession,signIn,signUp,signOut,lis
 import {isBackOfficeRole,backOfficeNavigation} from './role-navigation.js';
 import {photoFor,photoByUrl,photoStatusLabel} from './photo-library.js';
 import {applyBakeryBackground} from './background.js';
+import {applyAppearance} from './site-appearance.js';
 import {applyWebsiteSize} from './website-size.js';
 import {qrMarkup,qrSvg,bindQrActions} from './qr-code.js';
 import {stockPhotoFor,sandboxProductPhoto,demoMatchesView} from './stock-photography.js';
@@ -314,6 +315,7 @@ function layout(content){
    :'';
  applyWebsiteSize(settings.website_size);
  applyBakeryBackground(settings,config.supabaseUrl);
+ applyAppearance(settings,config.supabaseUrl);
  stopHomeCarousel();
  $('#app').innerHTML=`<header class="header"><div class="shell nav">
  <div class="nav-leading">
@@ -440,7 +442,7 @@ function home(){
   '</div></section>':'';
  const combinedCategories=`<section class="section ${categories().length?'':'empty-category-section'}">
   <div class="section-head"><div><h2>Shop by category</h2></div><a href="#shop">View all products</a></div>
-  <div class="grid">${categories().map(c=>`<a class="card" href="#category/${e(c.id)}" style="text-decoration:none">${c.photo_url?image(c.photo_url):''}<div class="card-content"><h3>${e(c.name)}</h3></div></a>`).join('')}</div>
+  <div class="grid">${categories().map(c=>`<a class="card mb-category-link" href="#category/${e(c.id)}" style="text-decoration:none">${c.photo_url?image(c.photo_url):''}<div class="card-content"><h3>${e(c.name)}</h3><span class="mb-category-button">${e(s.category_cta_label||'View Category')}</span></div></a>`).join('')}</div>
  </section>`;
  const gallery=`<section class="section"><div class="section-head"><div><h2>Past Bakes</h2></div><a href="#gallery">Browse Past Bakes</a></div>
   
@@ -466,7 +468,7 @@ function shop(mode=null,categoryId=null,subcategoryId=null,requestedDepartment=n
   mode==='ready'?'Ready to Sell':mode==='preorder'?'Preorder':'Shop All';
  const heading=mode==='ready'?'Ready for scheduled pickup':
   mode==='preorder'?'Made for an upcoming baking day':'Explore all currently available treats';
- const description=mode==='ready'?'Ready for pickup.':mode==='preorder'?'Order for an available date.':'';
+ const description=mode==='ready'?'':mode==='preorder'?'Order for an available date.':'';
  const empty='No items listed.';
 
  const isShopAll=(!mode&&!categoryId&&!subcategoryId)||department==='homestand';
