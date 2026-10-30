@@ -25,6 +25,7 @@ const faqs=Object.freeze([
  ['How does the website use personal information and cookies?',
   'See the '+link('privacy','Privacy Policy')+' and '+link('cookies','Cookie & Tracking Policy')+'. You may reopen optional cookie choices using Cookie Settings in the footer.']
 ]);
+const escapeQuestion=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 export function defaultFaqEntries(){return faqs.map(([question,answer],source_index)=>({source_index,question,answer}));}
 export function faqPage(managed=null){
  const rows=Array.isArray(managed)?managed.map(row=>{
@@ -35,7 +36,7 @@ export function faqPage(managed=null){
  return '<section class="section customer-faq" aria-labelledby="faq-title">'+
   '<div class="customer-faq-heading"><h1 id="faq-title">Questions & Policies</h1><p>Find practical answers about ordering, pickup, delivery, and our farmstand.</p></div>'+
   '<div class="customer-faq-list">'+rows.map(([question,answer])=>
-    '<details class="customer-faq-item"><summary>'+question+'</summary><div class="customer-faq-answer"><p>'+answer+'</p></div></details>').join('')+
+    '<details class="customer-faq-item"><summary>'+escapeQuestion(question)+'</summary><div class="customer-faq-answer"><p>'+answer+'</p></div></details>').join('')+
   '</div><div class="customer-faq-legal"><div><h2>Complete legal and customer policies</h2><p>Read the full terms for orders, privacy, fulfillment, property access, and food safety.</p></div><a class="button secondary" href="#legal">View all policies</a></div>'+
  '</section>';
 }
