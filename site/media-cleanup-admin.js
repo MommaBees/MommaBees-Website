@@ -24,7 +24,7 @@ export async function showMediaCleanup({showError},bucket='product-photos'){
    '<p class="small">Showing up to 100 recent uploaded files. Built-in branding and stock images are excluded.</p>'+
    '<div class="table-wrap"><table><thead><tr><th>Uploaded image</th><th>First recorded</th><th>Status</th><th>Action</th></tr></thead><tbody>'+
    (data.items.length?data.items.map(item=>
-    '<tr><td><div class="media-cleanup-photo"><img src="'+e(config.supabaseUrl.replace(/\\/$/,'')+'/storage/v1/object/public/'+bucket+'/'+encodeURIComponent(item.name))+'" alt="Uploaded file preview" loading="lazy"><span>'+e(item.name)+'</span></div></td><td>'+e(item.created_at?new Date(item.created_at).toLocaleDateString():'Unknown')+'</td>'+
+    '<tr><td><div class="media-cleanup-photo"><img src="'+e((config.supabaseUrl.endsWith('/')?config.supabaseUrl.slice(0,-1):config.supabaseUrl)+'/storage/v1/object/public/'+bucket+'/'+encodeURIComponent(item.name))+'" alt="Uploaded file preview" loading="lazy"><span>'+e(item.name)+'</span></div></td><td>'+e(item.created_at?new Date(item.created_at).toLocaleDateString():'Unknown')+'</td>'+
     '<td>'+(item.referenced?'In use — protected':'Unused — eligible')+'</td>'+
     '<td><button type="button" class="button secondary" data-delete-image="'+e(item.name)+'"'+(item.referenced?' disabled':'')+'>Delete unused image</button></td></tr>'
    ).join(''):'<tr><td colspan="4">No managed photo uploads in this library.</td></tr>')+'</tbody></table></div>'+
