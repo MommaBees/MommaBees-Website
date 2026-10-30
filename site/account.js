@@ -24,7 +24,7 @@ const item=(name,label,autocomplete,required=false,type='text',value='')=>
 function profileFields(p={}, {editableUsername=true}={}){
  return '<div class="account-fields">'+item('first_name','First name','given-name',true,'text',p.first_name)+
  item('last_name','Last name','family-name',true,'text',p.last_name)+
- (editableUsername?item('username','Username (chosen at sign-up; 3–30 letters, numbers or underscores)','username',true,'text',p.username):'<p class="field"><strong>Username:</strong> '+h(p.username||'Not set')+'<span class="small muted" style="display:block">Locked after registration. Only the bakery Owner/Admin can change a username.</span></p>')+
+ (editableUsername?item('username','Username (chosen at sign-up; 3–30 letters, numbers or underscores)','username',true,'text',p.username):'<p class="field"><strong>Username:</strong> '+h(p.username||'Not set')+'</p>')+
  item('phone','Phone (optional)','tel',false,'tel',p.phone)+
  '<fieldset><legend>Account address</legend>'+addressFields.map(f=>item(...f.slice(0,4),'text',p[f[0]]??(f[0]==='country'?'US':''))).join('')+'</fieldset>'+
  '<label class="checkbox"><input type="checkbox" name="billing_same"'+(p.billing_same!==false?' checked':'')+'> My billing address is the same as my account address</label>'+
@@ -206,15 +206,31 @@ export async function account({layout,rerender,showError,section=null}){
  if(section==='reset-password')return resetPasswordPage({layout});
  if(!currentUser())return authPage({layout,rerender,showError,section});
  const user=currentUser();
- layout('<section class="section"><h1>My Account</h1><p>Signed in as '+h(user.email)+'</p>'+
-  '<button class="button secondary" id="signout">Sign Out</button><div class="cols">'+
-  '<section class="box"><h2>Customer Account ID</h2><div id="my-account-code">Loading…</div>'+
-  '<div id="account-profile-section"><h2>Profile & Addresses</h2><div id="my-profile">Loading…</div></div></section>'+ 
-  '<section class="box"><h2>My Orders</h2><div id="my-orders">Loading…</div>'+
-  '<h2>Notifications</h2><div id="my-notices">Loading…</div>'+
-  '<section id="account-settings" aria-label="Account Settings"><h2>Account Settings</h2><label class="checkbox"><input type="checkbox" id="optin"> Receive promotional messages in my account</label>'+ 
-  '<button class="button secondary" id="save-optin">Save Preference</button><div class="account-idle-pref"><label for="idle-minutes">Automatic sign-out after inactivity <span class="required-indicator" aria-hidden="true">* Required</span></label><select id="idle-minutes" required>'+IDLE_OPTIONS.map(n=>'<option value="'+n+'">'+n+' minute'+(n===1?'':'s')+'</option>').join('')+'</select><button class="button secondary" type="button" id="save-idle-minutes">Save Timeout</button><p id="idle-pref-status" role="status" aria-live="polite"></p></div></section></section></div>'+ 
-  '<section class="section" id="my-messages" aria-label="Private customer messages">Loading messages…</section></section>');
+ layout('<section class="section my-account-page"><div class="account-welcome"><div><h1 id="account-welcome-heading">Welcome</h1><p>Manage your orders, account, notifications, and messages in one place.</p></div><button class="button secondary" id="signout">Sign Out</button></div>'+
+  '<div class="account-tabbar" role="tablist" aria-label="My Account sections">'+
+  '<button type="button" class="account-tab" role="tab" data-account-tab="orders" id="tab-orders" aria-controls="panel-orders">My Orders</button>'+
+  '<button type="button" class="account-tab" role="tab" data-account-tab="settings" id="tab-settings" aria-controls="panel-settings">Account Settings</button>'+
+  '<button type="button" class="account-tab" role="tab" data-account-tab="notifications" id="tab-notifications" aria-controls="panel-notifications">Notifications</button>'+
+  '<button type="button" class="account-tab" role="tab" data-account-tab="messages" id="tab-messages" aria-controls="panel-messages">Private Messages to Momma Bee’s</button></div>'+
+  '<div role="tabpanel" class="account-tab-panel box" data-account-panel="orders" id="panel-orders" aria-labelledby="tab-orders"><h2>My Orders</h2><div id="my-orders">Loading…</div></div>'+
+  '<div role="tabpanel" class="account-tab-panel box" data-account-panel="settings" id="panel-settings" aria-labelledby="tab-settings"><h2>Account Settings</h2><div id="my-account-code">Loading…</div>'+
+  '<div id="account-profile-section"><h3>Profile &amp; Addresses</h3><div id="my-profile">Loading…</div></div>'+
+  '<section id="account-settings" aria-label="Account preferences"><h3>Preferences</h3>'+
+  '<p class="account-service-info">Order updates, account notices, and important service alerts are enabled automatically.</p>'+
+  '<label class="checkbox"><input type="checkbox" id="optin"> Receive optional promotional messages in my account</label>'+
+  '<button class="button secondary" id="save-optin">Save Preference</button><div class="account-idle-pref"><label for="idle-minutes">Automatic sign-out after inactivity <span class="required-indicator" aria-hidden="true">* Required</span></label><select id="idle-minutes" required>'+IDLE_OPTIONS.map(n=>'<option value="'+n+'">'+n+' minute'+(n===1?'':'s')+'</option>').join('')+'</select><button class="button secondary" type="button" id="save-idle-minutes">Save Timeout</button><p id="idle-pref-status" role="status" aria-live="polite"></p></div></section></div>'+
+  '<div role="tabpanel" class="account-tab-panel box" data-account-panel="notifications" id="panel-notifications" aria-labelledby="tab-notifications"><h2>Notifications</h2><div id="my-notices">Loading…</div></div>'+
+  '<div role="tabpanel" class="account-tab-panel" data-account-panel="messages" id="panel-messages" aria-labelledby="tab-messages"><section id="my-messages" aria-label="Private customer messages">Loading messages…</section></div></section>');
+ const chooseTab=tab=>{
+  const chosen=['orders','settings','notifications','messages'].includes(tab)?tab:'orders';
+  document.querySelectorAll('[data-account-tab]').forEach(el=>{
+   const active=el.dataset.accountTab===chosen;el.setAttribute('aria-selected',String(active));el.tabIndex=active?0:-1;
+  });
+  document.querySelectorAll('[data-account-panel]').forEach(el=>{el.hidden=el.dataset.accountPanel!==chosen;});
+ };
+ document.querySelectorAll('[data-account-tab]').forEach(el=>el.addEventListener('click',()=>chooseTab(el.dataset.accountTab)));
+ chooseTab(section==='profile'?'settings':section);
+
  document.getElementById('signout').onclick=async()=>{await signOut();await rerender();};
  try{
   const [orders,notes,profiles]=await Promise.all([
@@ -222,6 +238,9 @@ export async function account({layout,rerender,showError,section=null}){
    list('notifications',{customer_id:'eq.'+user.id,order:'created_at.desc',limit:'40'}),
    list('customer_profiles',{id:'eq.'+user.id})]);
   const profile=profiles[0]||{};
+  const firstName=String(profile.first_name||profile.full_name?.trim().split(/\s+/)[0]||'').trim();
+  document.getElementById('account-welcome-heading').textContent=firstName?'Welcome, '+firstName:'Welcome to MommaBee';
+
   document.getElementById('my-account-code').innerHTML='<p><strong>Username:</strong> '+h(profile.username||'Not set')+'</p><p><strong>Account ID:</strong> '+h(profile.account_code||'Pending setup')+'</p>';
   document.getElementById('my-orders').innerHTML=orders.map(o=>'<p>'+h(o.id.slice(0,8))+' · '+h(o.status)+' · '+fmt(o.fulfillment_date)+' · '+money(o.total_cents)+'</p>').join('')||'<p>No orders yet.</p>';
   document.getElementById('my-notices').innerHTML=notes.map(n=>'<p><strong>'+h(n.title)+'</strong>: '+h(n.body)+'</p>').join('')||'<p>No notifications.</p>';
