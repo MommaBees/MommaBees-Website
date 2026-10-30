@@ -1,3 +1,5 @@
+> **Account migration notice (2026-10-30):** The Stripe sandbox account ID and catalog references in this historical document describe the legacy sandbox. The active MommaBee sandbox is `acct_1UWAEICv9zp633CV`. See `docs/MBB_PAY_003_STRIPE_SANDBOX_MIGRATION_V1_0.md` for the current integration and outstanding acceptance gates. This notice does not retroactively certify any payment test.
+
 # Admin Demo Store — Checkout Visibility and End-to-End Acceptance
 
 **Document ID:** MBB-PAY-002
