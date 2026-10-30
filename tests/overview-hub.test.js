@@ -62,7 +62,7 @@ test('Owner-requested names and compact footer are present without changing exis
  const account=readFileSync(new URL('../site/account.js',import.meta.url),'utf8');
  const admin=readFileSync(new URL('../site/admin.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../site/country-home-v2.css',import.meta.url),'utf8');
- assert.ok(account.includes('<h1>My Account</h1>'));
+ assert.ok(account.includes('id="account-welcome-heading"'));
  assert.ok(admin.includes('Bakery &amp; Farmstand Control Center'));
  assert.ok(admin.includes("Momma’s Overview Hub"));
  assert.ok(css.includes('max-width:820px'));
