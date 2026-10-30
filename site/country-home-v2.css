@@ -2056,3 +2056,81 @@ body[data-page="admin"] .credential-external{display:grid;gap:6px}
 body[data-page="admin"] .credential-external>div{padding:10px 0;border-bottom:1px solid #e0cbb4}
 body[data-page="admin"] .credential-external strong{font-size:.86rem}
 body[data-page="admin"] .credential-external p{margin:4px 0;font-size:.81rem;line-height:1.45}
+
+/* MBB-UI-064 — compact, centered real-cart presentation; storefront/admin/carousel unchanged. */
+body[data-website-size][data-page="cart"] #main.shell,
+body[data-website-size][data-page="cart"][data-site-background] #main.shell{
+  width:100%;
+  max-width:min(100%,calc(820px * var(--website-density,1)));
+}
+body[data-page="cart"] #main>.bakery-cart-section{
+  width:100%;
+  max-width:100%;
+  margin-inline:auto;
+}
+body[data-page="cart"] #main .bakery-cart-section h1{
+  font-size:clamp(2rem,3.8vw,2.55rem);
+  margin:0 0 18px;
+}
+body[data-page="cart"] #main .bakery-cart-section .cart-line{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px 16px;
+  min-height:0;
+  padding:12px 16px;
+  margin-bottom:8px;
+}
+body[data-page="cart"] #main .bakery-cart-section .cart-line>div:first-child{
+  display:grid;
+  grid-template-columns:max-content 1fr;
+  align-items:center;
+  gap:6px 8px;
+  min-width:0;
+}
+body[data-page="cart"] #main .bakery-cart-section .cart-line>div:first-child>strong,
+body[data-page="cart"] #main .bakery-cart-section .cart-line>div:first-child>p{
+  grid-column:1 / -1;
+  min-width:0;
+  margin:0;
+  overflow-wrap:anywhere;
+}
+body[data-page="cart"] #main .bakery-cart-section .cart-line>div:first-child>label{
+  font-size:.84rem;
+  font-weight:700;
+}
+body[data-page="cart"] #main .bakery-cart-section .cart-line .qty-input-wrap{
+  display:inline-flex;
+  width:96px;
+  margin:0;
+}
+body[data-page="cart"] #main .bakery-cart-section .cart-line>div:last-child{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  white-space:nowrap;
+}
+body[data-page="cart"] #main .bakery-cart-section .cart-line .button{
+  min-height:38px;
+  padding:7px 12px;
+  font-size:.86rem;
+}
+body[data-page="cart"] #main .bakery-cart-section .total{
+  margin:15px 0 9px;
+  padding-top:13px;
+  font-size:1.08rem;
+}
+@media(max-width:600px){
+  body[data-page="cart"] #main .bakery-cart-section .cart-line{
+    grid-template-columns:minmax(0,1fr);
+    padding:12px;
+    gap:10px;
+  }
+  body[data-page="cart"] #main .bakery-cart-section .cart-line>div:last-child{
+    justify-content:space-between;
+    width:100%;
+    border-top:1px solid #e1ceb4;
+    padding-top:9px;
+  }
+}
