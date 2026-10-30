@@ -2168,3 +2168,20 @@ body .footer .footer-legal-links{
     padding-inline:clamp(14px,3vw,22px);
   }
 }
+
+/* MBB-UI-066 — owner-requested narrower footer and checkout navigation. */
+body .footer{max-width:900px;width:calc(100% - clamp(30px,8vw,150px));}
+body .footer>.shell{padding-inline:clamp(14px,2.1vw,25px);}
+body .footer .footer-inner{grid-template-columns:minmax(0,1fr) minmax(165px,218px);column-gap:18px;}
+body .footer .footer-brand-name{font-size:clamp(1.28rem,1.65vw,1.7rem);}
+body .footer .footer-location{font-size:clamp(.89rem,1.1vw,1rem);}
+body .footer .footer-navigation{max-width:100%;}
+body .footer .footer-nav-row{flex-wrap:wrap;row-gap:2px;}
+body .footer .footer-nav-row>a{font-size:clamp(.72rem,1vw,.85rem);}
+body .footer .footer-legal{margin-top:11px;padding:10px 0;}
+body .footer .footer-legal-links{gap:5px 12px;}
+body .footer .footer-bottom{margin-top:9px;}
+.header .nav-checkout-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:7px 11px;border-radius:5px;border:1px solid #694532;background:#fff9ed;color:#35231c;font-size:.88rem;font-weight:750;text-decoration:none;white-space:nowrap;}
+.header .nav-checkout-link:hover,.header .nav-checkout-link[aria-current="page"]{background:#f2e0ca;}
+@media(max-width:760px){body .footer{width:calc(100% - 18px);max-width:100%;}body .footer .footer-inner{grid-template-columns:minmax(0,1fr);}}
+@media(max-width:480px){.header .nav-checkout-link{min-height:38px;padding:6px 8px;font-size:.77rem;}}
