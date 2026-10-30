@@ -2293,3 +2293,38 @@ body[data-page] #main .card-quick-buy .card-quick-actions{gap:6px;}
 .header .nav-alerts-link:hover,.header .nav-alerts-link[aria-current="page"]{text-decoration:underline;}
 @media(max-width:980px){body .footer .footer-nav-row{flex-wrap:wrap;gap:5px 12px;}}
 @media(max-width:760px){body .footer{width:100%!important;}body .footer .footer-inner{grid-template-columns:minmax(0,1fr);}body .footer .footer-inner>.footer-navigation{grid-row:auto;}body .footer .footer-nav-row{flex-wrap:wrap;}}
+
+/* MBB-UI-073: Account tabs, alerts, and dedicated FAQs. */
+body[data-page="account"] #main>.my-account-page{width:min(100%,930px);max-width:930px;margin-inline:auto;}
+body[data-page="account"] .account-welcome{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:15px 0 19px;}
+body[data-page="account"] .account-welcome h1{font-size:clamp(1.75rem,3vw,2.5rem);margin:0 0 6px;}
+body[data-page="account"] .account-welcome p{font-size:.9rem;margin:0;line-height:1.5;color:#654737;}
+body[data-page="account"] .account-tabbar{display:flex;gap:5px;align-items:stretch;flex-wrap:wrap;margin-bottom:13px;border-bottom:1px solid #c7ab86;}
+body[data-page="account"] .account-tab{border:1px solid #c9af91;border-bottom:0;background:#f5ecdf;color:#432b1f;padding:11px 13px;font:700 .86rem/1.4 inherit;border-radius:6px 6px 0 0;cursor:pointer;text-align:center;}
+body[data-page="account"] .account-tab[aria-selected="true"]{background:#fffaf2;box-shadow:inset 0 3px #9b6140;}
+body[data-page="account"] .account-tab:focus-visible{outline:3px solid #a8714c;outline-offset:1px;}
+body[data-page="account"] .account-tab-panel{min-height:195px;max-width:100%;padding:clamp(15px,2.8vw,24px);}
+body[data-page="account"] .account-tab-panel[hidden]{display:none!important;}
+body[data-page="account"] #account-settings{margin-top:24px;border-top:1px solid #d9c6b2;padding-top:15px;}
+body[data-page="account"] .account-service-info{font-size:.83rem;color:#604b3c;}
+body[data-page="account"] #panel-messages{padding:0;border:0;background:none;}
+body[data-page="account"] #panel-settings #profile-editor{max-width:760px;}
+body[data-page="alerts"] #main>.customer-alert-center{max-width:960px;margin-inline:auto;}
+body[data-page="alerts"] .customer-alert-center>.box{margin-top:14px;}
+body[data-page="alerts"] .customer-alert{border-bottom:1px solid #decdb6;padding:12px 3px;}
+body[data-page="alerts"] .customer-alert:last-child{border:0;}
+body[data-page="alerts"] .customer-alert strong{font-size:.93rem;}
+body[data-page="alerts"] .customer-alert p{font-size:.85rem;margin:6px 0 0;line-height:1.5;}
+body[data-page="checkout"] .checkout-preview{max-width:1080px;margin-inline:auto;}
+body[data-page="checkout"] .checkout-preview-title p{font-size:.88rem;max-width:750px;}
+body[data-page="checkout"] .checkout-preview .cols{align-items:start;gap:12px;}
+body[data-page="checkout"] .checkout-preview .lineitem{gap:8px;}
+#admin-main .faq-admin-actions{display:flex;flex-wrap:wrap;gap:4px;}
+#admin-main .faq-admin-actions .button{font-size:.71rem;padding:6px 8px;min-height:31px;}
+#admin-main .faq-editor-form{margin-top:14px;max-width:900px;}
+#admin-main .faq-editor-form[hidden]{display:none;}
+@media(max-width:650px){
+ body[data-page="account"] .account-tab{flex:1 1 46%;font-size:.77rem;padding:9px 7px;}
+ body[data-page="account"] .account-welcome{align-items:start;}
+ .header .nav-alerts-link{font-size:.75rem;padding:6px 5px;}
+}
