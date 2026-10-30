@@ -1392,7 +1392,7 @@ test('store routes have department tabs only in split mode, and Admin holds cata
 
 import {testStripeKeyAllowed,safeStripePicture,stripeFingerprint,testStripePriceLookup,MOMMABEES_STRIPE_TEST_ACCOUNT} from '../functions/_lib/product-stripe-test.js';
 test('Stripe TEST integration is isolated to MommaBees sandbox and restricts key modes',()=>{
- assert.equal(MOMMABEES_STRIPE_TEST_ACCOUNT,'acct_1UUtoDJF02bajTTM');
+ assert.equal(MOMMABEES_STRIPE_TEST_ACCOUNT,'acct_1UWAEICv9zp633CV');
  assert.equal(testStripeKeyAllowed('sk_test_example123'),true);
  assert.equal(testStripeKeyAllowed('rk_test_example123'),true);
  for(const key of ['sk_live_abc','rk_live_abc','','mytest','sk_test_'])assert.equal(testStripeKeyAllowed(key),false);
