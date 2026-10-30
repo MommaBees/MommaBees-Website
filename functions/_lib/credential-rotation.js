@@ -62,7 +62,7 @@ export async function verifyStripeKey(value,environment){
   if(!response.ok)return {ok:false,checks:[...checks,{name,state:'failed',status:response.status}]};
   if(name==='stripe_account'){
    const data=await response.json().catch(()=>({}));
-   if(data.id!=='acct_1UUtoDJF02bajTTM')return {ok:false,checks:[...checks,{name,state:'failed',reason:'wrong Stripe account'}]};
+   if(environment==='test' && data.id!=='acct_1UWAEICv9zp633CV')return {ok:false,checks:[...checks,{name,state:'failed',reason:'wrong Stripe account'}]};
   }
   checks.push({name,state:'verified'});
  }
