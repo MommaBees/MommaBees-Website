@@ -1,6 +1,15 @@
 import {runtimeCredential} from './runtime-credentials.js';
 import {verifyMommaBeesTestAccount} from './product-stripe-test.js';
+import {db} from './db.js';
 export function stripePaymentMode(env){return env.STRIPE_PAYMENT_MODE==='live'||(!env.STRIPE_PAYMENT_MODE&&/^sk_live_/.test(env.STRIPE_SECRET_KEY||''))?'live':'test';}
+// Storefront runtime selection is Owner-controlled in Supabase; never derive LIVE mode from a browser request.
+// Cloudflare LIVE_PAYMENT_ALLOWED remains an independent emergency kill switch.
+export async function storefrontStripeMode(env){
+ const rows=await db(env,'/rest/v1/site_settings?select=stripe_payment_mode,checkout_enabled&id=eq.1');
+ const row=rows?.[0];
+ if(rows?.length!==1||!['test','live'].includes(row.stripe_payment_mode))throw Error('Stripe storefront mode is not configured');
+ return {mode:row.stripe_payment_mode,checkoutEnabled:row.checkout_enabled===true};
+}
 export async function createStripeSession(env,fields,{environment=stripePaymentMode(env)}={}){
  const key=await runtimeCredential(env,'STRIPE_SECRET_KEY',environment);
  if(!key)throw Error('Stripe API key is not configured');
