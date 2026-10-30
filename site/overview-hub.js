@@ -174,7 +174,7 @@ function attentionLine(label,value,moduleName,ok){
  return '<button type="button" class="hub-queue" data-hub-module="'+e(moduleName)+'"><span>'+e(label)+'</span>'+
   '<strong>'+numberMarkup(value,ok)+'</strong></button>';
 }
-function paint(root,data,errors,period){
+function paint(root,data,errors,period,showError){
  const m=hubDataModel(data,errors,period);
  const orderOK=available(errors,'orders');
  const expenseOK=available(errors,'expenses');
@@ -231,8 +231,8 @@ function paint(root,data,errors,period){
   m.topProducts.map(item=>'<tr><td>'+e(item.name)+'</td><td>'+safeCount(item.quantity)+'</td><td>'+money(item.gross)+'</td></tr>').join('')+
   '</tbody></table></div>')+'</article>'+
   '<p class="hub-disclaimer">Management overview only. Payment refunds, processor fees, labor, ingredients, delivery costs, inventory allocations and tax remittances may be incomplete. Figures are not certified revenue, profit or a tax statement. Checkout status here reflects the website database switch, not independent Stripe LIVE authorization.</p></section>';
- root.querySelector('#hub-period').onchange=event=>paint(root,data,errors,event.target.value);
- root.querySelector('#hub-refresh').onclick=()=>renderOverviewHub({showError:window.__mommabeeHubShowError||(()=>{})});
+ root.querySelector('#hub-period').onchange=event=>paint(root,data,errors,event.target.value,showError);
+ root.querySelector('#hub-refresh').onclick=()=>renderOverviewHub({showError});
  root.querySelectorAll('[data-hub-module]').forEach(button=>button.onclick=()=>{
   const moduleId=button.dataset.hubModule;
   const nav=document.querySelector('.admin-nav-link[data-panel="'+moduleId+'"]');
@@ -248,17 +248,16 @@ function paint(root,data,errors,period){
    const payload=await result.json().catch(()=>({}));
    if(!result.ok)throw Error(payload.error||'Release was not completed.');
    window.alert('Released '+safeCount(asNumber(payload.released))+' expired reservations.');
-   await renderOverviewHub({showError:window.__mommabeeHubShowError||(()=>{})});
-  }catch(error){(window.__mommabeeHubShowError||(()=>{}))(error);}
+   await renderOverviewHub({showError});
+  }catch(error){showError(error);}
  };
 }
 export async function renderOverviewHub({showError}){
  const root=document.querySelector('#admin-main');
  if(!root)return;
- window.__mommabeeHubShowError=showError;
  root.innerHTML='<section class="hub-wrap"><h2>Momma’s Overview Hub</h2><p>Loading current business records…</p></section>';
  const result=await Promise.allSettled(SOURCE_TABLES.map(table=>
-  list(table,{limit:table==='site_settings'?1:5000,order:table==='site_settings'?undefined:undefined})
+  list(table,{limit:table==='site_settings'?1:5000})
  ));
  const data={},errors=[];
  result.forEach((entry,i)=>{
@@ -266,5 +265,5 @@ export async function renderOverviewHub({showError}){
   if(entry.status==='fulfilled'&&Array.isArray(entry.value))data[key]=entry.value;
   else{errors.push(key);data[key]=[];}
  });
- paint(root,data,errors,'30');
+ paint(root,data,errors,'30',showError);
 }
