@@ -6,7 +6,7 @@ export function adminGroupsForRole(role){
  return role==='admin'?ADMIN_GROUPS.map(([group,ids])=>[group,ids.filter(id=>id!=='live_sales')]):[];
 }
 export const ADMIN_DESCRIPTIONS=Object.freeze({
- dashboard:'Key metrics, action items and shortcuts.',
+ dashboard:'Sales, revenue charts, fulfillment, inventory, members and operational alerts.',
  orders:'Confirm, prepare and fulfill orders.',
  baking_days:'Manage bake dates, pickup, delivery and order cutoffs.',
  product_day_limits:'Set per-product limits for selected dates.',
