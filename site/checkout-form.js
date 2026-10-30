@@ -30,7 +30,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
   '<div class="field"><label for="method">Fulfillment method</label><select name="method" id="method">'+
    (pickupEnabled?'<option value="pickup">Local pickup</option>':'')+
    (settings.delivery_enabled?'<option value="delivery">Local delivery</option>':'')+'</select></div>'+
-  '<div class="field"><label for="date">Available bakery or fair day</label><select name="date" id="date" required>'+
+  '<div class="field"><label for="date">Pickup or delivery date</label><select name="date" id="date" required>'+
    '<option value="">Select an available date</option>'+days.map(d=>
    '<option value="'+e(d.date)+'">'+e(fmt(d.date))+(d.day_type==='fair'?' — '+e(d.event_label||'Bake fair'):' — Baking day')+'</option>').join('')+
    '</select></div>'+
