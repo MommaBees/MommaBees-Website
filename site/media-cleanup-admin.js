@@ -1,5 +1,5 @@
 // Owner/Admin media cleanup. Only generated uploads no longer referenced may be removed.
-import {currentSession,escapeHtml as e} from './api.js';
+import {config,currentSession,escapeHtml as e} from './api.js';
 const API='/api/admin/media-cleanup';
 async function call(bucket,remove=null){
  const token=currentSession()?.access_token;
@@ -24,7 +24,7 @@ export async function showMediaCleanup({showError},bucket='product-photos'){
    '<p class="small">Showing up to 100 recent uploaded files. Built-in branding and stock images are excluded.</p>'+
    '<div class="table-wrap"><table><thead><tr><th>Uploaded image</th><th>First recorded</th><th>Status</th><th>Action</th></tr></thead><tbody>'+
    (data.items.length?data.items.map(item=>
-    '<tr><td>'+e(item.name)+'</td><td>'+e(item.created_at?new Date(item.created_at).toLocaleDateString():'Unknown')+'</td>'+
+    '<tr><td><div class="media-cleanup-photo"><img src="'+e(config.supabaseUrl.replace(/\\/$/,'')+'/storage/v1/object/public/'+bucket+'/'+encodeURIComponent(item.name))+'" alt="Uploaded file preview" loading="lazy"><span>'+e(item.name)+'</span></div></td><td>'+e(item.created_at?new Date(item.created_at).toLocaleDateString():'Unknown')+'</td>'+
     '<td>'+(item.referenced?'In use — protected':'Unused — eligible')+'</td>'+
     '<td><button type="button" class="button secondary" data-delete-image="'+e(item.name)+'"'+(item.referenced?' disabled':'')+'>Delete unused image</button></td></tr>'
    ).join(''):'<tr><td colspan="4">No managed photo uploads in this library.</td></tr>')+'</tbody></table></div>'+
