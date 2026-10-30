@@ -3,7 +3,7 @@
 import {list,money,escapeHtml as e,currentSession} from './api.js';
 
 const SERIES_COLORS=['#946038','#bd8457','#6e8675','#8a7471','#c9a260','#627780','#a17055'];
-const SOURCE_TABLES=['orders','order_items','expenses','products','stock_batches','baking_days','messages','reviews','notifications','promotions','customer_profiles','site_settings'];
+const SOURCE_TABLES=['orders','order_items','expenses','products','stock_batches','baking_days','messages','reviews','notifications','promotions','customer_profiles','site_settings','store_showcase_items'];
 const NUMBER_FORMAT=new Intl.NumberFormat('en-US');
 const MONTH_FORMAT=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',month:'short',year:'numeric'});
 const DATE_PARTS=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'});
@@ -102,6 +102,7 @@ export function hubDataModel(data,errors=[],period='30',now=new Date()){
   readyPackages:sum(batches,x=>x.quantity_available),
   upcomingDates:days.length,
   activePromotions:sourceRows(data,'promotions').filter(x=>x.published===true).length,
+  activeShowcase:sourceRows(data,'store_showcase_items').filter(x=>x.active===true).length,
   checkoutEnabled:sourceRows(data,'site_settings')[0]?.checkout_enabled===true,
   alerts,
   departmentMix:[...departmentRevenue].map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value),
@@ -219,7 +220,8 @@ function paint(root,data,errors,period,showError){
   '<div><span>Eligible ready-stock batches</span><strong>'+numberMarkup(m.readyBatches,available(errors,'stock_batches'))+'</strong></div>'+
   '<div><span>Available packages in eligible batches</span><strong>'+numberMarkup(m.readyPackages,available(errors,'stock_batches'))+'</strong></div>'+
   '<div><span>Upcoming enabled fulfillment dates</span><strong>'+numberMarkup(m.upcomingDates,available(errors,'baking_days'))+'</strong></div>'+
-  '<div><span>Published promotions</span><strong>'+numberMarkup(m.activePromotions,available(errors,'promotions'))+'</strong></div></div>'+
+  '<div><span>Published promotions</span><strong>'+numberMarkup(m.activePromotions,available(errors,'promotions'))+'</strong></div>'+ 
+  '<div><span>Active Product Showcase entries</span><strong>'+numberMarkup(m.activeShowcase,available(errors,'store_showcase_items'))+'</strong></div></div>'+
   '<p class="hub-quicklinks"><button type="button" data-hub-module="products">Products</button>'+
   '<button type="button" data-hub-module="baking_days">Calendar</button>'+
   '<button type="button" data-hub-module="stock_batches">Inventory</button>'+
