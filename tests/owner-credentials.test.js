@@ -24,7 +24,7 @@ const fakeFetch=(role='owner',passwordOK=true)=>{
   else if(target.includes('/auth/v1/token?grant_type=password')){
    if(passwordOK)body={user:{id:user,email:'owner@example.com'},access_token:'reauth'};
    else{body={error:'invalid'};code=400;}
-  }else if(target==='https://api.stripe.com/v1/account')body={id:'acct_1UUtoDJF02bajTTM'};
+  }else if(target==='https://api.stripe.com/v1/account')body={id:'acct_1UWAEICv9zp633CV'};
   else if(target==='https://api.stripe.com/v1/products?limit=1')body={data:[]};
   else if(target.includes('/rpc/mommabees_credential_stage'))body={id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',state:'pending'};
   else if(target.includes('/rpc/mommabees_credential_promote'))body={id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',state:'activated'};
