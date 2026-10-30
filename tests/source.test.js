@@ -1027,7 +1027,7 @@ test('Owner requested footer links use exactly two rows and account tagline is a
   [['gallery','Past Bakes'],['contact','Ask Momma Bee'],['faq','Questions & Policies']]);
  assert.match(css,/\.footer-nav-row>a:not\(:last-child\)::after/);
  assert.doesNotMatch(account,/A place for your bakery favorites/);
- assert.match(account,/<h1>My Account<\\/h1>/);
+ assert.ok(account.includes('<h1>My Account</h1>'));
 });
 
 test('Product type is derived from category and non-food products cannot be published',()=>{
