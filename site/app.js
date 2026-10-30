@@ -659,8 +659,8 @@ function cartPage(){
   (cart.length?rows+
    (real.length?'<p class="total">Product subtotal: '+money(subtotal)+'</p>':'')+
    (hasPreviews?'<p class="total">Preview subtotal: '+money(previewTotal)+'</p>'+
-    '<p class="small">Preview items cannot be purchased. Remove them before checkout.</p>'+
-    '<span class="button secondary" aria-disabled="true" title="Remove preview items before checkout">Checkout unavailable for previews</span>':
+    '<p class="small">Showcase previews cannot be purchased. You can inspect the next checkout step without placing an order.</p>'+
+    '<a class="button" href="#checkout">Checkout Preview</a>':
     '<a class="button" href="#checkout">Checkout</a>'):
    '<div class="empty">Your cart is empty. <a href="#shop">Browse products</a>.</div>')+'</section>');
  $$('[data-remove]').forEach(button=>button.onclick=()=>{
@@ -682,8 +682,8 @@ function cartPage(){
 }
 async function checkoutPage(){
  if(cartHasShowcase(cart)){
-  layout('<section class="section"><h1>Your Cart</h1><p>Remove preview items before checkout.</p><a class="button" href="#cart">View Cart</a></section>');
-  return;
+  const mod=await import('./checkout-preview.js');
+  return mod.showCheckoutPreview({cart,all,layout});
  }
  const mod=await import('./checkout-form.js');
  await mod.showCheckout({cart,all,layout,nav,showError,clearCart:()=>{cart=[];saveCart();}});
