@@ -1,5 +1,5 @@
 // Functional Admin navigation. Does not grant permissions.
-export const ADMIN_GROUPS=Object.freeze([["Overview",["dashboard"]],["Orders & Fulfillment",["orders","baking_days","product_day_limits","stock_batches","shopping","fulfillment_settings"]],["Products & Inventory",["products","store_showcase_items","categories","subcategories","catalog_varieties","product_photos","recipes","recipe_ingredients","ingredients","past_bakes","media_cleanup"]],["Accounts & Permissions",["customer_profiles","users"]],["Customer Service",["messages","reviews","notifications"]],["Marketing & Promotions",["announcements","announcement_recipients","promotions","promotion_recipients"]],["Website & Design",["homepage_content","home_carousel_slides","store_display","website_size","website_background","site_settings","faqs"]],["Checkout & Finance",["live_sales","checkout_settings","reports","expenses"]],["Sandbox & Testing",["sandbox_settings","demo_catalog_items","demo_checkout_tests"]]]);
+export const ADMIN_GROUPS=Object.freeze([["Overview",["dashboard"]],["Orders & Fulfillment",["orders","baking_days","product_day_limits","stock_batches","shopping","fulfillment_settings"]],["Products & Inventory",["products","store_showcase_items","categories","subcategories","catalog_varieties","product_photos","recipes","recipe_ingredients","ingredients","past_bakes","bulk_photo_uploads","media_cleanup"]],["Accounts & Permissions",["customer_profiles","users"]],["Customer Service",["messages","reviews","notifications"]],["Marketing & Promotions",["announcements","announcement_recipients","promotions","promotion_recipients"]],["Website & Design",["homepage_content","home_carousel_slides","store_display","website_size","website_background","site_settings","faqs"]],["Checkout & Finance",["live_sales","checkout_settings","reports","expenses"]],["Sandbox & Testing",["sandbox_settings","demo_catalog_items","demo_checkout_tests"]]]);
 export function adminGroupsForRole(role){
  if(role==='moderator')return [['Customer Moderation',['messages','reviews']]];
  if(role==='owner')return [...ADMIN_GROUPS,['Security & Credentials',['owner_credentials']]];
@@ -23,6 +23,7 @@ export const ADMIN_DESCRIPTIONS=Object.freeze({
  recipe_ingredients:'Recipe ingredient quantities.',
  ingredients:'Ingredients and supplies on hand.',
  past_bakes:'Photographs of past creations, not items automatically for sale.',
+ bulk_photo_uploads:'Upload Homestand harvest photos or Past Bakes using separate tabs.',
  media_cleanup:'Permanently delete unreferenced uploaded images after reference verification.',
  messages:'Customer questions, requests and responses.',
  reviews:'Review publication and moderation.',
