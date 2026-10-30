@@ -1,5 +1,5 @@
 // Functional Admin navigation. Does not grant permissions.
-export const ADMIN_GROUPS=Object.freeze([["Overview",["dashboard"]],["Orders & Fulfillment",["orders","baking_days","product_day_limits","stock_batches","shopping","fulfillment_settings"]],["Products & Inventory",["products","store_showcase_items","categories","subcategories","catalog_varieties","product_photos","recipes","recipe_ingredients","ingredients","past_bakes","bulk_photo_uploads","media_cleanup"]],["Accounts & Permissions",["customer_profiles","users"]],["Customer Service",["messages","reviews","notifications"]],["Marketing & Promotions",["announcements","announcement_recipients","promotions","promotion_recipients"]],["Website & Design",["homepage_content","home_carousel_slides","store_display","website_size","website_background","site_appearance","site_settings","faqs"]],["Checkout & Finance",["live_sales","checkout_settings","reports","expenses"]],["Sandbox & Testing",["sandbox_settings","demo_catalog_items","demo_checkout_tests"]]]);
+export const ADMIN_GROUPS=Object.freeze([["Overview",["dashboard"]],["Orders & Fulfillment",["orders","baking_days","product_day_limits","stock_batches","shopping","fulfillment_settings"]],["Products & Inventory",["item_payments","products","store_showcase_items","categories","subcategories","catalog_varieties","product_photos","recipes","recipe_ingredients","ingredients","past_bakes","bulk_photo_uploads","media_cleanup"]],["Accounts & Permissions",["customer_profiles","users"]],["Customer Service",["messages","reviews","notifications"]],["Marketing & Promotions",["announcements","announcement_recipients","promotions","promotion_recipients"]],["Website & Design",["homepage_content","home_carousel_slides","store_display","website_size","website_background","site_appearance","site_settings","faqs"]],["Checkout & Finance",["live_sales","checkout_settings","reports","expenses"]],["Sandbox & Testing",["sandbox_settings","demo_catalog_items","demo_checkout_tests"]]]);
 export function adminGroupsForRole(role){
  if(role==='moderator')return [['Customer Moderation',['messages','reviews']]];
  if(role==='owner')return [...ADMIN_GROUPS,['Security & Credentials',['owner_credentials']]];
@@ -13,6 +13,7 @@ export const ADMIN_DESCRIPTIONS=Object.freeze({
  product_day_limits:'Set per-product limits for selected dates.',
  stock_batches:'Track products baked and ready to sell.',
  shopping:'Generate ingredient requirements from recorded orders.',
+ item_payments:'Set Online Stripe and Pay at Pickup permissions for each real product; review linked showcase items.',
  products:'Add, classify, photograph and publish real products.',
  categories:'Organize major product families.',
  subcategories:'Manage named product groups within a family.',
