@@ -18,7 +18,7 @@ test('Stripe preflight validates ownership and product API with no charges',asyn
  const previous=globalThis.fetch,requests=[];
  globalThis.fetch=async(url,options={})=>{
   requests.push({url:String(url),method:options.method});
-  if(String(url).endsWith('/v1/account'))return reply({id:'acct_1UUtoDJF02bajTTM'});
+  if(String(url).endsWith('/v1/account'))return reply({id:'acct_1UWAEICv9zp633CV'});
   if(String(url).endsWith('/v1/products?limit=1'))return reply({data:[]});
   throw Error('Unexpected fetch');
  };
