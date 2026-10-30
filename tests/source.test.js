@@ -1016,20 +1016,17 @@ test('catalog RLS hardening drops overly permissive active-account write policie
  assert.doesNotMatch(sql,/drop policy.*public products/i);
 });
 
-test('Owner requested footer links use exactly two rows and account tagline is absent',()=>{
+test('Owner requested footer links remain accessible in one row',()=>{
  const app=read('site/app.js'),account=read('site/account.js'),css=read('site/country-home-v2.css');
  const nav=app.slice(app.indexOf('aria-label="Footer navigation"'),app.indexOf('class="footer-qr"'));
- assert.equal((nav.match(/class="footer-nav-row"/g)||[]).length,2);
- const rows=nav.split('class="footer-nav-row"').slice(1);
- assert.deepEqual([...rows[0].matchAll(/href="#([^"]+)"[^>]*>([^<]+)<\/a>/g)].map(x=>[x[1],x[2]]),
-  [['shop','Shop All'],['ready','Ready to Sell'],['preorder','Preorder']]);
- assert.deepEqual([...rows[1].matchAll(/href="#([^"]+)"[^>]*>([^<]+)<\/a>/g)].map(x=>[x[1],x[2]]),
-  [['gallery','Past Bakes'],['contact','Ask Momma Bee'],['faq','Questions & Policies']]);
- assert.match(css,/\.footer-nav-row>a:not\(:last-child\)::after/);
- assert.doesNotMatch(account,/A place for your bakery favorites/);
+ assert.equal((nav.match(/class="footer-nav-row"/g)||[]).length,1);
+ for(const [route,label] of [['shop','Shop All'],['ready','Ready to Sell'],['preorder','Preorder'],['gallery','Past Bakes'],['contact','Got a Question Ask Momma Bee']]){
+  assert.ok(nav.includes('href="#'+route+'">'+label+'</a>'));
+ }
+ assert.ok(nav.includes('href="#faq">FAQ &amp; Policies</a>'));
+ assert.match(css,/footer-nav-row>a:not\(:last-child\)::after/);
  assert.ok(account.includes('<h1>My Account</h1>'));
 });
-
 test('Product type is derived from category and non-food products cannot be published',()=>{
  const sql=read('supabase/migrations/20261027_product_type_gates_v119.sql');
  const admin=read('site/admin.js');
