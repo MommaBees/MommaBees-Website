@@ -1099,7 +1099,10 @@ test('Admin Center organizes all panels into navigable role-aware groups',()=>{
  const owner=adminGroupsForRole('owner'),moderator=adminGroupsForRole('moderator');
  assert.deepEqual(owner.slice(0,ADMIN_GROUPS.length),ADMIN_GROUPS);
  assert.deepEqual(owner.at(-1),['Security & Credentials',['owner_credentials']]);
- assert.deepEqual(adminGroupsForRole('admin'),ADMIN_GROUPS);
+ assert.deepEqual(adminGroupsForRole('admin'),
+  ADMIN_GROUPS.map(([group,ids])=>[group,ids.filter(id=>id!=='live_sales')]));
+ assert.ok(owner.some(([name,ids])=>name==='Checkout & Finance'&&ids.includes('live_sales')));
+ assert.ok(!adminGroupsForRole('admin').some(([,ids])=>ids.includes('live_sales')));
  assert.ok(!adminGroupsForRole('moderator').some(([,ids])=>ids.includes('owner_credentials')));
  assert.ok(owner.length>=6);
  assert.ok(owner.some(([name,ids])=>name==='Website & Design'&&ids.includes('home_carousel_slides')));
