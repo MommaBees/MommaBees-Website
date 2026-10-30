@@ -111,3 +111,27 @@ As of document creation:
 
 ---
 **Revision note:** 2026-10-30 follow-up read-only verification; acceptance remains partial.
+
+## 9. October 30 — LIVE configuration placeholders and independent Stripe-only checkout test
+
+**Request:** Create empty placement holders in the dedicated MommaBee Cloudflare Pages production environment for LIVE Stripe Key, LIVE Stripe Secret, and LIVE Stripe Webhook; do not install LIVE credentials or enable live charges.
+
+**Cloudflare configuration implemented and read back:**
+| User-facing purpose | Runtime binding name | Stored type | Value status |
+|---|---|---|---|
+| Live Stripe Key (publishable) | `STRIPE_LIVE_PUBLISHABLE_KEY` | `plain_text` | Blank |
+| Live Stripe Secret (secret API key) | `STRIPE_LIVE_SECRET_KEY` | `secret_text` | Created with empty value |
+| Live Stripe Webhook (signing secret) | `STRIPE_LIVE_WEBHOOK_SECRET` | `secret_text` | Created with empty value |
+
+**Environment:** MommaBees Cloudflare account, project `mommabees-website`, production deployment settings. Existing secret binding names were preserved, and verified control values remain `LIVE_PAYMENT_ALLOWED=no` and `STRIPE_AUTOMATIC_TAX_ENABLED=no`. These placeholders are not populated or authorized for production payment processing. When the time comes, populate the encrypted fields through Cloudflare's protected secrets UI; separately verify the correct LIVE account identity and tax readiness.
+
+**Additional TEST API result:** A single TEST-mode Stripe-only Checkout Session was created in `acct_1UWAEICv9zp633CV` for 1 × Cinnamon Rolls using `price_1UWM6qCv9zp633CVkErBLS3X`, amount `400` cents USD. The session was independently retrieved and its line item and `livemode=false` verified.
+
+- **Session:** `cs_test_a11A3MqeI9YOGiF8ALw8BtHDyG3DqBpDkIfRW8kMM7YGaois8hWlHurEIt`
+- **State on verification:** `open`, `unpaid` (no successful test payment).
+- **Scope restriction:** Stripe-API-only probe; metadata `test_scope=stripe_api_only_not_website_order`. Not created by website Owner checkout; cannot be used as acceptance evidence for website authentication, TEST runtime credential activation, webhook signature verification, or Supabase order reconciliation. No real inventory was reserved.
+- **Environment preflight:** new sandbox webhook `we_1UWM7TCv9zp633CVGy0FVbEA` remains enabled; the connected browser automation profiles have no authenticated MommaBee Owner session, so an Owner-only completed purchase cannot be performed by that method.
+- **Database observation:** zero `demo_checkout_tests`, zero customer `orders`, zero `product_stripe_test_sync` at verification. No full website-originated payment-to-webhook-to-ledger acceptance has passed.
+- **Release position:** LIVE disabled. Next genuine payment acceptance requires the authenticated Owner/Admin website checkout and a completed test payment, followed by confirmed signed webhook and matching demo ledger result.
+
+**Update date:** 2026-10-30 · **Status:** LIVE placeholders verified; Stripe TEST session creation verified; website payment lifecycle not accepted.
