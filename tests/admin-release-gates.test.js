@@ -33,7 +33,7 @@ test('LIVE activation is rejected when the real payment gates, products and cale
   if(u.pathname==='/rest/v1/customer_profiles')return json([{banned_at:null}]);
   if(u.pathname==='/rest/v1/site_settings'){
    if(init.method==='PATCH'){sawMutation=true;return json([{checkout_enabled:true}]);}
-   return json([{id:1,checkout_enabled:false,pickup_enabled:true,delivery_enabled:true}]);
+   return json([{id:1,stripe_payment_mode:'test',checkout_enabled:false,pickup_enabled:true,delivery_enabled:true}]);
   }
   if(u.pathname.startsWith('/rest/v1/rpc/mommabees_credential_read'))return json(null);
   if(u.pathname.startsWith('/rest/v1/'))return json([]);
