@@ -34,7 +34,15 @@ export async function onRequestPost({request,env}){
  try{
   const a=await manager(env,request);if(a.error)return a.error;
   if(!originOk(env,request))return response({error:'Invalid request origin'},403);
-  const obj=clean(await readBody(request));
+  const body=await readBody(request);
+  if(body?.action==='reorder'){
+   if(!Array.isArray(body.ids)||body.ids.length<1||body.ids.length>250||body.ids.some(x=>!asUuid(x)))
+    return response({error:'Invalid FAQ ordering list'},400);
+   const count=await db(env,'/rest/v1/rpc/mommabees_reorder_faqs',{method:'POST',body:{p_ids:body.ids}});
+   await auditAccount(env,a.auth.user.id,null,'faqs_reordered',{count}).catch(()=>{});
+   return response({reordered:count});
+  }
+  const obj=clean(body);
   const rows=await db(env,collection,{method:'POST',body:obj,prefer:'return=representation'});
   if(!Array.isArray(rows)||rows.length!==1)return response({error:'FAQ creation could not be verified'},503);
   await auditAccount(env,a.auth.user.id,null,'faq_created',{faq_id:rows[0].id}).catch(()=>{});
