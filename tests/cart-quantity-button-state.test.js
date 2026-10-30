@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {lineQuantity,cartActionLabel} from '../site/cart-action.js';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-test('Selected Qty equal to cart amount shows Checkout, any changed amount shows Add to Cart',()=>{
+test('Matched Qty shows Checkout; changing an existing cart Qty shows Update',()=>{
  const c=[{mode:'showcase',showcase_id:'pie',quantity:3},
           {mode:'preorder',product_id:'bread',batch_id:null,quantity:2},
           {mode:'ready',product_id:'cookie',batch_id:'batch-a',quantity:4}];
  const show={mode:'showcase',showcase_id:'pie'};
  assert.equal(cartActionLabel(c,show,3),'Checkout');
- assert.equal(cartActionLabel(c,show,2),'Add to Cart');
- assert.equal(cartActionLabel(c,show,4),'Add to Cart');
+ assert.equal(cartActionLabel(c,show,2),'Update');
+ assert.equal(cartActionLabel(c,show,4),'Update');
  assert.equal(cartActionLabel(c,{mode:'preorder',product_id:'bread',batch_id:null},2),'Checkout');
  assert.equal(cartActionLabel(c,{mode:'ready',product_id:'cookie',batch_id:'batch-a'},4),'Checkout');
  assert.equal(lineQuantity(c,{mode:'ready',product_id:'cookie',batch_id:'batch-b'}),0);
