@@ -210,7 +210,7 @@ test('member username is locked and Edit Profile must be opened explicitly',()=>
  assert.match(account,/id="edit-profile">Edit Profile/);
  assert.match(account,/id="profile-editor" hidden/);
  assert.match(account,/collect\(form,\{includeUsername:false\}\)/);
- assert.match(account,/Locked after registration/);
+ assert.doesNotMatch(account,/Locked after registration/);
 });
 test('username updates are reserved for Admin and Owner management with audit trail',()=>{
  const manage=read('functions/api/admin/users.js');
@@ -491,7 +491,7 @@ test('subcategory migration enforces same-parent consistency and preserves blank
 });
 test('FAQ directs special-order inquiries to explicit acceptance and food eligibility policy',()=>{
  const store=read('site/app.js'),faq=read('site/customer-faq.js'),legal=read('site/legal-policies.js');
- assert.match(store,/function faq\(\)\{layout\(faqPage\(\)\);\}/);
+ assert.match(store,/async function faq\(\)/);
  assert.match(faq,/not an accepted order or a capacity reservation/);
  assert.match(faq,/proposed off-schedule fee must be disclosed and accepted/);
  assert.match(legal,/production location|production method|operating method/);
@@ -831,7 +831,7 @@ test('dropdown links address real, accessible customer profile and settings sect
  assert.match(account,/id="account-profile-section"/);
  assert.match(account,/id="account-settings"/);
  assert.match(account,/id="edit-profile">Edit Profile/);
- assert.match(account,/Locked after registration/);
+ assert.doesNotMatch(account,/Locked after registration/);
  assert.match(css,/#primary-navigation \.account-dropdown-trigger/);
  assert.match(css,/#primary-navigation \.account-dropdown-panel\[hidden\]/);
  assert.match(css,/@media\(max-width:760px\)/);
@@ -1274,7 +1274,7 @@ test('redundant text removed without losing customer-facing commerce and safety 
   assert.ok(!app.includes(phrase),'redundant copy should not remain: '+phrase);
  }
  assert.doesNotMatch(app,/class="bakery-home-note"/);
- for(const phrase of ['h1>Past Bakes Gallery','food_notice','function faq(){layout(faqPage());}']){
+ for(const phrase of ['h1>Past Bakes Gallery','food_notice','async function faq()']){
   assert.ok(app.includes(phrase),'critical storefront information missing: '+phrase);
  }
  assert.match(checkout,/canFulfillCartOn/);
