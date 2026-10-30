@@ -18,9 +18,13 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
  });
  const days=(all.days||[]).filter(d=>d.enabled&&d.cutoff_at&&new Date(d.cutoff_at)>new Date()&&
   d.date>=currentDate()&&canFulfillCartOn(d.date)).sort((a,b)=>a.date.localeCompare(b.date));
- const stripeAvailable=settings.checkout_enabled===true;
+ // A mixed cart can use a payment method only if every real sale product permits it.
+ // These flags are presentation only; the reservation RPC enforces them inside the database transaction.
+ const onlineItemsAllowed=cart.every(item=>all.products.some(p=>p.id===item.product_id&&p.online_payment_enabled===true));
+ const pickupItemsAllowed=cart.every(item=>all.products.some(p=>p.id===item.product_id&&p.pay_at_pickup_enabled===true));
+ const stripeAvailable=settings.checkout_enabled===true&&onlineItemsAllowed;
  const pickupEnabled=settings.pickup_enabled===true;
- const payAtPickup=settings.pay_at_pickup_enabled===true&&
+ const payAtPickup=settings.pay_at_pickup_enabled===true&&pickupItemsAllowed&&
      settings.pay_at_pickup_tax_reviewed===true&&Number.isInteger(settings.pay_at_pickup_tax_rate_bps);
  const anyAvailable=stripeAvailable||payAtPickup;
  const subtotal=cart.reduce((n,i)=>n+packageTotal(all.products.find(p=>p.id===i.product_id)?.price_cents??i.price_cents,i.quantity),0);
@@ -62,7 +66,7 @@ export async function showCheckout({cart,all,layout,nav,showError,clearCart}){
    ' id="pay-at-pickup-radio" disabled> Pay at pickup (available on selected dates)</label></fieldset>'+
   '<p id="pickup-tax-estimate" class="small" aria-live="polite"></p>'+
   '<p class="small">Pay at pickup does not charge a card now. Staff will record your payment when collected. Taxes are included in the confirmed amount due.</p>'+
-  (!anyAvailable?'<div class="notice error">Ordering is not enabled for this bakery yet.</div>':'')+
+  (!anyAvailable?'<div class="notice error">'+(!onlineItemsAllowed&&!pickupItemsAllowed?'One or more items in your cart are not enabled for online or pickup payment. Contact the bakery or remove those items.':'No payment method is available for all items in this cart. Check product payment permissions and the selected pickup date.')+'</div>':'')+
   '<label class="checkbox checkout-policy-consent"><input type="checkbox" name="policy_acceptance" value="yes" required> I agree to the <a href="#legal/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>, the <a href="#legal/pickup" target="_blank" rel="noopener noreferrer" id="checkout-fulfillment-policy">Customer Pickup Policy</a>, and the <a href="#legal/refunds" target="_blank" rel="noopener noreferrer">Refund & Cancellation Policy</a>.</label>'+
   '<p class="small">Privacy and optional cookie preferences are governed separately by the Privacy and Cookie Policies.</p>'+
   '<button type="submit" class="button" id="submit-order"'+(!anyAvailable?' disabled':'')+'>Continue</button>'+
