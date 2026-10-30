@@ -8,9 +8,6 @@ export async function onRequestPost({request,env}){
  try{
   const body=await request.json();if(!body||JSON.stringify(body).length>12000)return response({error:'Cart exceeds allowed size'},400);
   if(stripePaymentMode(env)==='live' && env.LIVE_PAYMENT_ALLOWED!=='yes')return response({error:'Live payments are disabled. Use Stripe TEST keys until live payments are explicitly authorized.'},503);
-  const selected=await storefrontStripeMode(env);
-  if(!selected.checkoutEnabled)return response({error:'Online checkout is currently disabled'},503);
-  if(selected.mode==='live'&&env.LIVE_PAYMENT_ALLOWED!=='yes')return response({error:'Live payments are disabled by the Cloudflare emergency gate'},503);
   if(env.STRIPE_AUTOMATIC_TAX_ENABLED!=='yes')return response({error:'Tax setup is not verified. Configure Stripe Tax and enable STRIPE_AUTOMATIC_TAX_ENABLED only after reviewing applicable bakery tax obligations.'},503);
   const user=await getVerifiedUser(env,request);
   const blocked=await checkoutAdmission(env,request,{guest:!user});
@@ -27,6 +24,10 @@ export async function onRequestPost({request,env}){
    return response({error:'Guest checkout requires first and last name, street address, city, state and ZIP'},400);
   if(!/^[^ @]+@[^ @]+\.[^ @]+$/.test(String(body.email||'')))
    return response({error:'An email address is required for Stripe online payments'},400);
+
+  const selected=await storefrontStripeMode(env);
+  if(!selected.checkoutEnabled)return response({error:'Online checkout is currently disabled'},503);
+  if(selected.mode==='live'&&env.LIVE_PAYMENT_ALLOWED!=='yes')return response({error:'Live payments are disabled by the Cloudflare emergency gate'},503);
 
   const guestToken=randomToken();
   const items=body.items?.map(x=>({product_id:String(x.product_id),mode:String(x.mode),batch_id:x.batch_id||null,quantity:Number(x.quantity)}));
