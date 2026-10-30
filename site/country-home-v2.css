@@ -2185,3 +2185,8 @@ body .footer .footer-bottom{margin-top:9px;}
 .header .nav-checkout-link:hover,.header .nav-checkout-link[aria-current="page"]{background:#f2e0ca;}
 @media(max-width:760px){body .footer{width:calc(100% - 18px);max-width:100%;}body .footer .footer-inner{grid-template-columns:minmax(0,1fr);}}
 @media(max-width:480px){.header .nav-checkout-link{min-height:38px;padding:6px 8px;font-size:.77rem;}}
+
+/* MBB-ADMIN-069 — identify old photos visually before permanent deletion. */
+#admin-main .media-cleanup-photo{display:flex;align-items:center;gap:10px;min-width:0;overflow-wrap:anywhere;}
+#admin-main .media-cleanup-photo img{height:66px;width:66px;flex:none;border:1px solid #cdb69d;border-radius:4px;background:#f8f0e8;object-fit:cover;}
+#admin-main .media-cleanup-photo span{font-size:.75rem;}
