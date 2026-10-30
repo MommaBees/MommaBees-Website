@@ -25,7 +25,7 @@ export async function showLiveSelling({showError}){
    '<h2>Stripe Payments — Owner Control</h2>'+
    '<p>Choose between Stripe TEST and LIVE for customer checkout. The selected storefront mode is saved on the server; Cloudflare emergency settings remain independent.</p>'+
    '<div class="owner-payment-mode"><h3>Current storefront mode: '+e(mode)+'</h3>'+
-   '<p><strong>Customer LIVE payments:</strong> '+(live?'Enabled':'Disabled')+'</p>'+
+   '<p><strong>Customer LIVE payments:</strong> '+(status.acceptingLivePayments?'Ready to process':live?'LIVE selected, but blocked by a release gate':'Disabled')+'</p>'+
    '<button type="button" role="switch" aria-label="Enable or disable LIVE Stripe payments" aria-checked="'+(live?'true':'false')+'" '+
     'id="owner-live-toggle" class="button '+(live?'danger':'')+'" '+(!live&&!ready?'disabled':'')+'>'+
       (live?'Disable LIVE Payments — return to TEST':'Enable LIVE Payments — switch to LIVE')+
