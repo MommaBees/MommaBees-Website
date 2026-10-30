@@ -15,11 +15,11 @@ test('customer questions remain concise and separately linked from legal terms',
  assert.doesNotMatch(html,/SPECIAL-ORDER DATE REQUESTS AND FULFILLMENT/);
  assert.doesNotMatch(html,/site_settings|s\.terms/);
 });
-test('footer keeps two original shop link rows and separates policy directory',()=>{
+test('footer uses a single shop-link row and retains the legal policy directory',()=>{
  const app=source('site/app.js');
  const footer=app.slice(app.indexOf('<footer class="footer"'),app.indexOf('</footer>')+9);
  const nav=footer.slice(footer.indexOf('aria-label="Footer navigation"'),footer.indexOf('aria-label="Legal and customer policies"'));
- assert.equal((nav.match(/class="footer-nav-row"/g)||[]).length,2);
+ assert.equal((nav.match(/class="footer-nav-row"/g)||[]).length,1);
  assert.match(footer,/footer-legal-heading/);
  for(const name of ['Terms of Service','Privacy Policy','Cookie Policy','Pickup Policy','Delivery Policy','Refunds &amp; Cancellations','Cookie Settings']){
   assert.ok(footer.includes(name),'missing visible footer policy '+name);
