@@ -1,9 +1,11 @@
 import {runtimeCredential} from './runtime-credentials.js';
+import {verifyMommaBeesTestAccount} from './product-stripe-test.js';
 export function stripePaymentMode(env){return env.STRIPE_PAYMENT_MODE==='live'||(!env.STRIPE_PAYMENT_MODE&&/^sk_live_/.test(env.STRIPE_SECRET_KEY||''))?'live':'test';}
 export async function createStripeSession(env,fields,{environment=stripePaymentMode(env)}={}){
  const key=await runtimeCredential(env,'STRIPE_SECRET_KEY',environment);
  if(!key)throw Error('Stripe API key is not configured');
  if(!(environment==='test'?/^sk_test_/.test(key):/^sk_live_/.test(key)))throw Error('Stripe payment key environment mismatch');
+ if(environment==='test')await verifyMommaBeesTestAccount(env);
  const form=new URLSearchParams();Object.entries(fields).forEach(([k,v])=>{if(v!==null&&v!==undefined)form.set(k,String(v));});
  const result=await fetch('https://api.stripe.com/v1/checkout/sessions',{method:'POST',headers:{Authorization:'Bearer '+key,'Content-Type':'application/x-www-form-urlencoded'},body:form});
  const data=await result.json();if(!result.ok)throw Error(data?.error?.message||'Stripe did not create a checkout session');return data;
