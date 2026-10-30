@@ -42,8 +42,7 @@ export async function renderMessages({container,isAdmin=false,showError=()=>{}})
   const photos=await savedPhotos(messages);
   const root=messages.filter(x=>!x.parent_id),byRoot=new Map();
   messages.filter(x=>x.parent_id).forEach(x=>{const list=byRoot.get(x.parent_id)||[];list.push(x);byRoot.set(x.parent_id,list);});
-  let html='<section class="box"><h2>'+(isAdmin?'Customer Messages & Special Requests':'Private Messages to Momma Bee’s')+'</h2>'+
-   '<p class="small muted">Conversations are private between the customer and the bakery Owner/Admin. Images are kept in private storage.</p>';
+  let html='<section class="box"><h2>'+(isAdmin?'Customer Messages & Special Requests':'Private Messages to Momma Bee’s')+'</h2>';
   if(!isAdmin)html+='<form id="new-message" class="message-form"><h3>Send a new message</h3>'+
    '<label class="field">Subject<select name="subject_type" required>'+subjects()+'</select></label>'+
    '<label class="field" data-custom style="display:none">Other subject<input name="subject_custom" maxlength="100" placeholder="Describe your subject"></label>'+
