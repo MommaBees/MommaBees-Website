@@ -1,5 +1,5 @@
 import {response,rpc,db,sha256,randomToken,getVerifiedUser,origin,limited} from '../_lib/db.js';
-import {createStripeSession,stripePaymentMode} from '../_lib/stripe.js';
+import {createStripeSession,stripePaymentMode,storefrontStripeMode} from '../_lib/stripe.js';
 import {acceptedOrderNote} from '../_lib/order-legal.js';
 import {verifyTurnstile} from '../_lib/turnstile.js';
 import {checkoutAdmission} from '../_lib/checkout-admission.js';
@@ -8,6 +8,9 @@ export async function onRequestPost({request,env}){
  try{
   const body=await request.json();if(!body||JSON.stringify(body).length>12000)return response({error:'Cart exceeds allowed size'},400);
   if(stripePaymentMode(env)==='live' && env.LIVE_PAYMENT_ALLOWED!=='yes')return response({error:'Live payments are disabled. Use Stripe TEST keys until live payments are explicitly authorized.'},503);
+  const selected=await storefrontStripeMode(env);
+  if(!selected.checkoutEnabled)return response({error:'Online checkout is currently disabled'},503);
+  if(selected.mode==='live'&&env.LIVE_PAYMENT_ALLOWED!=='yes')return response({error:'Live payments are disabled by the Cloudflare emergency gate'},503);
   if(env.STRIPE_AUTOMATIC_TAX_ENABLED!=='yes')return response({error:'Tax setup is not verified. Configure Stripe Tax and enable STRIPE_AUTOMATIC_TAX_ENABLED only after reviewing applicable bakery tax obligations.'},503);
   const user=await getVerifiedUser(env,request);
   const blocked=await checkoutAdmission(env,request,{guest:!user});
@@ -61,7 +64,7 @@ export async function onRequestPost({request,env}){
     'metadata[order_id]':orderId,
     'metadata[terms_version]':String(body.policy_acceptance.version)
   };
-  const session=await createStripeSession(env,params);
+  const session=await createStripeSession(env,params,{environment:selected.mode});
   return response({checkout_url:session.url,order_id:orderId,guest_token:guestToken});
  }catch(err){console.error('Checkout error:',err?.message);if(orderId)await rpc(env,'release_checkout',{p_order_id:orderId,p_reason:'failed'}).catch(x=>console.error('Could not release reservation',x.message));return response({error:err?.message||'Checkout unavailable'},400);}
 }
