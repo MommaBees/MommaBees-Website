@@ -2134,3 +2134,37 @@ body[data-page="cart"] #main .bakery-cart-section .total{
     padding-top:9px;
   }
 }
+
+/* MBB-UI-065 — narrower, centered footer; preserves links, palette, QR and responsive navigation. */
+body .footer{
+  width:calc(100% - clamp(28px,6vw,120px));
+  max-width:1080px;
+  margin-inline:auto;
+}
+body .footer > .shell{
+  width:100%;
+  max-width:100%;
+  padding-inline:clamp(17px,2.8vw,34px);
+}
+body .footer .footer-inner{
+  grid-template-columns:minmax(0,1fr) minmax(190px,250px);
+  column-gap:clamp(18px,2.5vw,30px);
+}
+body .footer .footer-legal{
+  max-width:100%;
+}
+body .footer .footer-legal-links{
+  gap:8px 16px;
+}
+@media(max-width:760px){
+  body .footer{
+    width:calc(100% - 20px);
+    max-width:100%;
+  }
+  body .footer .footer-inner{
+    grid-template-columns:minmax(0,1fr);
+  }
+  body .footer > .shell{
+    padding-inline:clamp(14px,3vw,22px);
+  }
+}
