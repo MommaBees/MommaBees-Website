@@ -92,9 +92,9 @@ const configs={
  messages:{label:'Customer Messages & Requests',readMostly:true,fields:cols(field('status','Status','select',{options:['new','in_progress','replied','closed']}))},
  reviews:{label:'Customer Review Moderation',readMostly:true,fields:cols(field('approved','Approve for publication','bool'))},
  promotions:{label:'Promotions & Coupons',fields:cols(field('title','Campaign name'),field('code','Optional coupon code'),field('kind','Discount type','select',{options:['percent','fixed']}),field('value','Percent OR fixed cents (example 500 = $5)','number'),field('scope','Apply to','select',{options:['all','products','categories','batches']}),field('scope_ids','Selected item/category/batch UUIDs (comma-separated)','uuids'),field('audience','Eligible audience','select',{options:['all','selected','returning']}),field('starts_at','Starts at','datetime'),field('ends_at','Ends at','datetime'),field('min_subtotal_cents','Minimum order subtotal (cents)','number'),field('max_discount_cents','Maximum discount (cents)','number'),field('max_uses','Maximum redemptions','number'),field('published','Active','bool'))},
- promotion_recipients:{label:'Private Promo Recipients',key:['promotion_id','customer_id'],fields:cols(field('promotion_id','Promotion','ref',{table:'promotions'}),field('customer_id','Customer account UUID'))},
+ promotion_recipients:{label:'Private Promo Recipients',key:['promotion_id','customer_id'],fields:cols(field('promotion_id','Promotion','ref',{table:'promotions'}),field('customer_id','Customer username or email (exact match)'))},
  announcements:{label:'Announcements & Alerts',fields:cols(field('title','Announcement title'),field('body','Message','textarea'),field('image_url','Announcement graphic','image'),field('link_url','Link (optional)'),field('placement','Display location','select',{options:['home','shop','all']}),field('audience','Audience','select',{options:['all','signed_in','selected']}),field('priority','Priority','select',{options:['normal','urgent']}),field('starts_at','Publish after','datetime'),field('ends_at','Expire after','datetime'),field('published','Published','bool'))},
- announcement_recipients:{label:'Private Announcement Recipients',key:['announcement_id','customer_id'],fields:cols(field('announcement_id','Announcement','ref',{table:'announcements'}),field('customer_id','Customer account UUID'))},
+ announcement_recipients:{label:'Private Announcement Recipients',key:['announcement_id','customer_id'],fields:cols(field('announcement_id','Announcement','ref',{table:'announcements'}),field('customer_id','Customer username or email (exact match)'))},
  expenses:{label:'Expenses',fields:cols(field('purchased_on','Purchase date','date'),field('description','Description'),field('category','Cost category','select',{options:['ingredients','packaging','delivery','labor','utilities','equipment','other']}),field('amount_cents','Amount in dollars','money'),field('notes','Notes','textarea'))},
  ingredients:{label:'Ingredients & Inventory',fields:cols(field('name','Ingredient / supply'),field('unit','Unit (grams, each, oz, etc.)'),field('package_size','Package quantity','number'),field('package_cost_cents','Package price (dollars)','money'),field('quantity_on_hand','Quantity currently on hand','number'))},
  recipes:{label:'Recipe Yields',fields:cols(field('product_id','Product','ref',{table:'products'}),field('yield_quantity','Recipe yield (sellable units)','number'),field('instructions','Instructions','textarea'))},
@@ -1146,6 +1146,20 @@ async function openEditor(record){const c=configs[selected];
 
  const dialog=$('#editor');dialog.showModal();$('#close-editor').onclick=()=>dialog.close();
  $('#record-form').onsubmit=async event=>{event.preventDefault();try{const body={};for(const f of c.fields){if(selected==='customer_profiles'&&f.key==='username')continue;const el=$('#field_'+f.key);if(!el&&['subcategory_id','variety_id','product_id'].includes(f.key)){body[f.key]=null;continue;}let v=f.type==='bool'?el.checked:el.value;
+ if(f.key==='customer_id'&&['announcement_recipients','promotion_recipients'].includes(selected)){
+  const lookup=String(v||'').trim();
+  if(!lookup)throw Error('Enter an existing customer username or email address.');
+  const result=await fetch('/api/admin/recipient-lookup',{
+   method:'POST',headers:{'Content-Type':'application/json','Origin':location.origin,
+    Authorization:'Bearer '+(currentSession()?.access_token||'')},
+   body:JSON.stringify({lookup})
+  });
+  const person=await result.json().catch(()=>({}));
+  if(!result.ok||!person.id)throw Error(person.error||'Customer account could not be resolved.');
+  if(selected==='promotion_recipients'&&!person.marketing_opt_in)
+   throw Error('This customer has not opted in to marketing. Obtain consent before assigning an offer.');
+  v=person.id;
+ }
  if(f.type==='image'){const inp=document.querySelector('[data-image-for="field_'+f.key+'"]');if(inp?.files?.[0]){const photo=await upload(selected==='past_bakes'?'past-bakes':'product-photos',inp.files[0]);v=photo.url;} }
  if(f.type==='carousel_image'){const inp=document.querySelector('[data-carousel-photo-for="field_'+f.key+'"]');if(inp?.files?.[0]){const uploaded=await upload('carousel-photos',inp.files[0]);v=uploaded.url;}if(!v)throw Error('Upload a real photograph before saving this slide.');}
  if(v==='__create__')throw Error('Save or cancel the new '+f.label+' before saving this record.');
