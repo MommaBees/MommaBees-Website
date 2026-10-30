@@ -16,6 +16,18 @@ export async function onRequestPost({request,env}){
    await db(env,'/rest/v1/reviews?id=eq.'+id,{method:'PATCH',body:{approved:input.approved}});
    return response({ok:true,message:input.approved?'Review approved':'Review unpublished'});
   }
+  if(action==='review_photo'){
+   if(typeof input.approved!=='boolean')return response({error:'Choose approval or withdrawal'},400);
+   const photos=await db(env,'/rest/v1/review_photos?select=id,review_id&id=eq.'+id);
+   if(photos.length!==1)return response({error:'Review photo not found'},404);
+   const reviews=await db(env,'/rest/v1/reviews?select=id&id=eq.'+photos[0].review_id);
+   if(reviews.length!==1)return response({error:'Parent review not found'},404);
+   const rows=await db(env,'/rest/v1/review_photos?id=eq.'+id,{method:'PATCH',prefer:'return=representation',
+    body:{approved:input.approved,reviewed_by:auth.user.id,reviewed_at:new Date().toISOString()}});
+   if(!Array.isArray(rows)||rows.length!==1||rows[0].approved!==input.approved)
+    return response({error:'Photo moderation outcome was not verified'},503);
+   return response({ok:true,message:input.approved?'Photograph approved for publication with the review':'Photograph withdrawn from public display'});
+  }
   if(action==='reply'){
    const body=String(input.body||'').trim();
    if(body.length<2||body.length>3000)return response({error:'Enter a reply of 2–3000 characters'},400);
