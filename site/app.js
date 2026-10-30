@@ -330,6 +330,7 @@ function layout(content){
  <a href="#home" class="brand">MommaBee Bakery&Farmstand</a>
  <div class="nav-utilities">
   <a href="#cart" class="nav-cart-link" ${routeName==='cart'?'aria-current="page"':''}>Cart (${cart.reduce((sum,item)=>sum+item.quantity,0)})</a>
+   <a href="#checkout" class="nav-checkout-link" ${routeName==='checkout'?'aria-current="page"':''}>Checkout</a>
   ${accountNavigationMarkup(Boolean(currentUser()),verifiedBackOfficeRole)}
   ${routeName==='home'&&!currentUser()?'<a href="#account/register" class="nav-account-register">Register</a>':''}
  </div></div>
@@ -649,8 +650,9 @@ function cartPage(){
   (cart.length?rows+
    (real.length?'<p class="total">Product subtotal: '+money(subtotal)+'</p>':'')+
    (hasPreviews?'<p class="total">Preview subtotal: '+money(previewTotal)+'</p>'+
-    '<p class="small">Remove preview items to complete a real checkout.</p>':
-    '<a class="button" href="#checkout">Continue to checkout</a>'):
+    '<p class="small">Preview items cannot be purchased. Remove them before checkout.</p>'+
+    '<span class="button secondary" aria-disabled="true" title="Remove preview items before checkout">Checkout unavailable for previews</span>':
+    '<a class="button" href="#checkout">Checkout</a>'):
    '<div class="empty">Your cart is empty. <a href="#shop">Browse products</a>.</div>')+'</section>');
  $$('[data-remove]').forEach(button=>button.onclick=()=>{
   cart.splice(Number(button.dataset.remove),1);saveCart();cartPage();
