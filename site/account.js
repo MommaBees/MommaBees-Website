@@ -206,7 +206,7 @@ export async function account({layout,rerender,showError,section=null}){
  if(section==='reset-password')return resetPasswordPage({layout});
  if(!currentUser())return authPage({layout,rerender,showError,section});
  const user=currentUser();
- layout('<section class="section"><h1>My Bakery Account</h1><p>Signed in as '+h(user.email)+'</p>'+
+ layout('<section class="section"><h1>My Account</h1><p>Signed in as '+h(user.email)+'</p>'+
   '<button class="button secondary" id="signout">Sign Out</button><div class="cols">'+
   '<section class="box"><h2>Customer Account ID</h2><div id="my-account-code">Loading…</div>'+
   '<div id="account-profile-section"><h2>Profile & Addresses</h2><div id="my-profile">Loading…</div></div></section>'+ 
