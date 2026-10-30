@@ -252,13 +252,24 @@ function paint(root,data,errors,period,showError){
   }catch(error){showError(error);}
  };
 }
+// Read up to five stable pages; do not silently mistake a provider's 1,000-row page cap for complete history.
+async function readOverviewTable(table){
+ const limit=table==='site_settings'?1:1000;
+ const max=table==='site_settings'?1:5000;
+ const rows=[];
+ for(let offset=0;offset<max;offset+=limit){
+  const result=await list(table,{limit,offset,order:table==='baking_days'?'date.asc':'id.asc'});
+  if(!Array.isArray(result))throw Error('Incomplete '+table+' response');
+  rows.push(...result);
+  if(result.length<limit)break;
+ }
+ return rows;
+}
 export async function renderOverviewHub({showError}){
  const root=document.querySelector('#admin-main');
  if(!root)return;
  root.innerHTML='<section class="hub-wrap"><h2>Momma’s Overview Hub</h2><p>Loading current business records…</p></section>';
- const result=await Promise.allSettled(SOURCE_TABLES.map(table=>
-  list(table,{limit:table==='site_settings'?1:5000})
- ));
+ const result=await Promise.allSettled(SOURCE_TABLES.map(table=>readOverviewTable(table)));
  const data={},errors=[];
  result.forEach((entry,i)=>{
   const key=SOURCE_TABLES[i];
