@@ -48,8 +48,8 @@ export async function confirmOwnerPassword(env,user,password,captcha){
  const signed=await result.json().catch(()=>({}));
  return signed.user?.id===user.id&&signed.user?.email?.toLowerCase()===user.email?.toLowerCase()&&Boolean(signed.access_token);
 }
-async function validateNewSecret(name,environment,value){
- if(name==='STRIPE_SECRET_KEY')return verifyStripeKey(value,environment);
+async function validateNewSecret(name,environment,value,env){
+ if(name==='STRIPE_SECRET_KEY')return verifyStripeKey(value,environment,env.STRIPE_LIVE_ACCOUNT_ID||null);
  if(name==='STRIPE_WEBHOOK_SECRET'&&/^whsec_[A-Za-z0-9]+$/.test(value))
   return {ok:true,checks:[{name:'secret_format',state:'verified'}]};
  if(name==='TURNSTILE_SECRET_KEY'&&/^0x[A-Za-z0-9_-]{15,100}$/.test(value))
@@ -76,7 +76,7 @@ export async function onRequestPost({request,env}){
   // Password + a NEW one-time human verification token must be supplied for every write.
   const confirmed=await confirmOwnerPassword(env,a.user,input.owner_password,input.captcha_token);
   if(!confirmed)return response({error:'Owner password or human verification was not accepted'},403);
-  const checked=await validateNewSecret(name,environment,value);
+  const checked=await validateNewSecret(name,environment,value,env);
   if(!checked.ok)return response({ok:false,state:'failed',checks:checked.checks,
    error:'Replacement failed provider verification. The existing website credential is unchanged.'},422);
   const plan=dependenciesFor(name,environment).map(step=>{
