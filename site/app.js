@@ -272,7 +272,7 @@ function bindQuickCart(){
   else cart.push({key,mode:'showcase',showcase_id:item.id,quantity,name:item.name,unit:item.price_unit||'each',price_cents:price});
   saveCart();
   document.querySelectorAll('.nav-cart-link').forEach(link=>{link.textContent='Cart ('+cart.reduce((n,x)=>n+x.quantity,0)+')';});
-  if(status)status.textContent='Added to cart.';
+  if(status)status.textContent=existing?'Quantity updated.':'Added to cart.';
   syncQuickCartButtons();
  });
  document.addEventListener('submit',event=>{
@@ -297,7 +297,7 @@ function bindQuickCart(){
   saveCart();
   const count=cart.reduce((total,row)=>total+row.quantity,0);
   for(const link of document.querySelectorAll('.nav-cart-link'))link.textContent='Cart ('+count+')';
-  if(status)status.textContent='Added to cart.';
+  if(status)status.textContent=existing?'Quantity updated.':'Added to cart.';
   document.querySelectorAll('form[data-quick-buy]').forEach(refresh);
   syncQuickCartButtons();
  });
@@ -308,7 +308,7 @@ function layout(content){
  const routeName=(location.hash||'#home').slice(1).split('/')[0]||'home';
  document.body.dataset.page=routeName;
  document.body.dataset.cardStyle=settings.site_card_style==='open'?'open':'cards';
- const crumbLabels={shop:'Shop All',ready:'Ready to Sell',preorder:'Preorder',category:'Browse Categories',subcategory:'Browse Varieties',product:'Product Details',cart:'Your Cart',checkout:'Checkout',success:'Order Status',track:'Track Your Order',account:'My Account',contact:'Contact & Special Orders',faq:'Questions & Policies',legal:'Legal & Policies',gallery:'Past Bakes',qr:'Bakery QR Code',admin:'Admin Center'};
+ const crumbLabels={shop:'Shop All',ready:'Ready to Sell',preorder:'Preorder',category:'Browse Categories',subcategory:'Browse Varieties',product:'Product Details',cart:'Your Cart',checkout:'Checkout',success:'Order Status',track:'Track Your Order',account:'My Account',contact:'Contact & Special Orders',faq:'FAQ & Policies',alerts:'Notifications & Alerts',legal:'Legal & Policies',gallery:'Past Bakes',qr:'Bakery QR Code',admin:'Admin Center'};
  const crumb=routeName!=='home'&&crumbLabels[routeName]
    ?'<nav class="page-crumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span aria-current="page">'+e(crumbLabels[routeName])+'</span></nav>'
    :'';
@@ -331,6 +331,7 @@ function layout(content){
  <div class="nav-utilities">
   <a href="#cart" class="nav-cart-link" ${routeName==='cart'?'aria-current="page"':''}>Cart (${cart.reduce((sum,item)=>sum+item.quantity,0)})</a>
    <a href="#checkout" class="nav-checkout-link" ${routeName==='checkout'?'aria-current="page"':''}>Checkout</a>
+   <a href="#alerts" class="nav-alerts-link" ${routeName==='alerts'?'aria-current="page"':''}>Notifications / Alerts</a>
   ${accountNavigationMarkup(Boolean(currentUser()),verifiedBackOfficeRole)}
   ${routeName==='home'&&!currentUser()?'<a href="#account/register" class="nav-account-register">Register</a>':''}
  </div></div>
@@ -341,8 +342,7 @@ function layout(content){
     <p class="footer-location">Located in Nixa, Missouri — Farmstand &amp; Made to Order</p>
     </div>
    <nav class="footer-col footer-navigation" aria-label="Footer navigation">
-    <div class="footer-nav-row"><a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a><a href="#preorder">Preorder</a></div>
-    <div class="footer-nav-row"><a href="#gallery">Past Bakes</a><a href="#contact">Ask Momma Bee</a><a href="#faq">Questions & Policies</a></div>
+    <div class="footer-nav-row"><a href="#shop">Shop All</a><a href="#ready">Ready to Sell</a><a href="#preorder">Preorder</a><a href="#gallery">Past Bakes</a><a href="#contact">Got a Question Ask Momma Bee</a><a href="#faq">FAQ &amp; Policies</a></div>
    </nav>
    <div class="footer-col"><p class="footer-col-title">Take us along</p>
     <a class="footer-qr" href="#qr" aria-label="Open the downloadable bakery homepage QR code">
@@ -358,7 +358,7 @@ function layout(content){
     <a href="#legal/property">Visitor &amp; Animal Safety</a><a href="#legal/food">Food &amp; Allergens</a>
     <button type="button" class="footer-cookie-link" data-cookie-settings>Cookie Settings</button>
    </div>
-  </nav><div class="footer-bottom">${e(settings.food_notice||'Please ask about ingredients and allergens before ordering.')}</div>
+  </nav>
  </div></footer>`;
  bindHomeCarousel(settings.home_carousel_interval_seconds);
  bindQuickCart();
