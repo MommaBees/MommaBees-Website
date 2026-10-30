@@ -42,6 +42,7 @@ async function readiness(env){
  requirements.push(['live_webhook',/^whsec_/.test(webhookKey||''),'Install the MommaBee LIVE webhook signing secret; independently test actual signed delivery before launch.']);
  return {
   enabled:row.checkout_enabled===true&&mode==='live',
+  acceptingLivePayments:row.checkout_enabled===true&&mode==='live'&&requirements.every(x=>x[1]),
   checkoutEnabled:row.checkout_enabled===true,
   mode,
   cloudflareMode:env.STRIPE_PAYMENT_MODE==='live'?'live':env.STRIPE_PAYMENT_MODE==='test'?'test':'unset',
