@@ -92,3 +92,22 @@ As of document creation:
 
 ---
 **Footer:** MBB-PAY-003 · v1.0 · MommaBees Website · Internal test evidence · Never store payment secrets
+
+## 8. October 30 follow-up — Owner reports credential updates
+
+**Owner statement:** The MommaBee TEST secret key and webhook signing secret have been updated. This is a user-reported completed configuration step, not an independently disclosed or re-read secret.
+
+**Post-change verification:**
+- Latest source-code GitHub Actions checks: **PASS**; run `41121576474`, commit `339f21c38f6e7693b005622387f9271cb972dc42`.
+- Cloudflare production Pages deployment for that commit: **SUCCESS**.
+- Cloudflare secret bindings `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` present; secret contents are intentionally masked.
+- The new Stripe sandbox webhook endpoint is enabled and points to `/api/stripe-webhook`.
+- Database: six demo catalog items enabled; one enabled Cinnamon Rolls example ($4.00); exactly one Owner role; `demo_store_enabled=true`, `checkout_enabled=false`; zero demo checkouts and zero customer orders at observation.
+- New sandbox Stripe Checkout Sessions: zero observed at observation.
+- **Credential API round-trip from the deployed website, a completed hosted Checkout payment, authenticated admin demo ledger insertion, signed webhook delivery, and inventory nonmutation are still unverified.**
+- Keep `LIVE_PAYMENT_ALLOWED=no` and `STRIPE_AUTOMATIC_TAX_ENABLED=no` until the separate gates are accepted.
+
+**Next decisive test:** Authorized Owner signs in, opens Shop > Example Menu > Cinnamon Rolls > Try Test Checkout, and pays using the Stripe TEST card. Independently read back Stripe Session `paid` + webhook event delivery and Supabase `demo_checkout_tests.status=paid`, with unchanged customer orders/inventory. This tests the **website-originated** session rather than a Stripe API-only fixture.
+
+---
+**Revision note:** 2026-10-30 follow-up read-only verification; acceptance remains partial.
